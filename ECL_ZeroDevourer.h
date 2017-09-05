@@ -30,9 +30,8 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
 */
 ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
-// TODO
-#define ECL_ZERO_EATER_GET_BOUND ECL_ZERO_DEVOURER_GET_BOUND
-#define ECL_ZeroEater_Compress ECL_ZeroDevourer_Compress
-#define ECL_ZeroEater_Decompress ECL_ZeroDevourer_Decompress
+//#define ECL_ZERO_EATER_GET_BOUND ECL_ZERO_DEVOURER_GET_BOUND
+//#define ECL_ZeroEater_Compress ECL_ZeroDevourer_Compress
+//#define ECL_ZeroEater_Decompress ECL_ZeroDevourer_Decompress
 
 #endif

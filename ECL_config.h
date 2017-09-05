@@ -12,7 +12,7 @@
     - uint32_t
 */
 
-#define ECL_USE_BITNESS_16 // 16 or 32 or 64
+#define ECL_USE_BITNESS_64 // 16 or 32 or 64
 //#define ECL_USE_ASSERT
 #define ECL_USE_BRANCHLESS
 
