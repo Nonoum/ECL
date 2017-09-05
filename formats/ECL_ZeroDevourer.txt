@@ -1,0 +1,37 @@
+ZeroDevourer stream format.
+Refers to functionality from:
+- ECL_JH.txt
+- ECL_E_number_format.txt
+
+1. Stream consists of independent blocks aligned with JumpingHeader.
+
+2. Decompressor logic for each block (error conditions are not checked in this example):
+
+not_zero = read bit from JumpingHeader
+if not_zero == 0:
+    add zero byte to output stream
+    continue to next block
+else:
+    opcode = read 2 bits from JumpingHeader
+    if opcode == 0:
+        count_x = read 2 bits from JumpingHeader
+        count_x = count_x + 1
+        count_0 = 1
+    else if opcode == 1:
+        count_x = read 4 bits from JumpingHeader
+        count_x = count_x + 4
+        count_0 = 1
+    else if opcode == 2:
+        count_x = 0
+        count_0 = read E4 number from JumpingHeader
+        count_0 = count_0 + 9
+    else: // opcode == 3
+        count_x = read E6E3 number from JumpingHeader
+        count_0 = 0
+
+    src_pointer = JumpingHeader.next
+    JumpingHeader.jump(count_x)
+    copy count_x bytes from src_pointer to output
+    add count_0 zero bytes to output
+
+That's it.

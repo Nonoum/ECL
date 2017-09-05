@@ -1,0 +1,22 @@
+ZeroEater stream format.
+
+1. Stream consists of independent blocks aligned by byte bound.
+
+2. Each block starts with a "header" byte and optionally followed by a sequence of raw bytes.
+
+3. Decompressor logic for each block (error conditions are not checked in this example):
+
+header = read byte from stream
+if (header & 0x80) == 0:
+    count_x = (header & 0x7F) + 1
+    copy count_x bytes from stream to output // stream pointer is adjusted
+else if (header & 0x40) == 0:
+    count_0 = (header & 0x3F) + 1
+    add count_0 zero bytes to output
+else:
+    count_x = (header & 0x07) + 1
+    count_0 = ((header >> 3) & 0x07) + 1
+    copy count_x bytes from stream to output // stream pointer is adjusted
+    add count_0 zero bytes to output
+
+That's it.

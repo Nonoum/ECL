@@ -1,0 +1,41 @@
+# default
+* text=auto
+
+# code files
+*.h text
+*.c text
+*.hpp text
+*.cpp text
+*.m text
+*.mm text
+
+# script files
+*.py text
+*.sh text eol=lf
+
+# config, docs
+*.cfg text=auto
+*.txt text=auto
+
+# qt config file
+*.conf text eol=crlf
+
+# translation files
+*.ts text eol=lf
+
+# platform files
+*.sln text eol=crlf
+*.bat text eol=crlf
+*.rc text eol=lf
+*.vcxproj text eol=crlf
+*.vcxproj.filters text eol=crlf
+
+# wix files
+*.wxs text eol=crlf
+*.wxi text eol=crlf
+
+# binary files
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.ico binary

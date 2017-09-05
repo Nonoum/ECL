@@ -1,0 +1,55 @@
+Jumping Header (JH) is an approach of storing strongly-packed data with small retrieving time.
+It assumes 2 types of data being united:
+- bit fields of various length
+- raw bytes data aligned by byte bound
+
+JH represents byte-stream with both bit and byte data messed inside and has methods for adding/retrieving bit and byte data:
+1. stream has:
+- p_byte - pointer to byte in the stream
+- p_next pointer to byte in the stream
+- p_end pointer to byte in the stream, followed by last byte
+- n_bits counter representing amount of bits unused in byte pointed by p_byte
+
+2. initializing stream sets:
+- p_byte = pointer to first byte
+- p_next = pointer to second byte
+- p_end = pointer to byte after last byte
+- n_bits = 8
+
+3. to read a single bit of data:
+if n_bits == 0:
+    if p_next == p_end:
+        // error, stream completed
+        exit
+    p_byte = p_next // update pointer
+    n_bits = 8
+output = (*p_byte >> (8 - n_bits)) & 0x01
+n_bits = n_bits - 1
+
+4. to read a sequence of raw bytes:
+src_pointer = p_next
+p_next = p_next + n_bytes_to_read // jump
+copy n_bytes_to_read bytes from src_pointer
+
+
+
+So for example you:
+- put 11 bits of data (A) in stream
+- put 5 bytes of data (Araw) in stream
+- put 7 bits of data (B) in stream
+- put 3 bytes of data (Braw) in stream
+- put 9 bits of data (C) in stream
+Your stream looks like this sequence of bytes (each byte is in square brackets):
+[A] [A, B] [Araw] [Araw] [Araw] [Araw] [Araw] [B, C] [Braw] [Braw] [Braw] [C]
+
+Bit header B is split between bytes stream[1] and stream[7] due to jump over sequence of raw A data.
+Bit header C is split between bytes stream[7] and stream[11] due to jump over sequence of raw B data.
+
+This:
+- is possible due to knowledge of where to jump, which is shared between packer and unpacker;
+- allows to make very compact data streams and take advantage of memcpy for raw sequences aligned by byte bound;
+- leaves unused bits in last logical partial byte (which is not necessarily the very last byte), similarly to a stream fully written as bitset;
+- requires peculiar handling if infinite stream processing is needed (special opcode of your stream to handle forced byte alignment);
+
+This is the core of ECL formats.
+That's it.
