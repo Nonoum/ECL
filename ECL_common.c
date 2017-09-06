@@ -146,14 +146,15 @@ void ECL_JH_Write_E6E3(ECL_JH_WState* state, ECL_usize value) {
 }
 
 ECL_usize ECL_JH_Read_E4(ECL_JH_RState* state) {
-    ECL_usize result;
+    ECL_usize result, workaround;
     uint8_t e, code, shift;
     shift = 0;
     result = 0;
     do {
         code = ECL_JH_Read(state, 5);
         e = code & 0x10;
-        result |= (code & 0x0F) << shift;
+        workaround = code & 0x0F;
+        result |= workaround << shift;
         shift += 4;
     } while(ECL_CHECK_E_AND_SHIFT(e, shift, 4));
     // TODO set up (multiply) is_valid if overflowed?
@@ -161,7 +162,7 @@ ECL_usize ECL_JH_Read_E4(ECL_JH_RState* state) {
 }
 
 ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state) {
-    ECL_usize result;
+    ECL_usize result, workaround;
     uint8_t e, code, shift;
     code = ECL_JH_Read(state, 8);
     result = code & 0x7F;
@@ -171,7 +172,8 @@ ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state) {
         do {
             code = ECL_JH_Read(state, 5);
             e = code & 0x10;
-            result |= (code & 0x0F) << shift;
+            workaround = code & 0x0F;
+            result |= workaround << shift;
             shift += 4;
         } while(ECL_CHECK_E_AND_SHIFT(e, shift, 4));
     }
@@ -179,7 +181,7 @@ ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state) {
 }
 
 ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state) {
-    ECL_usize result;
+    ECL_usize result, workaround;
     uint8_t e, code, shift;
     code = ECL_JH_Read(state, 7);
     result = code & 0x3F;
@@ -189,7 +191,8 @@ ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state) {
         do {
             code = ECL_JH_Read(state, 4);
             e = code & 0x8;
-            result |= (code & 0x07) << shift;
+            workaround = code & 0x07;
+            result |= workaround << shift;
             shift += 3;
         } while(ECL_CHECK_E_AND_SHIFT(e, shift, 3));
     }
