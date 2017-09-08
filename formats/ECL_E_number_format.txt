@@ -1,1 +1,29 @@
-TBA
+Format of E numbers.
+
+E-number (e.g. E4, E7E4) is named like that for simplicity. Numbers are unsigned.
+E stands for 'extensible'.
+Number consists of fixed-length blocks, each block contains 'E' flag as elder bit in block,
+this bit determines whether there's next block. Next block contains elder bits of number.
+
+Example for E4 (each block has 4 data bits):
+value = read 5 bits // where 5 is 4 + extension
+result = (value & 0x0F) // retrieve 4 lower bits
+if value & 0x10: // check extension flag
+    value = read 5 bits // where 5 is 4 + extension
+    result = result | ((value & 0x0F) << 4)
+    if value & 0x10: // check extension flag
+        ...
+
+Similar is fair for E2, E3, E5, E7... each block has equal amount of bits.
+Numbers having several E in format name (e.g. E7E4) have appropriate block sizes and last block is cycled.
+
+Example for E7E4 (first block has 7 data bits, all others have 4):
+value = read 8 bits // where 8 is 7 + extension
+result = (value & 0x7F) // retrieve 7 lower bits
+if value & 0x80: // check extension flag
+    value = read 5 bits // where 5 is 4 + extension
+    result = result | ((value & 0x0F) << 7)
+    if value & 0x10: // check extension flag
+        ... read E4 blocks
+
+That's it.

@@ -26,7 +26,10 @@ if n_bits == 0:
 output = (*p_byte >> (8 - n_bits)) & 0x01
 n_bits = n_bits - 1
 
-4. to read a sequence of raw bytes:
+4. when read more than 1 bit of data at time - lower bits logically go first, so reading value A of 2 bits is same to:
+A = read_bits(1) | (read_bits(1) << 1);
+
+5. to read a sequence of raw bytes:
 src_pointer = p_next
 p_next = p_next + n_bytes_to_read // jump
 copy n_bytes_to_read bytes from src_pointer
@@ -46,7 +49,7 @@ Bit header B is split between bytes stream[1] and stream[7] due to jump over seq
 Bit header C is split between bytes stream[7] and stream[11] due to jump over sequence of raw B data.
 
 This:
-- is possible due to knowledge of where to jump, which is shared between packer and unpacker;
+- is possible due to knowledge of where to jump, which is shared between coder and decoder;
 - allows to make very compact data streams and take advantage of memcpy for raw sequences aligned by byte bound;
 - leaves unused bits in last logical partial byte (which is not necessarily the very last byte), similarly to a stream fully written as bitset;
 - requires peculiar handling if infinite stream processing is needed (special opcode of your stream to handle forced byte alignment);

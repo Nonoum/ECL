@@ -19,7 +19,7 @@ else:
         count_0 = 1
     else if opcode == 1:
         count_x = read 4 bits from JumpingHeader
-        count_x = count_x + 4
+        count_x = count_x + 5
         count_0 = 1
     else if opcode == 2:
         count_x = 0
@@ -27,6 +27,7 @@ else:
         count_0 = count_0 + 9
     else: // opcode == 3
         count_x = read E6E3 number from JumpingHeader
+        count_x = count_x + 1
         count_0 = 0
 
     src_pointer = JumpingHeader.next

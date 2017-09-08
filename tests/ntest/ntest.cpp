@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <string.h>
 
-static uint64_t GetRDTSC() {
+static uint64_t RdtscWrapper() {
     union {
         uint64_t i64;
         struct {
@@ -42,9 +42,9 @@ TestBase :: TestBase(const char* _name)
 
 bool TestBase :: run(std::ostream& log) {
     result = INIT;
-    uint64_t before = GetRDTSC();
+    uint64_t before = RdtscWrapper();
     runInternal(log);
-    uint64_t after = GetRDTSC();
+    uint64_t after = RdtscWrapper();
     tacts = after - before;
     return result == SUCCESS;
 }

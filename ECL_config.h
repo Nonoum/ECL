@@ -12,9 +12,17 @@
     - uint32_t
 */
 
-#define ECL_USE_BITNESS_64 // 16 or 32 or 64
+#ifndef ECL_USE_BITNESS_16
+#ifndef ECL_USE_BITNESS_32
+#ifndef ECL_USE_BITNESS_64
+// none of these is defined with force for compilation, use 32 bits by default
+#define ECL_USE_BITNESS_32 // default bitness
+#endif
+#endif
+#endif
+
 //#define ECL_USE_ASSERT
-#define ECL_USE_BRANCHLESS
+//#define ECL_USE_BRANCHLESS
 
 
 

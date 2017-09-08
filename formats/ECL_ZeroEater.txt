@@ -14,8 +14,8 @@ else if (header & 0x40) == 0:
     count_0 = (header & 0x3F) + 1
     add count_0 zero bytes to output
 else:
-    count_x = (header & 0x07) + 1
-    count_0 = ((header >> 3) & 0x07) + 1
+    count_x = ((header >> 3) & 0x07) + 1
+    count_0 = (header & 0x07) + 1
     copy count_x bytes from stream to output // stream pointer is adjusted
     add count_0 zero bytes to output
 

@@ -227,3 +227,7 @@ uint8_t ECL_Evaluate_E6E3(ECL_usize number) {
     }
     return result;
 }
+
+// cleanup in case of compiling as single file
+#undef ECL_CALC_E
+#undef ECL_CHECK_E_AND_SHIFT

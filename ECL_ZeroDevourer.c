@@ -51,7 +51,7 @@
 #endif
 
 static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    // cnt_x = [1..4]
+    ECL_ASSERT((cnt_x >= 1) && (cnt_x <= 4));
     uint8_t* dst;
     ECL_JH_Write(state, 0x01, 3);
     ECL_JH_Write(state, cnt_x - 1, 2);
@@ -63,10 +63,10 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
 }
 
 static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    // cnt_x = [4..19]
+    ECL_ASSERT((cnt_x >= 5) && (cnt_x <= 20));
     uint8_t* dst;
     ECL_JH_Write(state, 0x03, 3);
-    ECL_JH_Write(state, cnt_x - 4, 4);
+    ECL_JH_Write(state, cnt_x - 5, 4);
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
@@ -75,13 +75,13 @@ static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src
 }
 
 static void ECL_ZeroDevourer_DumpSeq110(ECL_JH_WState* state, ECL_usize cnt_0) {
-    // cnt_0 = [9..]
+    ECL_ASSERT(cnt_0 >= 9);
     ECL_JH_Write(state, 0x05, 3);
     ECL_JH_Write_E4(state, cnt_0 - 9);
 }
 
 static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    // cnt_x = [1..]
+    ECL_ASSERT(cnt_x >= 1);
     uint8_t* dst;
     ECL_JH_Write(state, 0x07, 3);
     ECL_JH_Write_E6E3(state, cnt_x - 1);
@@ -99,19 +99,19 @@ static void ECL_ZeroDevourer_ReadSeq(ECL_JH_RState* state, ECL_usize* cnt_x, ECL
         return;
     }
     switch (ECL_JH_Read(state, 2)) {
-    case 0: // seq 100
+    case 0: // seq 1.00
         *cnt_x = ECL_JH_Read(state, 2) + 1;
         *cnt_0 = 1;
         break;
-    case 1: // seq 101
-        *cnt_x = ECL_JH_Read(state, 4) + 4;
+    case 1: // seq 1.01
+        *cnt_x = ECL_JH_Read(state, 4) + 5;
         *cnt_0 = 1;
         break;
-    case 2: // seq 110
+    case 2: // seq 1.10
         *cnt_x = 0;
         *cnt_0 = ECL_JH_Read_E4(state) + 9;
         break;
-    case 3: // seq 111
+    case 3: // seq 1.11
         *cnt_x = ECL_JH_Read_E6E3(state) + 1;
         *cnt_0 = 0;
         break;
@@ -141,7 +141,7 @@ static void ECL_ZeroDevourer_DumpGeneric(ECL_JH_WState* state, const uint8_t* sr
     if(cnt_x <= 4) {
         ECL_ZeroDevourer_DumpSeq100(state, src, cnt_x);
         --cnt_0;
-    } else if(cnt_x <= 19) {
+    } else if(cnt_x <= 20) {
         ECL_ZeroDevourer_DumpSeq101(state, src, cnt_x);
         --cnt_0;
     } else {
@@ -153,18 +153,23 @@ static void ECL_ZeroDevourer_DumpGeneric(ECL_JH_WState* state, const uint8_t* sr
 }
 
 static bool ECL_ZeroDevourer_IsWorth(ECL_usize cnt_x, ECL_usize cnt_0) {
-    if(cnt_x <= 19) {
+    ECL_usize bits_needed;
+    if(cnt_x <= 20) {
         return true;
     }
-    if(cnt_x <= 512) {
+    if(cnt_x <= (1U << 9)) {
         return cnt_0 >= 2;
     }
-    if(cnt_x <= 0x8000) {
+    if(cnt_x <= (1U << 12)) {
         return cnt_0 >= 3;
-    } else if(sizeof(ECL_usize) > 2) {
-        // TODO for longer sizes
     }
-    return cnt_0 >= 4;
+    bits_needed = 3 + ECL_Evaluate_E6E3(cnt_x - 1);
+    if(cnt_0 < 9) {
+        bits_needed += cnt_0;
+    } else {
+        bits_needed += 8;
+    }
+    return bits_needed <= (cnt_0 << 3);
 }
 
 ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
