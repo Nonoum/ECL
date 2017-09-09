@@ -34,6 +34,8 @@ src_pointer = p_next
 p_next = p_next + n_bytes_to_read // jump
 copy n_bytes_to_read bytes from src_pointer
 
+6. extra note: if you haven't read/written any bits before first jump - first byte is still unused and reserved for bits data,
+so first jump cannot be for distance of whole buffer size, at most "sizeof(buffer) - 1".
 
 
 So for example you:

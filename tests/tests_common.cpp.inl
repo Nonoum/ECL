@@ -60,3 +60,301 @@ NTEST(test_number_E6E3) {
 }
 
 #undef ECL_TEST_E_NEXT_VALUE
+
+NTEST(test_JH_writing_failures) {
+    uint8_t data[6];
+    ECL_JH_WState state;
+    {
+        data[1] = 0xFF;
+        ECL_JH_WInit(&state, data, 1, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[1] == uint8_t(0xFF));
+    }
+    {
+        data[1] = 0xFF;
+        ECL_JH_WInit(&state, data, 1, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[1] == uint8_t(0xFF));
+    }
+    {
+        data[2] = 0xFF;
+        ECL_JH_WInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[2] == uint8_t(0xFF));
+    }
+    {
+        data[2] = 0xFF;
+        ECL_JH_WInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 2);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[2] == uint8_t(0xFF));
+    }
+    {
+        data[2] = 0xFF;
+        ECL_JH_WInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 3);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 3);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[2] == uint8_t(0xFF));
+    }
+    {
+        data[2] = 0xFF;
+        ECL_JH_WInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[2] == uint8_t(0xFF));
+    }
+    {
+        data[5] = 0xFF;
+        ECL_JH_WInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 5);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_WJump(&state, 4);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 2);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 2);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 2);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[5] == uint8_t(0xFF));
+    }
+    {
+        data[5] = 0xFF;
+        ECL_JH_WInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 5);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_WJump(&state, 3);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 7);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 4);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[5] == uint8_t(0xFF));
+    }
+    {
+        data[5] = 0xFF;
+        ECL_JH_WInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_WJump(&state, 4);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_WJump(&state, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[5] == uint8_t(0xFF));
+    }
+    {
+        data[5] = 0xFF;
+        ECL_JH_WInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_WJump(&state, 5);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_WJump(&state, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_Write(&state, 0, 8);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(data[5] == uint8_t(0xFF));
+    }
+}
+
+NTEST(test_JH_reading_failures) {
+    uint8_t data[6];
+    ECL_JH_RState state;
+    {
+        memset(data, 0, sizeof(data));
+        data[1] = 0xFF;
+        ECL_JH_RInit(&state, data, 1, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[1] = 0xFF;
+        ECL_JH_RInit(&state, data, 1, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[2] = 0xFF;
+        ECL_JH_RInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[2] = 0xFF;
+        ECL_JH_RInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 2));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[2] = 0xFF;
+        ECL_JH_RInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 3));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 3));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[2] = 0xFF;
+        ECL_JH_RInit(&state, data, 2, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[5] = 0xFF;
+        ECL_JH_RInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 5));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_RJump(&state, 4);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 2));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 2));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 2));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[5] = 0xFF;
+        ECL_JH_RInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 5));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_RJump(&state, 3);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 7));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 4));
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 1));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[5] = 0xFF;
+        ECL_JH_RInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_RJump(&state, 4);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_RJump(&state, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+    {
+        memset(data, 0, sizeof(data));
+        data[5] = 0xFF;
+        ECL_JH_RInit(&state, data, 5, 0);
+        ECL_TEST_ASSERT(state.is_valid);
+        ECL_JH_RJump(&state, 5);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_JH_RJump(&state, 1);
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+        ECL_TEST_ASSERT(0 == ECL_JH_Read(&state, 8));
+        ECL_TEST_ASSERT(! state.is_valid);
+    }
+}
