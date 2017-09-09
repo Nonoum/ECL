@@ -1,8 +1,8 @@
 #include "../ECL_ZeroEater.h"
+#include "../ECL_ZeroDevourer.h"
 #include "ntest/ntest.h"
 
 #include <vector>
-#include <memory>
 
 struct ECLDatasetRecord {
     const char* ptr;
