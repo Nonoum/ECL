@@ -1,6 +1,8 @@
 #include "../ECL_JH_States.h"
 #include "ntest/ntest.h"
 
+#include <algorithm>
+
 #define ECL_TEST_E_NEXT_VALUE(value) (((value) * 128) / 127 + 1)
 
 #define ECL_TEST_ASSERT(expr) approve(expr)
@@ -60,6 +62,34 @@ NTEST(test_number_E6E3) {
 }
 
 #undef ECL_TEST_E_NEXT_VALUE
+
+NTEST(test_JH_generic) {
+    uint8_t bit_counts[] = {1,2,3,4,4,5,6,7,8};
+    uint8_t data[5];
+    ECL_JH_WState wstate;
+    ECL_JH_RState rstate;
+    do {
+        ECL_JH_WInit(&wstate, data, 5, 0);
+        ECL_JH_RInit(&rstate, data, 5, 0);
+        uint8_t value = 0;
+        for(auto n_bits : bit_counts) {
+            ECL_JH_Write(&wstate, value, n_bits);
+            value = ~value;
+        }
+        value = 0;
+        for(auto n_bits : bit_counts) {
+            auto retrieved = ECL_JH_Read(&rstate, n_bits);
+            uint8_t expected = value & ((1 << n_bits) - 1);
+            ECL_TEST_ASSERT(retrieved == expected);
+            value = ~value;
+        }
+        ECL_TEST_ASSERT(wstate.is_valid);
+        ECL_TEST_ASSERT(rstate.is_valid);
+        ECL_TEST_ASSERT(wstate.byte == rstate.byte);
+        ECL_TEST_ASSERT(wstate.next == rstate.next);
+        ECL_TEST_ASSERT(wstate.n_bits == rstate.n_bits);
+    } while(std::next_permutation(std::begin(bit_counts), std::end(bit_counts)));
+}
 
 NTEST(test_JH_writing_failures) {
     uint8_t data[6];
