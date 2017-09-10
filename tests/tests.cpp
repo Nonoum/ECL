@@ -5,6 +5,7 @@
 #include "tests_common.cpp.inl"
 #include "tests_datasets.cpp.inl"
 #include "tests_random_data.cpp.inl"
+#include "tests_perf.cpp.inl"
 
 NTEST(test_string_constants) {
     // test some weird stuff used in other tests for comfortability
