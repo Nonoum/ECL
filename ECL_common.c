@@ -51,8 +51,14 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
         *(state->byte) |= value << (8 - state->n_bits);
         value >>= state->n_bits;
         bits -= state->n_bits;
-        state->n_bits = 0;
-        ECL_JH_Write(state, value, bits); // TODO optimize all of it
+        if(state->next == state->end) {
+            state->is_valid = 0;
+            return;
+        }
+        state->byte = state->next;
+        state->next += state->is_valid;
+        *(state->byte) = value;
+        state->n_bits = 8 - bits;
     }
 }
 
@@ -72,9 +78,15 @@ uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
         state->n_bits = 8 - bits;
     } else { // 2 parts
         b = state->n_bits;
-        res = (*(state->byte) >> (8 - b)) & c_bmasks8[b];
-        state->n_bits = 0;
-        res |= ECL_JH_Read(state, bits - b) << b;
+        res = *(state->byte) >> (8 - b);
+        if(state->next == state->end) {
+            state->is_valid = 0;
+            return 0;
+        }
+        state->byte = state->next;
+        state->next += state->is_valid;
+        res |= *(state->byte) << b;
+        state->n_bits = 8 - bits + b;
     }
     res &= c_bmasks8[bits];
     return res;
@@ -84,6 +96,7 @@ void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance) {
     if((state->next + distance) <= state->end) {
         state->next += distance;
     } else {
+        state->next = state->end;
         state->is_valid = 0;
     }
 }
@@ -92,6 +105,7 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
     if((state->next + distance) <= state->end) {
         state->next += distance;
     } else {
+        state->next = state->end;
         state->is_valid = 0;
     }
 }
@@ -124,7 +138,7 @@ void ECL_JH_Write_E4(ECL_JH_WState* state, ECL_usize value) {
 void ECL_JH_Write_E7E4(ECL_JH_WState* state, ECL_usize value) {
     uint8_t e; // extension flag
     e = ECL_CALC_E(value, 7);
-    ECL_JH_Write(state, (value & 0x7F) | e, 8);
+    ECL_JH_Write(state, (uint8_t)value | e, 8);
     value >>= 7;
     while(value) {
         e = ECL_CALC_E(value, 4);
@@ -166,9 +180,8 @@ ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state) {
     uint8_t e, code, shift;
     code = ECL_JH_Read(state, 8);
     result = code & 0x7F;
-    e = code & 0x80;
-    shift = 7;
-    if(e) {
+    if(code & 0x80) {
+        shift = 7;
         do {
             code = ECL_JH_Read(state, 5);
             e = code & 0x10;
@@ -185,9 +198,8 @@ ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state) {
     uint8_t e, code, shift;
     code = ECL_JH_Read(state, 7);
     result = code & 0x3F;
-    e = code & 0x40;
-    shift = 6;
-    if(e) {
+    if(code & 0x40) {
+        shift = 6;
         do {
             code = ECL_JH_Read(state, 4);
             e = code & 0x8;
