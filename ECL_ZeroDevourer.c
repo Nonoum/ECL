@@ -1,54 +1,7 @@
 #include "ECL_ZeroDevourer.h"
 #include "ECL_JH_States.h"
 
-#define ECL_AS(pointer, type) *((type*)(pointer))
-#define ECL_COPY(dst, src, offset, type) ECL_AS(dst + offset, type) = ECL_AS(src + offset, type)
-
-#if 0
-#define ECL_MEMCPY(dst, src, size) \
-    { \
-        if((size) < 9) { \
-            switch (size) { \
-            case 0: break; \
-            case 1: ECL_COPY(dst, src, 0, uint8_t); break; \
-            case 2: ECL_COPY(dst, src, 0, uint16_t); break; \
-            case 3: ECL_COPY(dst, src, 0, uint16_t); ECL_COPY(dst, src, 2, uint8_t); break; \
-            case 4: ECL_COPY(dst, src, 0, uint32_t); break; \
-            case 5: ECL_COPY(dst, src, 0, uint32_t); ECL_COPY(dst, src, 4, uint8_t); break; \
-            case 6: ECL_COPY(dst, src, 0, uint32_t); ECL_COPY(dst, src, 4, uint16_t); break; \
-            case 7: ECL_COPY(dst, src, 0, uint32_t); ECL_COPY(dst, src, 4, uint16_t); ECL_COPY(dst, src, 6, uint8_t); break; \
-            case 8: ECL_COPY(dst, src, 0, uint32_t); ECL_COPY(dst, src, 4, uint32_t); break; \
-            } \
-        } else { \
-            memcpy(dst, src, size); \
-        } \
-    }
-#elif 0
-#define ECL_MEMCPY(dst, src, size) \
-    { \
-        if((size) < 5) { \
-            ECL_usize i; \
-            for(i = 0; i < (size); ++i) { \
-                (dst)[i] = (src)[i]; \
-            } \
-        } else { \
-            memcpy(dst, src, size); \
-        } \
-    }
-#elif 0
-#define ECL_MEMCPY(dst, src, size) \
-    { \
-        ECL_usize i; \
-        for(i = 0; i < (size-4); i += 4) { \
-            ECL_AS(dst + i, uint32_t) = ECL_AS(src + i, uint32_t); \
-        } \
-        for(; i < (size); ++i) { \
-            (dst)[i] = (src)[i]; \
-        } \
-    }
-#else
-#define ECL_MEMCPY memcpy
-#endif
+#include <stdbool.h>
 
 static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
     ECL_ASSERT((cnt_x >= 1) && (cnt_x <= 4));
@@ -58,7 +11,7 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
-        ECL_MEMCPY(dst, src, cnt_x);
+        memcpy(dst, src, cnt_x);
     }
 }
 
@@ -70,7 +23,7 @@ static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
-        ECL_MEMCPY(dst, src, cnt_x);
+        memcpy(dst, src, cnt_x);
     }
 }
 
@@ -88,7 +41,7 @@ static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
-        ECL_MEMCPY(dst, src, cnt_x);
+        memcpy(dst, src, cnt_x);
     }
 }
 
@@ -228,7 +181,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
                 if(! state.is_valid) {
                     break;
                 }
-                ECL_MEMCPY(dst + dst_pos, src_block_start, cnt_x);
+                memcpy(dst + dst_pos, src_block_start, cnt_x);
                 dst_pos += cnt_x;
             }
             if(cnt_0) {

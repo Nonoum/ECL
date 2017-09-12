@@ -3,6 +3,10 @@
 
 #include "ECL_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
     ECL Jumping Header states for writing and reading.
     - lower bits go first
@@ -42,5 +46,9 @@ ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state); // -:-
 uint8_t ECL_Evaluate_E4(ECL_usize number); // returns amount of bits required for coding 'number' in E4 format
 uint8_t ECL_Evaluate_E7E4(ECL_usize number); // -:-
 uint8_t ECL_Evaluate_E6E3(ECL_usize number); // -:-
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

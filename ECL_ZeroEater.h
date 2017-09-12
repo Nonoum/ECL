@@ -5,6 +5,10 @@
 
 #define ECL_ZERO_EATER_GET_BOUND(src_size) ((src_size) + 1 + (src_size)/128)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
     Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
     Function returns amount of bytes in resulted compressed stream or 0 if parameters are invalid.
@@ -28,5 +32,9 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
         }
 */
 ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

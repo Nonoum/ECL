@@ -25,7 +25,7 @@ static void ECL_ZeroEater_DumpSeq1(ECL_ZeroEaterComprssorState* state, ECL_usize
             state->dst += 1 + 128;
         }
         if(part_block_cnt) {
-            *(state->dst) = uint8_t(part_block_cnt - 1); // opcode
+            *(state->dst) = (uint8_t)part_block_cnt - 1; // opcode
             memcpy(state->dst + 1, state->src, part_block_cnt);
             state->src += part_block_cnt;
             state->dst += 1 + part_block_cnt;
@@ -48,7 +48,7 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
             ++(state->dst);
         }
         if(part_block_cnt) {
-            *(state->dst) = uint8_t(part_block_cnt - 1) | 0x80; // opcode
+            *(state->dst) = ((uint8_t)part_block_cnt - 1) | 0x80; // opcode
             ++(state->dst);
         }
     }
@@ -59,8 +59,8 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
     ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
-        *(state->dst) = uint8_t((count_0 - 1) & 0x0007)
-                     | (uint8_t((count_x - 1) & 0x0007) << 3)
+        *(state->dst) = (((uint8_t)count_0 - 1) & (uint8_t)0x07)
+                     | ((((uint8_t)count_x - 1) & (uint8_t)0x07) << 3)
                      | 0xC0; // opcode
         memcpy(state->dst + 1, state->src, count_x);
         state->src += count_x;

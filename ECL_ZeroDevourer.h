@@ -8,6 +8,10 @@
 */
 #define ECL_ZERO_DEVOURER_GET_BOUND(src_size) ((src_size) + 4)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
     Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
     Function returns amount of bytes in resulted compressed stream or 0 if failed.
@@ -30,8 +34,8 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
 */
 ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
-//#define ECL_ZERO_EATER_GET_BOUND ECL_ZERO_DEVOURER_GET_BOUND
-//#define ECL_ZeroEater_Compress ECL_ZeroDevourer_Compress
-//#define ECL_ZeroEater_Decompress ECL_ZeroDevourer_Decompress
+#ifdef __cplusplus
+}
+#endif
 
 #endif

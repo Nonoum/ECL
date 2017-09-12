@@ -2,7 +2,6 @@
 
 static uint8_t ECL_JH_dummy_buffer; // dummy data storage to simplify some checks
 static const uint8_t c_bmasks8[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
-static const uint8_t c_rbmasks8[] = {255, 127, 63, 31, 15, 7, 3, 1, 0};
 
 void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start) {
     uint8_t input_is_valid = 1;
@@ -112,14 +111,14 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
 
 #ifdef ECL_USE_BRANCHLESS
 #define ECL_CALC_E(value, n_bits) \
-    ((ECL_usize((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
+    (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
 
 #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
-    ((the_e) & (uint8_t((the_shift) - ECL_SIZE_TYPE_BITS_COUNT - 1) >> (7 - (n_bits))))
+    ((the_e) & (((uint8_t)(the_shift) - ECL_SIZE_TYPE_BITS_COUNT - 1) >> (7 - (n_bits))))
 
 #else
 #define ECL_CALC_E(value, n_bits) \
-    ((value) > ECL_usize((1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
+    ((value) > ((ECL_usize)(1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
 
 #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
     ((e) && ((shift) < ECL_SIZE_TYPE_BITS_COUNT))
