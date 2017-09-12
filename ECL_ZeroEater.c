@@ -48,7 +48,7 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
             ++(state->dst);
         }
         if(part_block_cnt) {
-            *(state->dst) = ((uint8_t)part_block_cnt - 1) | 0x80; // opcode
+            *(state->dst) = (uint8_t)part_block_cnt - 0x81; // subtract -1, subtract extra 0x80 to get 1 in higher bit
             ++(state->dst);
         }
     }
@@ -59,9 +59,7 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
     ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
-        *(state->dst) = (((uint8_t)count_0 - 1) & (uint8_t)0x07)
-                     | ((((uint8_t)count_x - 1) & (uint8_t)0x07) << 3)
-                     | 0xC0; // opcode
+        *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); // subtract extra 0x40 to get 11 in higher bits
         memcpy(state->dst + 1, state->src, count_x);
         state->src += count_x;
         state->dst += 1 + count_x;
