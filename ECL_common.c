@@ -136,6 +136,15 @@ void ECL_JH_Write_E4(ECL_JH_WState* state, ECL_usize value) {
     } while(value);
 }
 
+void ECL_JH_Write_E3(ECL_JH_WState* state, ECL_usize value) {
+    uint8_t e; // extension flag
+    do {
+        e = ECL_CALC_E(value, 3);
+        ECL_JH_Write(state, (value & 0x07) | e, 4);
+        value >>= 3;
+    } while(value);
+}
+
 void ECL_JH_Write_E7E4(ECL_JH_WState* state, ECL_usize value) {
     uint8_t e; // extension flag
     e = ECL_CALC_E(value, 7);
@@ -173,6 +182,21 @@ ECL_usize ECL_JH_Read_E4(ECL_JH_RState* state) {
         shift += 4;
     } while(ECL_CHECK_E_AND_SHIFT(e, shift, 4));
     // TODO set up (multiply) is_valid if overflowed?
+    return result;
+}
+
+ECL_usize ECL_JH_Read_E3(ECL_JH_RState* state) {
+    ECL_usize result, workaround;
+    uint8_t e, code, shift;
+    shift = 0;
+    result = 0;
+    do {
+        code = ECL_JH_Read(state, 4);
+        e = code & 0x08;
+        workaround = code & 0x07;
+        result |= workaround << shift;
+        shift += 3;
+    } while(ECL_CHECK_E_AND_SHIFT(e, shift, 3));
     return result;
 }
 
@@ -217,6 +241,15 @@ uint8_t ECL_Evaluate_E4(ECL_usize number) {
     do {
         number >>= 4;
         result += 5;
+    } while(number);
+    return result;
+}
+
+uint8_t ECL_Evaluate_E3(ECL_usize number) {
+    uint8_t result = 0;
+    do {
+        number >>= 3;
+        result += 4;
     } while(number);
     return result;
 }

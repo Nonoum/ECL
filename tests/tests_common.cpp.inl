@@ -5,19 +5,6 @@
 
 #define ECL_TEST_E_NEXT_VALUE(value) (((value) * 128) / 127 + 1)
 
-#define ECL_TEST_ASSERT(expr) approve(expr)
-#define ECL_TEST_COMPARE(val1, val2)                               \
-    {                                                              \
-        if((val1) != (val2)) {                                     \
-            if(hasntFailed()) {                                    \
-                log << "VAL1: " << std::hex << (val1) << " != VAL2: " << (val2) << " "; \
-            }                                                      \
-            approve(false);                                        \
-        } else {                                                   \
-            approve(true);                                         \
-        }                                                          \
-    }
-
 #define ECL_TEST_E_NUMBER_GENERIC(write_func, read_func, eval_func)                         \
     {                                                                                       \
         const uint64_t limit = 0x0FFFFFFFFFFFFFFLL & ((1ULL << (ECL_SIZE_TYPE_BITS_COUNT - 1)) - 1ULL); \
@@ -51,6 +38,10 @@
 
 NTEST(test_number_E4) {
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E4, ECL_JH_Read_E4, ECL_Evaluate_E4);
+}
+
+NTEST(test_number_E3) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E3, ECL_JH_Read_E3, ECL_Evaluate_E3);
 }
 
 NTEST(test_number_E7E4) {

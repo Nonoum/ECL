@@ -37,13 +37,16 @@ void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); // moves pointer to
 void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); // -:-
 
 void ECL_JH_Write_E4(ECL_JH_WState* state, ECL_usize value); // writes 'value' to 'state' in E4 number format
+void ECL_JH_Write_E3(ECL_JH_WState* state, ECL_usize value); // -:-
 void ECL_JH_Write_E7E4(ECL_JH_WState* state, ECL_usize value); // -:-
 void ECL_JH_Write_E6E3(ECL_JH_WState* state, ECL_usize value); // -:-
 ECL_usize ECL_JH_Read_E4(ECL_JH_RState* state); // reads from 'state' a value in E4 number format
+ECL_usize ECL_JH_Read_E3(ECL_JH_RState* state); // -:-
 ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state); // -:-
 ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state); // -:-
 
 uint8_t ECL_Evaluate_E4(ECL_usize number); // returns amount of bits required for coding 'number' in E4 format
+uint8_t ECL_Evaluate_E3(ECL_usize number); // -:-
 uint8_t ECL_Evaluate_E7E4(ECL_usize number); // -:-
 uint8_t ECL_Evaluate_E6E3(ECL_usize number); // -:-
 
