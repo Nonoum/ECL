@@ -11,7 +11,10 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
-        memcpy(dst, src, cnt_x);
+        ECL_usize i;
+        for(i = 0; i < cnt_x; ++i) {
+            dst[i] = src[i];
+        }
     }
 }
 

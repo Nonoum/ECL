@@ -29,7 +29,7 @@ typedef struct {
     uint8_t is_valid; // to check after any transaction
 } ECL_JH_RState;
 
-void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start); // state's construstor
+void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start); // state's constructor
 void ECL_JH_RInit(ECL_JH_RState* state, const uint8_t* ptr, ECL_usize size, ECL_usize start); // -:-
 void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits); // writes 'bits' bits of 'value' to 'state'
 uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits); // returns value of 'bits' size read from 'state'

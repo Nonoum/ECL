@@ -21,8 +21,8 @@ extern "C" {
 ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
 /*
-    Decompresses exactly 'src_size' bytes starting at 'src' to destination 'dst' holding at most 'dst_size' bytes.
-    Function returns: amount of bytes in uncompressed stream.
+    Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.
+    Function returns: amount of bytes in uncompressed stream, which is equal to 'dst_size' if decompression succeeded.
     Usage:
         uint8_t* cmp = (uint8_t*)malloc( ECL_ZERO_DEVOURER_GET_BOUND(sizeof(my_data)) );
         ECL_usize compressed_size = ECL_ZeroDevourer_Compress(src, src_size, cmp, compressed_size);

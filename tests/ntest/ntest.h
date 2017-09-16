@@ -18,6 +18,7 @@ public:
     bool run(std::ostream& log);
     const char* getName() const;
     uint64_t getTacts() const;
+    bool isFailed() const { return result == FAIL; };
 
     static size_t RunTests(std::ostream& log_output); // returns count of fails
 protected:
