@@ -3,6 +3,8 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdlib.h> // alloc
+#include <string.h> // memcpy, memset
 
 // user setup part ---------------------------------------------
 /*

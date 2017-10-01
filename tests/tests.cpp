@@ -1,7 +1,17 @@
 #include "ntest/ntest.cpp"
+#include "../ECL_JH_States.h"
+#include "../ECL_ZeroEater.h"
+#include "../ECL_ZeroDevourer.h"
+#include "../ECL_NanoLZ.h"
+
+#ifndef ECL_BUILD_AS_C
 #include "../ECL_common.c"
 #include "../ECL_ZeroEater.c"
 #include "../ECL_ZeroDevourer.c"
+#include "../ECL_NanoLZ.c"
+#endif
+
+#include <fstream>
 
 // auxiliary macro and methods for testing
 #define ECL_TEST_ASSERT(expr) approve(expr)
