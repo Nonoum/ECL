@@ -25,6 +25,7 @@
 
 //#define ECL_USE_ASSERT
 //#define ECL_USE_BRANCHLESS
+//#define ECL_USE_STAT_COUNTERS
 
 
 

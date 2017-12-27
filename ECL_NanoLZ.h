@@ -27,6 +27,15 @@ extern "C" {
 #endif
 
 /*
+    Declare static counters for tracking statistic on data decompression.
+*/
+#ifdef ECL_USE_STAT_COUNTERS
+#define ECL_NANO_LZ_DECOMPRESSION_OPCODE_PICK_COUNTERS_COUNT (8+1)
+extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION_OPCODE_PICK_COUNTERS_COUNT];
+#endif
+
+
+/*
     Schemes are:
     - incompatible between each other, so you have to use same scheme during compression and decompression of your dataset for correct result;
     - not included as identifiers in compressed stream in any way (so decompression method has such parameter as well);

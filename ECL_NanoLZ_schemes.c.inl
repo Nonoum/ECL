@@ -83,6 +83,7 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
 static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
     uint8_t opcode;
     opcode = ECL_JH_Read(&state->stream, 3);
+    ECL_NANO_LZ_COUNTER_APPEND(opcode, 1)
     switch (opcode) {
     case 0:
         state->n_new = ECL_JH_Read(&state->stream, 2);
@@ -131,6 +132,7 @@ static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
         }
         break;
     }
+    ECL_NANO_LZ_COUNTER_APPEND(8, state->n_new)
 }
 
 // scheme 2 coder & decoder --------------------------------------------------------------------------------------

@@ -27,7 +27,18 @@ typedef struct {
 typedef bool(*ECL_NanoLZ_SchemeCoder)(ECL_NanoLZ_CompressorState*);
 typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
 
+// import schemes, define counters if needed
+#ifdef ECL_USE_STAT_COUNTERS
+int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION_OPCODE_PICK_COUNTERS_COUNT];
+#define ECL_NANO_LZ_COUNTER_APPEND(index, value) ECL_NanoLZ_Decompression_OpcodePickCounters[index] += value;
+#define ECL_NANO_LZ_COUNTER_CLEARALL() memset(ECL_NanoLZ_Decompression_OpcodePickCounters, 0, sizeof(ECL_NanoLZ_Decompression_OpcodePickCounters));
+#else
+#define ECL_NANO_LZ_COUNTER_APPEND(index, value)
+#define ECL_NANO_LZ_COUNTER_CLEARALL()
+#endif
+
 #include "ECL_NanoLZ_schemes.c.inl"
+
 
 static ECL_usize ECL_NanoLZ_CalcEqualLength(const uint8_t* src1, const uint8_t* src2, ECL_usize limit) {
     // TODO dummy version, optimize later
@@ -318,6 +329,7 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
     ECL_NanoLZ_SchemeDecoder decoder;
     ECL_usize dst_pos;
 
+    ECL_NANO_LZ_COUNTER_CLEARALL();
     decoder = ECL_NanoLZ_GetSchemeDecoder(scheme);
     if(! decoder) {
         return 0;
@@ -366,3 +378,6 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
     }
     return dst_pos;
 }
+
+#undef ECL_NANO_LZ_COUNTER_APPEND
+#undef ECL_NANO_LZ_COUNTER_CLEARALL
