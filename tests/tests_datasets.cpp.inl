@@ -4,6 +4,7 @@
 #include "ntest/ntest.h"
 
 #include <vector>
+#include <numeric>
 
 struct ECLDatasetRecord {
     const char* ptr;
@@ -227,5 +228,100 @@ NTEST(test_NanoLZ_fast2_datasets) {
             approve(0 == memcmp(src_data, tmp_output.data(), src_size));
         }
     }
+    ECL_NanoLZ_FastParams_Destroy(&fp);
+}
+
+bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ_FastParams& preallocated_params) {
+    std::vector<uint8_t> src;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+
+    const int prefixes[] = {0, 1, 2, 10};
+    const int suffixes[] = {0, 1, 2, 10};
+    const int counts[] = {2, 3, 4, 5, 7, 8, 11};
+    const int new_ones[] = {0, 1, 2, 3, 4, 6, 8, 10, 18};
+    const int min_dist = 0;
+    const int max_dist = 800;
+
+    const int n_reserve = 1000;
+    src.reserve(n_reserve);
+    tmp.reserve(n_reserve);
+    tmp_output.reserve(n_reserve);
+    for(auto prefix_size : prefixes) {
+        for(auto suffix_size : suffixes) {
+            for(auto match_size : counts) {
+                for(auto n_new : new_ones) {
+                    for(int dist = min_dist; dist < max_dist; ++dist) {
+                        // generate data
+                        const auto src_size = prefix_size + match_size*2 + dist + suffix_size;
+                        src.resize(src_size);
+                        auto next_random_value = match_size;
+                        auto next_ptr = src.data();
+                        std::iota(next_ptr, next_ptr + prefix_size, next_random_value); // --- prefix
+                        next_ptr += prefix_size;
+                        next_random_value += prefix_size;
+                        std::iota(next_ptr, next_ptr + match_size, 0); // --- first string
+                        next_ptr += match_size;
+                        { // fill the gap
+                            auto n_generate = dist;
+                            if(n_new < dist) { // first, add a block that will hopefully get glued
+                                auto n_repeated = dist - n_new;
+                                std::fill(next_ptr, next_ptr + n_repeated, next_random_value);
+                                next_ptr += n_repeated;
+                                ++next_random_value;
+                                n_generate -= n_repeated;
+                            }
+                            std::iota(next_ptr, next_ptr + n_generate, next_random_value);
+                            next_ptr += n_generate;
+                            next_random_value += n_generate;
+                        }
+                        std::iota(next_ptr, next_ptr + match_size, 0); // --- second string - match
+                        next_ptr += match_size;
+                        std::iota(next_ptr, next_ptr + suffix_size, next_random_value); // --- suffix
+                        next_ptr += suffix_size;
+                        if(next_ptr != (src.data() + src_size)) {
+                            return false;
+                        }
+                        if(next_random_value > 255) {
+                            return false; // oops
+                        }
+
+                        // test
+                        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
+                        tmp.resize(enough_size);
+                        const uint8_t* src_data = src.data();
+
+                        for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+                            ECL_usize comp_size = 0;
+                            if(mode == 0) {
+                                comp_size = ECL_NanoLZ_Compress_slow(scheme, src_data, src_size, tmp.data(), enough_size, -1);
+                            } else if(mode == 1) {
+                                comp_size = ECL_NanoLZ_Compress_fast1(scheme, src_data, src_size, tmp.data(), enough_size, -1, &preallocated_params);
+                            } else if(mode == 2) {
+                                comp_size = ECL_NanoLZ_Compress_fast2(scheme, src_data, src_size, tmp.data(), enough_size, -1, &preallocated_params);
+                            } else {
+                                return false;
+                            }
+                            tmp_output.resize(src_size);
+                            auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+                            if(decomp_size != src_size) {
+                                return false;
+                            }
+                            if(memcmp(src_data, tmp_output.data(), src_size)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+NTEST(test_NanoLZ_fast1_generic_datasets) { // use only for fast1 version, as it's optimal for target data sizes
+    ECL_NanoLZ_FastParams fp;
+    ECL_NanoLZ_FastParams_Alloc1(&fp, 10);
+    approve(ECL_Test_NanoLZ_OnLinearGenericData(log, 1, fp));
     ECL_NanoLZ_FastParams_Destroy(&fp);
 }
