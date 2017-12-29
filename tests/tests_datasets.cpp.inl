@@ -170,10 +170,62 @@ NTEST(test_NanoLZ_slow_datasets) {
 
         auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
         tmp.resize(enough_size);
-        auto comp_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, src_data, src_size, tmp.data(), enough_size, -1);
-        tmp_output.resize(src_size);
-        auto decomp_size = ECL_NanoLZ_Decompress(ECL_NANOLZ_SCHEME1, tmp.data(), comp_size, tmp_output.data(), src_size);
-        approve(decomp_size == src_size);
-        approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+        for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+            auto comp_size = ECL_NanoLZ_Compress_slow(scheme, src_data, src_size, tmp.data(), enough_size, -1);
+            tmp_output.resize(src_size);
+            auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+            approve(decomp_size == src_size);
+            approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+        }
     }
+}
+
+NTEST(test_NanoLZ_fast1_datasets) {
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+
+    ECL_NanoLZ_FastParams fp;
+    ECL_NanoLZ_FastParams_Alloc1(&fp, 10);
+    for(auto& rec : GetDatasetRecords()) {
+        auto src_data = (const uint8_t*)rec.ptr;
+        auto src_size = rec.length;
+        approve(src_data);
+        approve(src_size);
+
+        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
+        tmp.resize(enough_size);
+        for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+            auto comp_size = ECL_NanoLZ_Compress_fast1(scheme, src_data, src_size, tmp.data(), enough_size, -1, &fp);
+            tmp_output.resize(src_size);
+            auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+            approve(decomp_size == src_size);
+            approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+        }
+    }
+    ECL_NanoLZ_FastParams_Destroy(&fp);
+}
+
+NTEST(test_NanoLZ_fast2_datasets) {
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+
+    ECL_NanoLZ_FastParams fp;
+    ECL_NanoLZ_FastParams_Alloc2(&fp, 10);
+    for(auto& rec : GetDatasetRecords()) {
+        auto src_data = (const uint8_t*)rec.ptr;
+        auto src_size = rec.length;
+        approve(src_data);
+        approve(src_size);
+
+        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
+        tmp.resize(enough_size);
+        for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+            auto comp_size = ECL_NanoLZ_Compress_fast2(scheme, src_data, src_size, tmp.data(), enough_size, -1, &fp);
+            tmp_output.resize(src_size);
+            auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+            approve(decomp_size == src_size);
+            approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+        }
+    }
+    ECL_NanoLZ_FastParams_Destroy(&fp);
 }

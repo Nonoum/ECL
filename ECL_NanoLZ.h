@@ -47,6 +47,8 @@ typedef enum {
     ECL_NANOLZ_SCHEME2,
 } ECL_NanoLZ_Scheme;
 
+#define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1}
+
 /*
     Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
     Function returns amount of bytes in resulted compressed stream or 0 if failed.
