@@ -43,10 +43,12 @@ void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
     log << ']' << std::endl;
 }
 
+#ifndef ECL_TEST_LOCAL
 #include "tests_common.cpp.inl"
 #include "tests_datasets.cpp.inl"
 #include "tests_random_data.cpp.inl"
 #include "tests_perf.cpp.inl"
+#endif
 
 NTEST(test_string_constants) {
     // test some weird stuff used in other tests for comfortability
@@ -56,6 +58,17 @@ NTEST(test_string_constants) {
     approve(char(0x70) == "\x70\x75"[0]);
     approve(char(0x75) == "\x70\x75"[1]);
 }
+
+#ifdef ECL_TEST_LOCAL
+
+#include "stat_dir.cpp.inl"
+
+NTEST(test_stat_dir) {
+    log << std::endl;
+    approve(ECL_Stat_Dir_Files_NanoLZ("C:/test-data/2", ECL_NANOLZ_SCHEME1, "-- ", log));
+}
+
+#endif
 
 int main() {
     return ntest::TestBase::RunTests(std::cout);
