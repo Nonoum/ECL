@@ -76,8 +76,11 @@ NTEST(test_NanoLZ_slow_random_data) {
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
+
+    src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {
         const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        src.clear();
         src.resize(src_size);
         for(int j = 0; j < src_size; ++j) {
             src[j] = rand();
@@ -89,12 +92,13 @@ NTEST(test_NanoLZ_slow_random_data) {
             }
             auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
             tmp.resize(enough_size);
-            auto comp_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, src.data(), src_size, tmp.data(), enough_size, -1);
-
-            tmp_output.resize(src_size);
-            auto decomp_size = ECL_NanoLZ_Decompress(ECL_NANOLZ_SCHEME1, tmp.data(), comp_size, tmp_output.data(), src_size);
-            approve(decomp_size == src_size);
-            approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
+            for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+                auto comp_size = ECL_NanoLZ_Compress_slow(scheme, src.data(), src_size, tmp.data(), enough_size, -1);
+                tmp_output.resize(src_size);
+                auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+                approve(decomp_size == src_size);
+                approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
+            }
         }
     }
 }

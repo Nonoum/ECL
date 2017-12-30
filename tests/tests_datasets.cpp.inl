@@ -231,6 +231,28 @@ NTEST(test_NanoLZ_fast2_datasets) {
     ECL_NanoLZ_FastParams_Destroy(&fp);
 }
 
+ECL_usize ECL_Test_NanoLZ_CompressWith(ECL_NanoLZ_Scheme scheme, const std::vector<uint8_t>& src, std::vector<uint8_t>& preallocated_output, int mode, ECL_NanoLZ_FastParams& preallocated_params) {
+    ECL_usize comp_size = 0;
+    if(mode == 0) {
+        comp_size = ECL_NanoLZ_Compress_slow(scheme,
+            src.data(), src.size(),
+            preallocated_output.data(), preallocated_output.size(),
+            -1);
+    } else if(mode == 1) {
+        comp_size = ECL_NanoLZ_Compress_fast1(scheme,
+            src.data(), src.size(),
+            preallocated_output.data(), preallocated_output.size(),
+            -1, &preallocated_params);
+    } else if(mode == 2) {
+        comp_size = ECL_NanoLZ_Compress_fast2(scheme,
+            src.data(), src.size(),
+            preallocated_output.data(), preallocated_output.size(),
+            -1, &preallocated_params);
+    }
+    preallocated_output.resize(comp_size);
+    return comp_size;
+}
+
 bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ_FastParams& preallocated_params) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
@@ -287,19 +309,10 @@ bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ
                         }
 
                         // test
-                        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
-                        tmp.resize(enough_size);
-                        const uint8_t* src_data = src.data();
-
+                        tmp.resize(ECL_NANO_LZ_GET_BOUND(src_size));
                         for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
-                            ECL_usize comp_size = 0;
-                            if(mode == 0) {
-                                comp_size = ECL_NanoLZ_Compress_slow(scheme, src_data, src_size, tmp.data(), enough_size, -1);
-                            } else if(mode == 1) {
-                                comp_size = ECL_NanoLZ_Compress_fast1(scheme, src_data, src_size, tmp.data(), enough_size, -1, &preallocated_params);
-                            } else if(mode == 2) {
-                                comp_size = ECL_NanoLZ_Compress_fast2(scheme, src_data, src_size, tmp.data(), enough_size, -1, &preallocated_params);
-                            } else {
+                            ECL_usize comp_size = ECL_Test_NanoLZ_CompressWith(scheme, src, tmp, mode, preallocated_params);
+                            if(! comp_size) {
                                 return false;
                             }
                             tmp_output.resize(src_size);
@@ -307,7 +320,7 @@ bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ
                             if(decomp_size != src_size) {
                                 return false;
                             }
-                            if(memcmp(src_data, tmp_output.data(), src_size)) {
+                            if(memcmp(src.data(), tmp_output.data(), src_size)) {
                                 return false;
                             }
                         }
@@ -324,4 +337,78 @@ NTEST(test_NanoLZ_fast1_generic_datasets) { // use only for fast1 version, as it
     ECL_NanoLZ_FastParams_Alloc1(&fp, 10);
     approve(ECL_Test_NanoLZ_OnLinearGenericData(log, 1, fp));
     ECL_NanoLZ_FastParams_Destroy(&fp);
+}
+
+bool ECL_Test_NanoLZ_AllCompressorsAreEqual(const std::vector<uint8_t>& src, std::ostream& log) {
+    // checks that all compression modes with maximum depth of search end up with equal binary output
+    using Vec = std::vector<uint8_t>;
+    ECL_NanoLZ_FastParams fp1;
+    ECL_NanoLZ_FastParams_Alloc1(&fp1, 15);
+    ECL_NanoLZ_FastParams fp2;
+    ECL_NanoLZ_FastParams_Alloc2(&fp2, 15);
+    bool result = true;
+
+    for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+        Vec last;
+        for(int mode = 0; mode < 3; ++mode) {
+            Vec tmp;
+            tmp.resize(ECL_NANO_LZ_GET_BOUND(src.size()));
+            if(mode == 1) {
+                ECL_Test_NanoLZ_CompressWith(scheme, src, tmp, mode, fp1);
+            } else if(mode == 2) {
+                ECL_Test_NanoLZ_CompressWith(scheme, src, tmp, mode, fp2);
+            } else {
+                ECL_Test_NanoLZ_CompressWith(scheme, src, tmp, mode, fp1);
+            }
+            if((! last.empty()) && (last != tmp)) {
+                log << " mode=" << mode << " mismatches previous. " << last.size() << " -- " << tmp.size() << std::endl;
+                result = false;
+                break;
+            }
+            last = std::move(tmp);
+        }
+        if(! result) {
+            break;
+        }
+        Vec decompressed;
+        decompressed.resize(src.size());
+        auto decomp_size = ECL_NanoLZ_Decompress(scheme, last.data(), last.size(), decompressed.data(), decompressed.size());
+        if(decomp_size != decompressed.size()) {
+            result = false;
+            break;
+        }
+        if(src != decompressed) {
+            result = false;
+            break;
+        }
+    }
+
+    ECL_NanoLZ_FastParams_Destroy(&fp1);
+    ECL_NanoLZ_FastParams_Destroy(&fp2);
+    return result;
+}
+
+NTEST(test_NanoLZ_check_modes_equal_result) {
+    std::vector<uint8_t> src;
+    const int n_sets = 20;
+    const int max_size = 10000;
+    const int min_size = 1;
+    const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
+
+    src.reserve(max_size);
+    for(int i = 0; i < n_sets; ++i) {
+        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        src.clear();
+        src.resize(src_size);
+        for(int j = 0; j < src_size; ++j) {
+            src[j] = rand();
+        }
+
+        for(auto mask : masks) {
+            for(int j = 0; j < src_size; ++j) {
+                src[j] &= mask;
+            }
+            approve( ECL_Test_NanoLZ_AllCompressorsAreEqual(src, log) );
+        }
+    }
 }
