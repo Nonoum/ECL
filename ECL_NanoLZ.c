@@ -174,7 +174,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
             const uint8_t* const tmp_src1 = src + 1;
-            const ECL_usize limit_length = state.src_end - src - 1;
+            const ECL_usize limit_length_m1 = state.src_end - src - 1;
             ECL_usize checked_idx, n_checks;
             state.n_new = src - state.first_undone;
             state.n_copy = 0;
@@ -184,7 +184,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 ECL_usize curr_length;
                 const uint8_t* const tmp_src2 = state.src_start + checked_idx + 1;
                 ECL_ASSERT(checked_idx < src_size);
-                for(curr_length = 0; curr_length < limit_length; ++curr_length) {
+                for(curr_length = 0; curr_length < limit_length_m1; ++curr_length) {
                     if(tmp_src1[curr_length] != tmp_src2[curr_length]) {
                         break;
                     }
@@ -193,7 +193,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 if(curr_length > state.n_copy) {
                     state.n_copy = curr_length;
                     state.offset = checked_idx;
-                    if(state.n_copy == limit_length) {
+                    if(state.n_copy == (limit_length_m1 + 1)) {
                         break;
                     }
                 }
@@ -262,7 +262,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
             const uint8_t* const tmp_src1 = src + 2;
-            const ECL_usize limit_length = state.src_end - src - 2;
+            const ECL_usize limit_length_m2 = state.src_end - src - 2;
             ECL_usize checked_idx, n_checks;
             state.n_new = src - state.first_undone;
             state.n_copy = 0;
@@ -272,7 +272,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 ECL_usize curr_length;
                 const uint8_t* const tmp_src2 = state.src_start + checked_idx + 2;
                 ECL_ASSERT(checked_idx < src_size);
-                for(curr_length = 0; curr_length < limit_length; ++curr_length) {
+                for(curr_length = 0; curr_length < limit_length_m2; ++curr_length) {
                     if(tmp_src1[curr_length] != tmp_src2[curr_length]) {
                         break;
                     }
@@ -281,7 +281,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 if(curr_length > state.n_copy) {
                     state.n_copy = curr_length;
                     state.offset = checked_idx;
-                    if(state.n_copy == limit_length) {
+                    if(state.n_copy == (limit_length_m2 + 2)) {
                         break;
                     }
                 }
