@@ -29,12 +29,12 @@ typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
 
 // import schemes, define counters if needed
 #ifdef ECL_USE_STAT_COUNTERS
-int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION_OPCODE_PICK_COUNTERS_COUNT];
-#define ECL_NANO_LZ_COUNTER_APPEND(index, value) ECL_NanoLZ_Decompression_OpcodePickCounters[index] += value;
-#define ECL_NANO_LZ_COUNTER_CLEARALL() memset(ECL_NanoLZ_Decompression_OpcodePickCounters, 0, sizeof(ECL_NanoLZ_Decompression_OpcodePickCounters));
+    int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION_OPCODE_PICK_COUNTERS_COUNT];
+    #define ECL_NANO_LZ_COUNTER_APPEND(index, value) ECL_NanoLZ_Decompression_OpcodePickCounters[index] += value;
+    #define ECL_NANO_LZ_COUNTER_CLEARALL() memset(ECL_NanoLZ_Decompression_OpcodePickCounters, 0, sizeof(ECL_NanoLZ_Decompression_OpcodePickCounters));
 #else
-#define ECL_NANO_LZ_COUNTER_APPEND(index, value)
-#define ECL_NANO_LZ_COUNTER_CLEARALL()
+    #define ECL_NANO_LZ_COUNTER_APPEND(index, value)
+    #define ECL_NANO_LZ_COUNTER_CLEARALL()
 #endif
 
 #include "ECL_NanoLZ_schemes.c.inl"

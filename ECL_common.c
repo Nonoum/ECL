@@ -112,167 +112,122 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
 }
 
 #ifdef ECL_USE_BRANCHLESS
-#define ECL_CALC_E(value, n_bits) \
-    (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
+    #define ECL_CALC_E(value, n_bits) \
+        (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
 
-#define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
-    ((the_e) & (((uint8_t)(the_shift) - ECL_SIZE_TYPE_BITS_COUNT - 1) >> (7 - (n_bits))))
+    #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
+        ((the_e) & (((uint8_t)(the_shift) - ECL_SIZE_TYPE_BITS_COUNT - 1) >> (7 - (n_bits))))
 
 #else
-#define ECL_CALC_E(value, n_bits) \
-    ((value) > ((ECL_usize)(1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
+    #define ECL_CALC_E(value, n_bits) \
+        ((value) > ((ECL_usize)(1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
 
-#define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
-    ((e) && ((shift) < ECL_SIZE_TYPE_BITS_COUNT))
+    #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
+        ((e) && ((shift) < ECL_SIZE_TYPE_BITS_COUNT))
 
 #endif
 
-void ECL_JH_Write_E4(ECL_JH_WState* state, ECL_usize value) {
-    uint8_t e; // extension flag
-    do {
-        e = ECL_CALC_E(value, 4);
-        ECL_JH_Write(state, (value & 0x0F) | e, 5);
-        value >>= 4;
-    } while(value);
-}
 
-void ECL_JH_Write_E3(ECL_JH_WState* state, ECL_usize value) {
-    uint8_t e; // extension flag
-    do {
-        e = ECL_CALC_E(value, 3);
-        ECL_JH_Write(state, (value & 0x07) | e, 4);
-        value >>= 3;
-    } while(value);
-}
-
-void ECL_JH_Write_E7E4(ECL_JH_WState* state, ECL_usize value) {
-    uint8_t e; // extension flag
-    e = ECL_CALC_E(value, 7);
-    ECL_JH_Write(state, (uint8_t)value | e, 8);
-    value >>= 7;
-    while(value) {
-        e = ECL_CALC_E(value, 4);
-        ECL_JH_Write(state, (value & 0x0F) | e, 5);
-        value >>= 4;
+/*
+    this should have been done in C++ templates, but unfortunately embedded rather use C.
+    0 < num < 8.
+*/
+#define ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(num) \
+    void ECL_JH_Write_E##num(ECL_JH_WState* state, ECL_usize value) {          \
+        uint8_t e;                                                             \
+        do {                                                                   \
+            e = ECL_CALC_E(value, num);                                        \
+            ECL_JH_Write(state, (value & ((1 << num) - 1)) | e, num + 1);      \
+            value >>= num;                                                     \
+        } while(value);                                                        \
+    }                                                                          \
+    ECL_usize ECL_JH_Read_E##num(ECL_JH_RState* state) {                       \
+        ECL_usize result, workaround;                                          \
+        uint8_t e, code, shift;                                                \
+        shift = 0;                                                             \
+        result = 0;                                                            \
+        do {                                                                   \
+            code = ECL_JH_Read(state, (num + 1));                              \
+            e = code & (1 << num);                                             \
+            workaround = code & ((1 << num) - 1);                              \
+            result |= workaround << shift;                                     \
+            shift += num;                                                      \
+        } while(ECL_CHECK_E_AND_SHIFT(e, shift, num));                         \
+        return result;                                                         \
+    }                                                                          \
+    uint8_t ECL_Evaluate_E##num(ECL_usize number) {                            \
+        uint8_t result = 0;                                                    \
+        do {                                                                   \
+            number >>= num;                                                    \
+            result += num + 1;                                                 \
+        } while(number);                                                       \
+        return result;                                                         \
     }
-}
 
-void ECL_JH_Write_E6E3(ECL_JH_WState* state, ECL_usize value) {
-    uint8_t e; // extension flag
-    e = ECL_CALC_E(value, 6);
-    ECL_JH_Write(state, (value & 0x3F) | e, 7);
-    value >>= 6;
-    while(value) {
-        e = ECL_CALC_E(value, 3);
-        ECL_JH_Write(state, (value & 0x07) | e, 4);
-        value >>= 3;
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(2)
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(3)
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(4)
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(5)
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(6)
+ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(7)
+
+#undef ECL_E_NUMBER_DEFINE_SIMPLE_IMPL
+
+/*
+    0 < num1 < 8.
+    0 < num2 < 8.
+*/
+#define ECL_E_NUMBER_DEFINE_X2_IMPL(num1, num2)                                 \
+    void ECL_JH_Write_E##num1##E##num2(ECL_JH_WState* state, ECL_usize value) { \
+        uint8_t e;                                                              \
+        e = ECL_CALC_E(value, num1);                                            \
+        ECL_JH_Write(state, (uint8_t)value | e, num1 + 1);                      \
+        value >>= num1;                                                         \
+        while(value) {                                                          \
+            e = ECL_CALC_E(value, num2);                                        \
+            ECL_JH_Write(state, (value & ((1 << num2) - 1)) | e, num2 + 1);     \
+            value >>= num2;                                                     \
+        }                                                                       \
+    }                                                                           \
+    ECL_usize ECL_JH_Read_E##num1##E##num2(ECL_JH_RState* state) {              \
+        ECL_usize result, workaround;                                           \
+        uint8_t e, code, shift;                                                 \
+        code = ECL_JH_Read(state, num1 + 1);                                    \
+        result = code & ((1 << num1) - 1);                                      \
+        if(code & (1 << num1)) {                                                \
+            shift = num1;                                                       \
+            do {                                                                \
+                code = ECL_JH_Read(state, num2 + 1);                            \
+                e = code & (1 << num2);                                         \
+                workaround = code & ((1 << num2) - 1);                          \
+                result |= workaround << shift;                                  \
+                shift += num2;                                                  \
+            } while(ECL_CHECK_E_AND_SHIFT(e, shift, num2));                     \
+        }                                                                       \
+        return result;                                                          \
+    }                                                                           \
+    uint8_t ECL_Evaluate_E##num1##E##num2(ECL_usize number) {                   \
+        uint8_t result = num1 + 1;                                              \
+        number >>= num1;                                                        \
+        while(number) {                                                         \
+            number >>= num2;                                                    \
+            result += num2 + 1;                                                 \
+        }                                                                       \
+        return result;                                                          \
     }
-}
 
-ECL_usize ECL_JH_Read_E4(ECL_JH_RState* state) {
-    ECL_usize result, workaround;
-    uint8_t e, code, shift;
-    shift = 0;
-    result = 0;
-    do {
-        code = ECL_JH_Read(state, 5);
-        e = code & 0x10;
-        workaround = code & 0x0F;
-        result |= workaround << shift;
-        shift += 4;
-    } while(ECL_CHECK_E_AND_SHIFT(e, shift, 4));
-    // TODO set up (multiply) is_valid if overflowed?
-    return result;
-}
+ECL_E_NUMBER_DEFINE_X2_IMPL(4, 5)
+ECL_E_NUMBER_DEFINE_X2_IMPL(5, 2)
+ECL_E_NUMBER_DEFINE_X2_IMPL(5, 3)
+ECL_E_NUMBER_DEFINE_X2_IMPL(5, 4)
+ECL_E_NUMBER_DEFINE_X2_IMPL(6, 2)
+ECL_E_NUMBER_DEFINE_X2_IMPL(6, 3)
+ECL_E_NUMBER_DEFINE_X2_IMPL(6, 4)
+ECL_E_NUMBER_DEFINE_X2_IMPL(7, 2)
+ECL_E_NUMBER_DEFINE_X2_IMPL(7, 3)
+ECL_E_NUMBER_DEFINE_X2_IMPL(7, 4)
 
-ECL_usize ECL_JH_Read_E3(ECL_JH_RState* state) {
-    ECL_usize result, workaround;
-    uint8_t e, code, shift;
-    shift = 0;
-    result = 0;
-    do {
-        code = ECL_JH_Read(state, 4);
-        e = code & 0x08;
-        workaround = code & 0x07;
-        result |= workaround << shift;
-        shift += 3;
-    } while(ECL_CHECK_E_AND_SHIFT(e, shift, 3));
-    return result;
-}
-
-ECL_usize ECL_JH_Read_E7E4(ECL_JH_RState* state) {
-    ECL_usize result, workaround;
-    uint8_t e, code, shift;
-    code = ECL_JH_Read(state, 8);
-    result = code & 0x7F;
-    if(code & 0x80) {
-        shift = 7;
-        do {
-            code = ECL_JH_Read(state, 5);
-            e = code & 0x10;
-            workaround = code & 0x0F;
-            result |= workaround << shift;
-            shift += 4;
-        } while(ECL_CHECK_E_AND_SHIFT(e, shift, 4));
-    }
-    return result;
-}
-
-ECL_usize ECL_JH_Read_E6E3(ECL_JH_RState* state) {
-    ECL_usize result, workaround;
-    uint8_t e, code, shift;
-    code = ECL_JH_Read(state, 7);
-    result = code & 0x3F;
-    if(code & 0x40) {
-        shift = 6;
-        do {
-            code = ECL_JH_Read(state, 4);
-            e = code & 0x8;
-            workaround = code & 0x07;
-            result |= workaround << shift;
-            shift += 3;
-        } while(ECL_CHECK_E_AND_SHIFT(e, shift, 3));
-    }
-    return result;
-}
-
-uint8_t ECL_Evaluate_E4(ECL_usize number) {
-    uint8_t result = 0;
-    do {
-        number >>= 4;
-        result += 5;
-    } while(number);
-    return result;
-}
-
-uint8_t ECL_Evaluate_E3(ECL_usize number) {
-    uint8_t result = 0;
-    do {
-        number >>= 3;
-        result += 4;
-    } while(number);
-    return result;
-}
-
-uint8_t ECL_Evaluate_E7E4(ECL_usize number) {
-    uint8_t result = 8;
-    number >>= 7;
-    while(number) {
-        number >>= 4;
-        result += 5;
-    }
-    return result;
-}
-
-uint8_t ECL_Evaluate_E6E3(ECL_usize number) {
-    uint8_t result = 7;
-    number >>= 6;
-    while(number) {
-        number >>= 3;
-        result += 4;
-    }
-    return result;
-}
+#undef ECL_E_NUMBER_DEFINE_X2_IMPL
 
 // cleanup in case of compiling as single file
 #undef ECL_CALC_E
