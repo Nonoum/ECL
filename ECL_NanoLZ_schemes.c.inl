@@ -5,7 +5,12 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
     ECL_usize estimate_bits, offset_sub;
     if(! state->n_copy) { // only new bytes
         ECL_JH_Write(&state->stream, 7, 3);
-        ECL_JH_Write_E3(&state->stream, state->n_new);
+        if(! state->n_new) {
+            ECL_JH_Write(&state->stream, 1, 1);
+        } else {
+            ECL_JH_Write(&state->stream, 0, 1);
+            ECL_JH_Write_E2(&state->stream, state->n_new - 1);
+        }
         ECL_JH_Write(&state->stream, 0, 4); // 0 in E3 format
         if(! state->n_new) { // stream alignment opcode for flow mode
             ECL_JH_Write(&state->stream, 0, state->stream.n_bits);
@@ -66,13 +71,18 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
             }
         }
     }
-    estimate_bits = ECL_Evaluate_E3(state->n_new)
+    estimate_bits = (1 + (state->n_new ? ECL_Evaluate_E2(state->n_new - 1) : 0))
                   + ECL_Evaluate_E3(state->n_copy - 2)
                   + ECL_Evaluate_E6E3(state->offset - offset_sub)
                   + 3;
     if(estimate_bits <= (state->n_copy << 3)) {
         ECL_JH_Write(&state->stream, 7, 3);
-        ECL_JH_Write_E3(&state->stream, state->n_new);
+        if(! state->n_new) {
+            ECL_JH_Write(&state->stream, 1, 1);
+        } else {
+            ECL_JH_Write(&state->stream, 0, 1);
+            ECL_JH_Write_E2(&state->stream, state->n_new - 1);
+        }
         ECL_JH_Write_E3(&state->stream, state->n_copy - 2);
         ECL_JH_Write_E6E3(&state->stream, state->offset - offset_sub);
         return true;
@@ -121,7 +131,7 @@ static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
         state->offset = ECL_JH_Read(&state->stream, 8) + 1 + 8 + 32 + 64;
         break;
     case 7:
-        state->n_new = ECL_JH_Read_E3(&state->stream);
+        state->n_new = ECL_JH_Read(&state->stream, 1) ? 0 : (ECL_JH_Read_E2(&state->stream) + 1);
         state->n_copy = ECL_JH_Read_E3(&state->stream);
         if(state->n_copy) {
             state->n_copy += 2;
