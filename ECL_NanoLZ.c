@@ -173,29 +173,31 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         buf_map[*src] = 0;
         pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
-            const uint8_t* const tmp_src1 = src + 1;
-            const ECL_usize limit_length_m1 = state.src_end - src - 1;
+            const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx, n_checks;
             state.n_new = src - state.first_undone;
             state.n_copy = 0;
 
             checked_idx = buf_map[*src];
-            for(n_checks = 0; (n_checks < search_limit) && (checked_idx != (ECL_usize)-1); ++n_checks) {
+            for(n_checks = 0; checked_idx != (ECL_usize)-1;) {
                 ECL_usize curr_length;
-                const uint8_t* const tmp_src2 = state.src_start + checked_idx + 1;
+                const uint8_t* const tmp_src2 = state.src_start + checked_idx;
                 ECL_ASSERT(checked_idx < src_size);
-                for(curr_length = 0; curr_length < limit_length_m1; ++curr_length) {
-                    if(tmp_src1[curr_length] != tmp_src2[curr_length]) {
+                ++n_checks;
+                for(curr_length = 1; curr_length < limit_length; ++curr_length) {
+                    if(src[curr_length] != tmp_src2[curr_length]) {
                         break;
                     }
                 }
-                curr_length += 1;
                 if(curr_length > state.n_copy) {
                     state.n_copy = curr_length;
                     state.offset = checked_idx;
-                    if(state.n_copy == (limit_length_m1 + 1)) {
+                    if(curr_length == limit_length) {
                         break;
                     }
+                }
+                if(n_checks >= search_limit) {
+                    break;
                 }
                 if((pos - checked_idx) > window_size) { // ran out of window
                     break;
@@ -261,29 +263,31 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         buf_map[key] = 0;
         pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
-            const uint8_t* const tmp_src1 = src + 2;
-            const ECL_usize limit_length_m2 = state.src_end - src - 2;
+            const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx, n_checks;
             state.n_new = src - state.first_undone;
             state.n_copy = 0;
 
             checked_idx = buf_map[ECL_READ_U16(src)];
-            for(n_checks = 0; (n_checks < search_limit) && (checked_idx != (ECL_usize)-1); ++n_checks) {
+            for(n_checks = 0; checked_idx != (ECL_usize)-1;) {
                 ECL_usize curr_length;
-                const uint8_t* const tmp_src2 = state.src_start + checked_idx + 2;
+                const uint8_t* const tmp_src2 = state.src_start + checked_idx;
                 ECL_ASSERT(checked_idx < src_size);
-                for(curr_length = 0; curr_length < limit_length_m2; ++curr_length) {
-                    if(tmp_src1[curr_length] != tmp_src2[curr_length]) {
+                ++n_checks;
+                for(curr_length = 2; curr_length < limit_length; ++curr_length) {
+                    if(src[curr_length] != tmp_src2[curr_length]) {
                         break;
                     }
                 }
-                curr_length += 2;
                 if(curr_length > state.n_copy) {
                     state.n_copy = curr_length;
                     state.offset = checked_idx;
-                    if(state.n_copy == (limit_length_m2 + 2)) {
+                    if(state.n_copy == limit_length) {
                         break;
                     }
+                }
+                if(n_checks >= search_limit) {
+                    break;
                 }
                 if((pos - checked_idx) > window_size) { // ran out of window
                     break;

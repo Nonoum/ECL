@@ -27,13 +27,21 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
             ECL_JH_Write(&state->stream, state->offset - 1, 3);
             return true;
         } else if((state->n_new <= 8) && (state->offset <= 32)) { // opcode 1
-            ECL_JH_Write(&state->stream, 1, 3);
-            if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+            if(state->n_new) {
+                ECL_JH_Write(&state->stream, 1, 4);
+                ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+            } else {
+                ECL_JH_Write(&state->stream, 0x9, 4);
+            }
             ECL_JH_Write(&state->stream, state->offset - 1, 5);
             return true;
         } else if((state->n_new <= 8) && (state->offset <= (32 + 128))) { // opcode 2
-            ECL_JH_Write(&state->stream, 2, 3);
-            if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+            if(state->n_new) {
+                ECL_JH_Write(&state->stream, 2, 4);
+                ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+            } else {
+                ECL_JH_Write(&state->stream, 0xA, 4);
+            }
             ECL_JH_Write(&state->stream, state->offset - 1 - 32, 7);
             return true;
         } else {
@@ -43,26 +51,42 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
         offset_sub = 1;
         if(state->n_copy <= 10) {
             if((state->n_new <= 8) && (state->offset <= 8)) { // opcode 3
-                ECL_JH_Write(&state->stream, 3, 3);
-                if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+                if(state->n_new) {
+                    ECL_JH_Write(&state->stream, 3, 4);
+                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                } else {
+                    ECL_JH_Write(&state->stream, 0xB, 4);
+                }
                 ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
                 ECL_JH_Write(&state->stream, state->offset - 1, 3);
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32))) { // opcode 4
-                ECL_JH_Write(&state->stream, 4, 3);
-                if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+                if(state->n_new) {
+                    ECL_JH_Write(&state->stream, 4, 4);
+                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                } else {
+                    ECL_JH_Write(&state->stream, 0xC, 4);
+                }
                 ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
                 ECL_JH_Write(&state->stream, state->offset - 1 - 8, 5);
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32 + 64))) { // opcode 5
-                ECL_JH_Write(&state->stream, 5, 3);
-                if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+                if(state->n_new) {
+                    ECL_JH_Write(&state->stream, 5, 4);
+                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                } else {
+                    ECL_JH_Write(&state->stream, 0xD, 4);
+                }
                 ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
                 ECL_JH_Write(&state->stream, state->offset - 1 - 8 - 32, 6);
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32 + 64 + 256))) { // opcode 6
-                ECL_JH_Write(&state->stream, 6, 3);
-                if(state->n_new) ECL_JH_Write(&state->stream, (state->n_new - 1) << 1, 4); else ECL_JH_Write(&state->stream, 1, 1);
+                if(state->n_new) {
+                    ECL_JH_Write(&state->stream, 6, 4);
+                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                } else {
+                    ECL_JH_Write(&state->stream, 0xE, 4);
+                }
                 ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
                 ECL_JH_Write(&state->stream, state->offset - 1 - 8 - 32 - 64, 8);
                 return true;
