@@ -48,33 +48,6 @@ static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src
     }
 }
 
-static void ECL_ZeroDevourer_ReadSeq(ECL_JH_RState* state, ECL_usize* cnt_x, ECL_usize* cnt_0) {
-    if(! ECL_JH_Read(state, 1)) {
-        *cnt_x = 0;
-        *cnt_0 = 1;
-        return;
-    }
-    switch (ECL_JH_Read(state, 2)) {
-    case 0: // seq 1.00
-        *cnt_x = ECL_JH_Read(state, 2) + 1;
-        *cnt_0 = 1;
-        break;
-    case 1: // seq 1.01
-        *cnt_x = ECL_JH_Read(state, 4) + 5;
-        *cnt_0 = 1;
-        break;
-    case 2: // seq 1.10
-        *cnt_x = 0;
-        *cnt_0 = ECL_JH_Read_E4(state) + 9;
-        break;
-    case 3: // seq 1.11
-        *cnt_x = ECL_JH_Read_E6E3(state) + 1;
-        *cnt_0 = 0;
-        break;
-    }
-}
-
-
 static void ECL_ZeroDevourer_DumpZeroGeneric(ECL_JH_WState* state, ECL_usize cnt_0) {
     // cnt_0 > 0
     if(cnt_0 >= 9) {
@@ -180,23 +153,69 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
         if(! left) {
             break;
         }
-        ECL_ZeroDevourer_ReadSeq(&state, &cnt_x, &cnt_0);
-        if(state.is_valid && ((cnt_x + cnt_0) <= left)) {
-            if(cnt_x) {
-                const uint8_t* src_block_start = state.next;
-                ECL_JH_RJump(&state, cnt_x);
-                if(! state.is_valid) {
-                    break;
+        if(! ECL_JH_Read(&state, 1)) {
+            if(state.is_valid) {
+                *dst = 0;
+                ++dst;
+            } else {
+                return 0;
+            }
+        } else { // wide codes
+            switch (ECL_JH_Read(&state, 2)) {
+            case 0: // seq 1.00
+                cnt_x = ECL_JH_Read(&state, 2) + 1;
+                {
+                    const uint8_t* const src_block_start = state.next;
+                    ECL_usize i = 0;
+                    ECL_JH_RJump(&state, cnt_x);
+                    if(state.is_valid && (cnt_x < left)) {
+                        dst[cnt_x] = 0;
+                        for(; i < cnt_x; ++i) {
+                            dst[i] = src_block_start[i];
+                        }
+                        dst += cnt_x + 1;
+                    } else {
+                        return 0;
+                    }
                 }
-                memcpy(dst, src_block_start, cnt_x);
-                dst += cnt_x;
+                break;
+            case 1: // seq 1.01
+                cnt_x = ECL_JH_Read(&state, 4) + 5;
+                {
+                    const uint8_t* const src_block_start = state.next;
+                    ECL_JH_RJump(&state, cnt_x);
+                    if(state.is_valid && (cnt_x < left)) {
+                        dst[cnt_x] = 0;
+                        memcpy(dst, src_block_start, cnt_x);
+                        dst += cnt_x + 1;
+                    } else {
+                        return 0;
+                    }
+                }
+                break;
+            case 2: // seq 1.10
+                cnt_0 = ECL_JH_Read_E4(&state) + 9;
+                if(state.is_valid && (cnt_0 <= left)) {
+                    memset(dst, 0, cnt_0);
+                    dst += cnt_0;
+                } else {
+                    return 0;
+                }
+                break;
+            case 3: // seq 1.11
+                cnt_x = ECL_JH_Read_E6E3(&state) + 1;
+                {
+                    const uint8_t* const src_block_start = state.next;
+                    ECL_JH_RJump(&state, cnt_x);
+                    if(state.is_valid && (cnt_x <= left)) {
+                        memcpy(dst, src_block_start, cnt_x);
+                        dst += cnt_x;
+                    } else {
+                        return 0;
+                    }
+                }
+                break;
             }
-            if(cnt_0) {
-                memset(dst, 0, cnt_0);
-                dst += cnt_0;
-            }
-        } else {
-            break;
         }
     }
     return dst - dst_start;
