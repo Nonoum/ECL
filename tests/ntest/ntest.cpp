@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <string.h>
 
+#if defined __GNUC__
+#include <x86intrin.h>
+#endif
+
 static uint64_t RdtscWrapper() {
     union {
         uint64_t i64;
