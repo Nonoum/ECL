@@ -55,6 +55,7 @@ typedef enum {
     Extra memory usage: 0.
     - 'search_limit' is maximum amount of bytes to look back when searching for a match, increasing this parameter can decrease performance dramatically.
     - to find enough size for output buffer: dst_size = ECL_NANO_LZ_GET_BOUND(src_size);
+    See full compress/decompress example usage near decompression function.
 */
 ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
 
@@ -69,15 +70,15 @@ typedef struct {
 } ECL_NanoLZ_FastParams;
 
 /*
+    TLDR version:
+    - consumption with alloc1 is 256*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+    - consumption with alloc2 is 65536*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+
     Initializers for fast1/fast2 compressors, return whether succeeded.
     - *Alloc1 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST1* macros
     - *Alloc2 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST2* macros
 
     For maximum efficiency window_size_bits should be = [log2(src_size)].
-
-    TLDR version:
-    - consumption with alloc1 is 256*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
-    - consumption with alloc2 is 65536*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
 */
 bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
 bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
@@ -103,7 +104,7 @@ void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
         uint8_t* compressed_stream = (uint8_t*)malloc( compressed_size_limit );
         ECL_NanoLZ_FastParams fp;
         ECL_NanoLZ_FastParams_Alloc2(&fp, 10);
-        ECL_usize compressed_size = ECL_NanoLZ_Compress_fast2(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 20, %fp);
+        ECL_usize compressed_size = ECL_NanoLZ_Compress_fast2(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 20, &fp);
         ECL_NanoLZ_FastParams_Destroy(&fp);
 */
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
@@ -118,7 +119,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         ECL_usize compressed_size_limit = ECL_NANO_LZ_GET_BOUND(sizeof(my_data));
         uint8_t* compressed_stream = (uint8_t*)malloc( compressed_size_limit );
         ECL_usize compressed_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 1000);
-        // ... transferring 'compressed_size' bytes of 'compressed_stream' to receiver side
+        // ... <- transferring 'compressed_size' bytes of 'compressed_stream' to receiver side
         ECL_usize uncompressed_size = ECL_NanoLZ_Decompress(ECL_NANOLZ_SCHEME1, compressed_stream, compressed_size, (uint8_t*)&my_data, sizeof(my_data));
         if(uncompressed_size != sizeof(my_data)) {
             // failed

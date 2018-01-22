@@ -108,3 +108,7 @@ For my target datasets (around 1-2 kb) I achieved compressed size = around 75-80
 *NOTE: decompression speed grows with bigger search_limit specified on compression.
 *NOTE: ECL_NanoLZ_Compress_fast2 is fastest NanoLZ compression mode, consumes maximum amount of memory among all modes.
 *NOTE: "16 bits (512 kb)" means that algorithm uses 16 bit searching window, 512 kb of temporary buffers in total.
+
+
+USAGE:
+Usage samples present in headers of each codec, you can also find examples in "tests/" dir.
