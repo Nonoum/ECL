@@ -168,32 +168,36 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
 
 ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
     ECL_JH_RState state;
-    ECL_usize dst_pos, cnt_x, cnt_0;
-    const uint8_t* src_block_start;
-
+    const uint8_t* dst_start = dst;
+    const uint8_t* dst_end = dst + dst_size;
     ECL_JH_RInit(&state, src, src_size, 0);
     if((! dst) || (! state.is_valid)) {
         return 0;
     }
-    for(dst_pos = 0; dst_pos < dst_size;) {
+    for(;;) {
+        ECL_usize cnt_x, cnt_0;
+        const ECL_usize left = dst_end - dst;
+        if(! left) {
+            break;
+        }
         ECL_ZeroDevourer_ReadSeq(&state, &cnt_x, &cnt_0);
-        if(state.is_valid && ((dst_pos + cnt_x + cnt_0) <= dst_size)) {
+        if(state.is_valid && ((cnt_x + cnt_0) <= left)) {
             if(cnt_x) {
-                src_block_start = state.next;
+                const uint8_t* src_block_start = state.next;
                 ECL_JH_RJump(&state, cnt_x);
                 if(! state.is_valid) {
                     break;
                 }
-                memcpy(dst + dst_pos, src_block_start, cnt_x);
-                dst_pos += cnt_x;
+                memcpy(dst, src_block_start, cnt_x);
+                dst += cnt_x;
             }
             if(cnt_0) {
-                memset(dst + dst_pos, 0, cnt_0);
-                dst_pos += cnt_0;
+                memset(dst, 0, cnt_0);
+                dst += cnt_0;
             }
         } else {
             break;
         }
     }
-    return dst_pos;
+    return dst - dst_start;
 }
