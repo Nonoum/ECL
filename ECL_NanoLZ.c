@@ -331,7 +331,8 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
 ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
     ECL_NanoLZ_DecompressorState state;
     ECL_NanoLZ_SchemeDecoder decoder;
-    ECL_usize dst_pos;
+    uint8_t* const dst_start = dst;
+    uint8_t* const dst_end = dst + dst_size;
 
     ECL_NANO_LZ_COUNTER_CLEARALL();
     decoder = ECL_NanoLZ_GetSchemeDecoder(scheme);
@@ -343,44 +344,47 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
         return 0;
     }
     *dst = *src; // copy first byte as is
-    for(dst_pos = 1; dst_pos < dst_size;) {
+    for(++dst; ; ) {
+        const ECL_usize left = dst_end - dst;
+        if(! left) {
+            break;
+        }
         (*decoder)(&state);
         if(! state.stream.is_valid) {
             break; // error in stream
         }
-        if((state.n_new + state.n_copy) > (dst_size - dst_pos)) {
+        if((state.n_new + state.n_copy) > left) {
             break; // output doesn't fit this
         }
         if(state.n_new) {
-            const uint8_t* src_block_start = state.stream.next;
+            const uint8_t* const src_block_start = state.stream.next;
+            ECL_usize i = 0;
             ECL_JH_RJump(&state.stream, state.n_new);
             if(! state.stream.is_valid) {
                 break; // don't have enough data in stream
             }
-            memcpy(dst + dst_pos, src_block_start, state.n_new);
-            dst_pos += state.n_new;
+            for(; i < state.n_new; ++i) { // memcpy is inefficient here
+                dst[i] = src_block_start[i];
+            }
+            dst += state.n_new;
         }
         if(state.n_copy) {
-            if(state.offset > dst_pos) {
+            if(state.offset > (dst - dst_start)) {
                 break; // points outside of data. error in stream
             }
-            if(state.offset >= state.n_copy) { // regular block
-                memcpy(dst + dst_pos, dst + dst_pos - state.offset, state.n_copy);
-            } else { // interleaved (cycled) block
-                if(state.offset == 1) {
-                    memset(dst + dst_pos, dst[dst_pos - 1], state.n_copy);
-                } else {
-                    uint8_t* ptr_end;
-                    uint8_t* ptr = dst + dst_pos;
-                    for(ptr_end = ptr + state.n_copy; ptr < ptr_end; ++ptr) {
-                        *ptr = *(ptr - state.offset);
-                    }
+            if(state.offset == 1) {
+                memset(dst, dst[-1], state.n_copy); // memset wins against cycle in average case
+                dst += state.n_copy;
+            } else {
+                const ECL_usize offs = state.offset;
+                ECL_usize i = state.n_copy;
+                for(; i; --i, ++dst) { // memcpy is inefficient here
+                    *dst = *(dst - offs);
                 }
             }
         }
-        dst_pos += state.n_copy;
     }
-    return dst_pos;
+    return dst - dst_start;
 }
 
 #undef ECL_NANO_LZ_COUNTER_APPEND
