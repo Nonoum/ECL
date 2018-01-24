@@ -106,20 +106,21 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
             }
         }
         if((state.n_copy > 1) && (*coder)(&state)) {
-            uint8_t* tmp = state.stream.next;
+            uint8_t* const tmp = state.stream.next;
             ECL_JH_WJump(&state.stream, state.n_new);
             if(state.stream.is_valid) {
-                if(state.n_new) {
-                    memcpy(tmp, state.first_undone, state.n_new);
+                ECL_usize i;
+                for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                    tmp[i] = state.first_undone[i];
                 }
                 src += state.n_copy;
                 state.first_undone = src;
+                continue;
             } else {
                 break;
             }
-        } else {
-            ++src;
         }
+        ++src;
     }
     // main cycle done. dump last seq
     return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
@@ -211,8 +212,8 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 ECL_JH_WJump(&state.stream, state.n_new);
                 if(state.stream.is_valid) {
                     ECL_usize i;
-                    if(state.n_new) {
-                        memcpy(tmp, state.first_undone, state.n_new);
+                    for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                        tmp[i] = state.first_undone[i];
                     }
                     for(i = 0; i < state.n_copy; ++i, ++pos) {
                         buf_window[pos & window_mask] = buf_map[src[i]];
@@ -301,8 +302,8 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 ECL_JH_WJump(&state.stream, state.n_new);
                 if(state.stream.is_valid) {
                     ECL_usize i;
-                    if(state.n_new) {
-                        memcpy(tmp, state.first_undone, state.n_new);
+                    for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                        tmp[i] = state.first_undone[i];
                     }
                     for(i = 0; i < state.n_copy; ++i, ++pos) {
                         key = ECL_READ_U16(src + i);
