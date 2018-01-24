@@ -126,6 +126,151 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
 }
 
+// 'mid' versions --------------------------------------------------------
+
+ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256) {
+    ECL_NanoLZ_CompressorState state;
+    ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    if(! coder) {
+        return 0;
+    }
+    if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
+        return 0; // not allowed for this mode
+    }
+    if((src_size / 2) >= dst_size) {
+        return 0; // not allowed for this mode
+    }
+    ECL_JH_WInit(&state.stream, dst, dst_size, 1);
+    if((! src) || (! state.stream.is_valid)) {
+        return 0;
+    }
+    memset(buf_256, 0, 256);
+    {
+        uint8_t* const buf_map = (uint8_t*)buf_256;
+        uint8_t* const buf_window = dst + dst_size - (src_size / 2);
+        ECL_usize pos;
+
+        memset(buf_window, 0, (src_size / 2)); // fill with zeroes
+        *dst = *src; // copy first byte as is
+        state.src_start = src;
+        state.src_end = src + src_size;
+        state.search_end = state.src_end - 1;
+        state.first_undone = src + 1;
+        pos = 1;
+        for(src = state.first_undone; src < state.search_end;) {
+            const ECL_usize limit_length = state.src_end - src;
+            ECL_usize checked_idx, n_checks;
+            state.n_new = src - state.first_undone;
+            state.n_copy = 0;
+
+            checked_idx = ((ECL_usize)buf_map[*src]) | (pos & ~(ECL_usize)0x0FF);
+            // catch up index
+            if(checked_idx >= pos) {
+                checked_idx -= 256;
+                ECL_ASSERT(checked_idx < src_size); // can't go < 0. check as unsigned
+            }
+            while(state.src_start[checked_idx] != *src) {
+                if(checked_idx >= 256) {
+                    checked_idx -= 256;
+                } else {
+                    break;
+                }
+            }
+            if(state.src_start[checked_idx] == *src) { // found minimal match
+                for(n_checks = 0; ; ) {
+                    ECL_usize curr_length;
+                    const uint8_t* const tmp_src2 = state.src_start + checked_idx;
+                    ECL_ASSERT(checked_idx < src_size);
+                    ECL_ASSERT(*src == *tmp_src2);
+                    ++n_checks;
+                    for(curr_length = 1; curr_length < limit_length; ++curr_length) {
+                        if(src[curr_length] != tmp_src2[curr_length]) {
+                            break;
+                        }
+                    }
+                    if(curr_length > state.n_copy) {
+                        state.n_copy = curr_length;
+                        state.offset = checked_idx;
+                        if(curr_length == limit_length) {
+                            break;
+                        }
+                    }
+                    if(n_checks >= search_limit) {
+                        break;
+                    }
+                    // pick next match
+                    {
+                        const ECL_usize table_index = checked_idx >> 1;
+                        const ECL_usize last_checked = checked_idx;
+                        ECL_ASSERT(last_checked <= pos);
+                        if((buf_window + table_index) < state.stream.next) {
+                            break; // window data is invalid there
+                        }
+                        checked_idx = ((buf_window[table_index] >> ((last_checked & 1) * 4)) & 0x0F)
+                                    | (last_checked & ~(ECL_usize)0x0F);
+                        // catch up index
+                        if(checked_idx >= last_checked) {
+                            if(! checked_idx) {
+                                break; // no more matches
+                            }
+                            checked_idx -= 16;
+                            ECL_ASSERT(checked_idx < src_size); // can't go < 0. check as unsigned
+                        }
+                        while(state.src_start[checked_idx] != *src) {
+                            if(checked_idx >= 16) {
+                                checked_idx -= 16;
+                            } else {
+                                break;
+                            }
+                        }
+                        if(state.src_start[checked_idx] != *src) {
+                            break; // no more matches
+                        }
+                    }
+                }
+
+                state.offset = pos - state.offset;
+                if((state.n_copy > 1) && (*coder)(&state)) {
+                    uint8_t* const tmp = state.stream.next;
+                    ECL_JH_WJump(&state.stream, state.n_new);
+                    if(state.stream.is_valid) {
+                        ECL_usize i;
+                        for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                            tmp[i] = state.first_undone[i];
+                        }
+                        // update tables for referenced sequence
+                        for(i = 0; i < state.n_copy; ++i, ++pos) {
+                            const ECL_usize table_index = pos >> 1;
+                            if((buf_window + table_index) >= state.stream.next) {
+                                const uint8_t prev_pos = buf_map[src[i]];
+                                buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
+                            }
+                            buf_map[src[i]] = pos;
+                        }
+                        src += state.n_copy;
+                        state.first_undone = src;
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            {
+                // update tables for passed byte
+                const ECL_usize table_index = pos >> 1;
+                if((buf_window + table_index) >= state.stream.next) {
+                    const uint8_t prev_pos = buf_map[*src];
+                    buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
+                }
+                buf_map[*src] = pos;
+            }
+            ++src;
+            ++pos;
+        }
+    }
+    return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+}
+
 // 'fast' versions ------------------------------------------------------------------------------
 
 bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits) {
