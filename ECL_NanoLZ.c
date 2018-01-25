@@ -42,7 +42,7 @@ typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
 
 static ECL_usize ECL_NanoLZ_CalcEqualLength(const uint8_t* src1, const uint8_t* src2, ECL_usize limit) {
     // TODO dummy version, optimize later
-    ECL_ssize i;
+    ECL_usize i;
     for(i = 0; i < limit; ++i) {
         if(src1[i] != src2[i]) {
             return i;
@@ -85,7 +85,7 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     state.search_end = state.src_end - 1;
     state.first_undone = src + 1;
     for(src = state.first_undone; src < state.search_end;) {
-        const uint8_t* const back_search_end = src - ECL_MIN(src - state.src_start, search_limit);
+        const uint8_t* const back_search_end = src - ECL_MIN((ECL_usize)(src - state.src_start), search_limit);
         const uint8_t* candidate = src;
         const uint16_t w1 = *(uint16_t*)candidate;
         const ECL_usize limit_length = state.src_end - src - 2;
@@ -131,13 +131,14 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256) {
     ECL_NanoLZ_CompressorState state;
     ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    const ECL_usize window_length = (src_size >> 1) + (src_size & 1);
     if(! coder) {
         return 0;
     }
     if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
         return 0; // not allowed for this mode
     }
-    if((src_size / 2) >= dst_size) {
+    if(window_length >= dst_size) {
         return 0; // not allowed for this mode
     }
     ECL_JH_WInit(&state.stream, dst, dst_size, 1);
@@ -147,10 +148,10 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     memset(buf_256, 0, 256);
     {
         uint8_t* const buf_map = (uint8_t*)buf_256;
-        uint8_t* const buf_window = dst + dst_size - (src_size / 2);
+        uint8_t* const buf_window = dst + dst_size - window_length;
         ECL_usize pos;
 
-        memset(buf_window, 0, (src_size / 2)); // fill with zeroes
+        memset(buf_window, 0, window_length); // fill with zeroes
         *dst = *src; // copy first byte as is
         state.src_start = src;
         state.src_end = src + src_size;
@@ -269,6 +270,11 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         }
     }
     return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+}
+
+ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_512){
+    // TODO
+    return ECL_NanoLZ_Compress_mid1(scheme, src, src_size, dst, dst_size, search_limit, buf_512);
 }
 
 // 'fast' versions ------------------------------------------------------------------------------
