@@ -27,11 +27,21 @@
         }                                                          \
     }
 
+#define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
+    vector_name.resize(capacity + 1); \
+    vector_name[capacity] = 0x39;
+
+#define ECL_TEST_MAGIC_VALIDATE(vector_name) \
+    ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x39)
+
+
+
 void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
-    const int max_size = 50;
-    auto sz = std::min<int>(max_size, v.size());
+    const size_t max_size = 50;
+    auto sz = std::min(max_size, v.size());
+    log << '{' << v.size() << '}';
     log << '[';
-    for(int i = 0; i < sz; ++i) {
+    for(size_t i = 0; i < sz; ++i) {
         if(i) {
             log << ", ";
         }

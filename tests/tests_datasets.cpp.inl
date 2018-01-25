@@ -231,6 +231,60 @@ NTEST(test_NanoLZ_fast2_datasets) {
     ECL_NanoLZ_FastParams_Destroy(&fp);
 }
 
+NTEST(test_NanoLZ_mid1_datasets) {
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    uint8_t buf_x[256];
+    const int search_limits[] = {1, 2, 5, 10, -1};
+
+    for(auto& rec : GetDatasetRecords()) {
+        auto src_data = (const uint8_t*)rec.ptr;
+        auto src_size = rec.length;
+        approve(src_data);
+        approve(src_size);
+
+        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
+        ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
+        for(auto limit : search_limits) {
+            for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+                auto comp_size = ECL_NanoLZ_Compress_mid1(scheme, src_data, src_size, tmp.data(), enough_size, limit, buf_x);
+                tmp_output.resize(src_size);
+                auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+                approve(decomp_size == src_size);
+                approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+                ECL_TEST_MAGIC_VALIDATE(tmp);
+            }
+        }
+    }
+}
+
+NTEST(test_NanoLZ_mid2_datasets) {
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    uint8_t buf_x[512];
+    const int search_limits[] = {1, 2, 5, 10, -1};
+
+    for(auto& rec : GetDatasetRecords()) {
+        auto src_data = (const uint8_t*)rec.ptr;
+        auto src_size = rec.length;
+        approve(src_data);
+        approve(src_size);
+
+        auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
+        ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
+        for(auto limit : search_limits) {
+            for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+                auto comp_size = ECL_NanoLZ_Compress_mid2(scheme, src_data, src_size, tmp.data(), enough_size, limit, buf_x);
+                tmp_output.resize(src_size);
+                auto decomp_size = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), src_size);
+                approve(decomp_size == src_size);
+                approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+                ECL_TEST_MAGIC_VALIDATE(tmp);
+            }
+        }
+    }
+}
+
 ECL_usize ECL_Test_NanoLZ_CompressWith(ECL_NanoLZ_Scheme scheme, const std::vector<uint8_t>& src, std::vector<uint8_t>& preallocated_output, int mode, ECL_NanoLZ_FastParams& preallocated_params) {
     ECL_usize comp_size = 0;
     if(mode == 0) {
