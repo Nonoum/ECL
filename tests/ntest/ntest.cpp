@@ -2,36 +2,14 @@
 
 #include <algorithm>
 #include <string.h>
-
-#if defined __GNUC__
-#include <x86intrin.h>
-#endif
-
-static uint64_t RdtscWrapper() {
-    union {
-        uint64_t i64;
-        struct {
-            uint32_t low;
-            uint32_t high;
-        } i32;
-    } value;
-#ifdef _MSC_VER // ms visual studio compiler
-    uint32_t l, h;
-    __asm {
-        rdtsc;
-        mov l, eax;
-        mov h, edx;
-       }
-    value.i32.low = l;
-    value.i32.high = h;
-#elif defined __GNUC__ // gcc compiler
-    value.i64 = __rdtsc();
-#endif
-    return value.i64;
-}
-
+#include <chrono>
 
 namespace ntest {
+
+uint64_t GetTimeMicroseconds() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 typedef std::vector<TestBase*> RunnersType;
 
@@ -41,15 +19,15 @@ static RunnersType& GetRunners() {
 }
 
 TestBase :: TestBase(const char* _name)
-        : name(_name), result(INIT), tacts(0) {
+        : name(_name), result(INIT), time_mcs(0) {
 }
 
 bool TestBase :: run(std::ostream& log) {
     result = INIT;
-    uint64_t before = RdtscWrapper();
+    uint64_t before = GetTimeMicroseconds();
     runInternal(log);
-    uint64_t after = RdtscWrapper();
-    tacts = after - before;
+    uint64_t after = GetTimeMicroseconds();
+    time_mcs = after - before;
     return result == SUCCESS;
 }
 
@@ -57,8 +35,8 @@ const char* TestBase :: getName() const {
     return name;
 }
 
-uint64_t TestBase :: getTacts() const {
-    return tacts;
+uint64_t TestBase :: getDurationMicroseconds() const {
+    return time_mcs;
 }
 
 void TestBase :: PushRunner(TestBase* test) {
@@ -86,7 +64,7 @@ size_t TestBase :: RunTests(std::ostream& log_output) {
         } catch (...) {
             ++n_failed;
         }
-        log_output << (result ? "success\t\t| ~" : "fail\t\t| ~") << std::fixed << (double(runner->getTacts()) / 3000000000.) << std::endl;
+        log_output << (result ? "success\t\t| ~" : "fail\t\t| ~") << std::fixed << (double(runner->getDurationMicroseconds()) / 1000000.) << std::endl;
     }
     log_output << ":: Total tests : " << (n_failed + n_succeeded) << std::endl;
     log_output << ":: Succeeded : " << n_succeeded << std::endl;

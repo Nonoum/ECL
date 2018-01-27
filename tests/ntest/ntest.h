@@ -5,6 +5,8 @@
 
 namespace ntest {
 
+uint64_t GetTimeMicroseconds();
+
 class TestBase {
     const char* name;
     enum {
@@ -12,12 +14,12 @@ class TestBase {
         SUCCESS,
         FAIL
     } result;
-    uint64_t tacts;
+    uint64_t time_mcs;
 public:
     TestBase(const char* _name);
     bool run(std::ostream& log);
     const char* getName() const;
-    uint64_t getTacts() const;
+    uint64_t getDurationMicroseconds() const;
     bool isFailed() const { return result == FAIL; };
 
     static size_t RunTests(std::ostream& log_output); // returns count of fails
