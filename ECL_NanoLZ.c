@@ -312,8 +312,8 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
     {
         ECL_usize* const buf_map = (ECL_usize*)p->buf_map;
         ECL_usize* const buf_window = (ECL_usize*)p->buf_window;
-        const ECL_usize window_size = 1UL << p->window_size_bits;
-        const ECL_usize window_mask = (1UL << p->window_size_bits) - 1;
+        const ECL_usize window_size = ((ECL_usize)1) << p->window_size_bits;
+        const ECL_usize window_mask = (((ECL_usize)1) << p->window_size_bits) - 1;
         ECL_usize pos;
 
         *dst = *src; // copy first byte as is
@@ -400,8 +400,8 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
     {
         ECL_usize* const buf_map = (ECL_usize*)p->buf_map;
         ECL_usize* const buf_window = (ECL_usize*)p->buf_window;
-        const ECL_usize window_size = 1UL << p->window_size_bits;
-        const ECL_usize window_mask = (1UL << p->window_size_bits) - 1;
+        const ECL_usize window_size = ((ECL_usize)1) << p->window_size_bits;
+        const ECL_usize window_mask = (((ECL_usize)1) << p->window_size_bits) - 1;
         ECL_usize pos;
         uint16_t key;
 

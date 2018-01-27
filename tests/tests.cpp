@@ -14,7 +14,7 @@
 #include <fstream>
 
 // auxiliary macro and methods for testing
-#define ECL_TEST_ASSERT(expr) approve(expr)
+#define ECL_TEST_ASSERT(expr) approve((bool)(expr))
 #define ECL_TEST_COMPARE(val1, val2)                               \
     {                                                              \
         if((val1) != (val2)) {                                     \

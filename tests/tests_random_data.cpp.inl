@@ -14,14 +14,14 @@ NTEST(test_ZeroEater_random_data) {
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
     for(int i = 0; i < n_sets; ++i) {
-        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.resize(src_size);
-        for(int j = 0; j < src_size; ++j) {
+        for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
 
         for(auto mask : masks) {
-            for(int j = 0; j < src_size; ++j) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_ZERO_EATER_GET_BOUND(src_size);
@@ -46,14 +46,14 @@ NTEST(test_ZeroDevourer_random_data) {
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
     for(int i = 0; i < n_sets; ++i) {
-        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.resize(src_size);
-        for(int j = 0; j < src_size; ++j) {
+        for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
 
         for(auto mask : masks) {
-            for(int j = 0; j < src_size; ++j) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_ZERO_DEVOURER_GET_BOUND(src_size);
@@ -79,15 +79,15 @@ NTEST(test_NanoLZ_slow_random_data) {
 
     src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {
-        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.clear();
         src.resize(src_size);
-        for(int j = 0; j < src_size; ++j) {
+        for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
 
         for(auto mask : masks) {
-            for(int j = 0; j < src_size; ++j) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
@@ -116,15 +116,15 @@ NTEST(test_NanoLZ_mid1_random_data) {
 
     src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {
-        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.clear();
         src.resize(src_size);
-        for(int j = 0; j < src_size; ++j) {
+        for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
 
         for(auto mask : masks) {
-            for(int j = 0; j < src_size; ++j) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
@@ -157,15 +157,15 @@ NTEST(test_NanoLZ_mid2_random_data) {
 
     src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {
-        const auto src_size = (rand() % (max_size - min_size)) + min_size;
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.clear();
         src.resize(src_size);
-        for(int j = 0; j < src_size; ++j) {
+        for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
 
         for(auto mask : masks) {
-            for(int j = 0; j < src_size; ++j) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);

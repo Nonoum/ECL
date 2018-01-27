@@ -124,7 +124,7 @@ NTEST(test_ZeroEater_datasets) {
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -145,7 +145,7 @@ NTEST(test_ZeroDevourer_datasets) {
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -165,7 +165,7 @@ NTEST(test_NanoLZ_slow_datasets) {
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -189,7 +189,7 @@ NTEST(test_NanoLZ_fast1_datasets) {
     ECL_NanoLZ_FastParams_Alloc1(&fp, 10);
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -214,7 +214,7 @@ NTEST(test_NanoLZ_fast2_datasets) {
     ECL_NanoLZ_FastParams_Alloc2(&fp, 10);
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -239,7 +239,7 @@ NTEST(test_NanoLZ_mid1_datasets) {
 
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -266,7 +266,7 @@ NTEST(test_NanoLZ_mid2_datasets) {
 
     for(auto& rec : GetDatasetRecords()) {
         auto src_data = (const uint8_t*)rec.ptr;
-        auto src_size = rec.length;
+        ECL_usize src_size = rec.length;
         approve(src_data);
         approve(src_size);
 
@@ -329,7 +329,7 @@ bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ
                 for(auto n_new : new_ones) {
                     for(int dist = min_dist; dist < max_dist; ++dist) {
                         // generate data
-                        const auto src_size = prefix_size + match_size*2 + dist + suffix_size;
+                        const ECL_usize src_size = prefix_size + match_size*2 + dist + suffix_size;
                         src.resize(src_size);
                         auto next_random_value = match_size;
                         auto next_ptr = src.data();
