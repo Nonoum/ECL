@@ -54,10 +54,10 @@ void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
 }
 
 #ifndef ECL_TEST_LOCAL
-#include "tests_common.cpp.inl"
-#include "tests_datasets.cpp.inl"
-#include "tests_random_data.cpp.inl"
-#include "tests_perf.cpp.inl"
+#include "tests_common_inline.hpp"
+#include "tests_datasets_inline.hpp"
+#include "tests_random_data_inline.hpp"
+#include "tests_perf_inline.hpp"
 #endif
 
 NTEST(test_string_constants) {
@@ -71,7 +71,7 @@ NTEST(test_string_constants) {
 
 #ifdef ECL_TEST_LOCAL
 
-#include "stat_dir.cpp.inl"
+#include "stat_dir_inline.hpp"
 
 NTEST(test_stat_dir) {
     log << std::endl;

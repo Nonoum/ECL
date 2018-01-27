@@ -37,7 +37,7 @@ typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
     #define ECL_NANO_LZ_COUNTER_CLEARALL()
 #endif
 
-#include "ECL_NanoLZ_schemes.c.inl"
+#include "ECL_NanoLZ_schemes_inline.h"
 
 
 static ECL_usize ECL_NanoLZ_CalcEqualLength(const uint8_t* src1, const uint8_t* src2, ECL_usize limit) {
