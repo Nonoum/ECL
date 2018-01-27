@@ -132,43 +132,51 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
 }
 
 ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
-    ECL_usize dst_pos, src_pos, cnt_x, cnt_0;
-    uint8_t opcode;
+    const uint8_t* src_end = src + src_size;
+    const uint8_t* dst_start = dst;
+    const uint8_t* dst_end = dst + dst_size;
     if((! src) || (! dst)) { // invalid parameters
         return 0;
     }
-    dst_pos = 0;
-    for(src_pos = 0; src_pos < src_size;) {
-        opcode = src[src_pos];
-        ++src_pos;
-        cnt_x = 0;
-        cnt_0 = 0;
+    for(; src < src_end; ) {
+        ECL_usize cnt_x, cnt_0;
+        const uint8_t opcode = *src;
+        ++src;
         if(opcode & 0x80) { // method 2 or 3
             if(opcode & 0x40) { // method 3
                 cnt_x = ((opcode >> 3) & 0x07) + 1;
                 cnt_0 = (opcode & 0x07) + 1;
+                // check if fits output buffer and unpack
+                if((cnt_x + cnt_0) > (dst_end - dst)) {
+                    break;
+                }
+                if(cnt_x > (src_end - src)) {
+                    break; // invalid stream
+                }
+                memcpy(dst, src, cnt_x);
+                memset(dst + cnt_x, 0, cnt_0);
+                dst += cnt_x + cnt_0;
+                src += cnt_x;
             } else { // method 2
                 cnt_0 = (opcode & 0x3F) + 1;
+                if(cnt_0 > (dst_end - dst)) {
+                    break;
+                }
+                memset(dst, 0, cnt_0);
+                dst += cnt_0;
             }
         } else { // method 1
             cnt_x = (opcode & 0x7F) + 1;
-        }
-        // check if fits output buffer and unpack
-        if((dst_pos + cnt_x + cnt_0) > dst_size) {
-            break;
-        }
-        if(cnt_x) {
-            if((src_pos + cnt_x) > src_size) {
+            if(cnt_x > (dst_end - dst)) {
+                break;
+            }
+            if(cnt_x > (src_end - src)) {
                 break; // invalid stream
             }
-            memcpy(dst + dst_pos, src + src_pos, cnt_x);
-            dst_pos += cnt_x;
+            memcpy(dst, src, cnt_x);
+            dst += cnt_x;
+            src += cnt_x;
         }
-        if(cnt_0) {
-            memset(dst + dst_pos, 0, cnt_0);
-            dst_pos += cnt_0;
-        }
-        src_pos += cnt_x;
     }
-    return (src_pos == src_size) ? dst_pos : 0; // ensure all source is consumed
+    return (src == src_end) ? (dst - dst_start) : 0; // ensure all source is consumed
 }
