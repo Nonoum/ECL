@@ -71,7 +71,7 @@ static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, E
 
 ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit) {
     ECL_NanoLZ_CompressorState state;
-    ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     if(! coder) {
         return 0;
     }
@@ -89,7 +89,6 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         const uint8_t* candidate = src;
         const uint16_t w1 = *(uint16_t*)candidate;
         const ECL_usize limit_length = state.src_end - src - 2;
-        state.n_new = src - state.first_undone;
         state.n_copy = 0;
         for(--candidate; candidate >= back_search_end; --candidate) {
             ECL_usize curr_length;
@@ -105,19 +104,22 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                 }
             }
         }
-        if((state.n_copy > 1) && (*coder)(&state)) {
-            uint8_t* const tmp = state.stream.next;
-            ECL_JH_WJump(&state.stream, state.n_new);
-            if(state.stream.is_valid) {
-                ECL_usize i;
-                for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
-                    tmp[i] = state.first_undone[i];
+        if(state.n_copy > 1) {
+            state.n_new = src - state.first_undone;
+            if((*coder)(&state)) {
+                uint8_t* const tmp = state.stream.next;
+                ECL_JH_WJump(&state.stream, state.n_new);
+                if(state.stream.is_valid) {
+                    ECL_usize i;
+                    for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                        tmp[i] = state.first_undone[i];
+                    }
+                    src += state.n_copy;
+                    state.first_undone = src;
+                    continue;
+                } else {
+                    break;
                 }
-                src += state.n_copy;
-                state.first_undone = src;
-                continue;
-            } else {
-                break;
             }
         }
         ++src;
@@ -130,7 +132,7 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 
 ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256) {
     ECL_NanoLZ_CompressorState state;
-    ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     const ECL_usize window_length = (src_size >> 1) + (src_size & 1);
     if(! coder) {
         return 0;
@@ -161,7 +163,6 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx, n_checks;
-            state.n_new = src - state.first_undone;
             state.n_copy = 0;
 
             checked_idx = ((ECL_usize)buf_map[*src]) | (pos & ~(ECL_usize)0x0FF);
@@ -230,29 +231,32 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                     }
                 }
 
-                state.offset = pos - state.offset;
-                if((state.n_copy > 1) && (*coder)(&state)) {
-                    uint8_t* const tmp = state.stream.next;
-                    ECL_JH_WJump(&state.stream, state.n_new);
-                    if(state.stream.is_valid) {
-                        ECL_usize i;
-                        for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
-                            tmp[i] = state.first_undone[i];
-                        }
-                        // update tables for referenced sequence
-                        for(i = 0; i < state.n_copy; ++i, ++pos) {
-                            const ECL_usize table_index = pos >> 1;
-                            if((buf_window + table_index) >= state.stream.next) {
-                                const uint8_t prev_pos = buf_map[src[i]];
-                                buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
+                if(state.n_copy > 1) {
+                    state.offset = pos - state.offset;
+                    state.n_new = src - state.first_undone;
+                    if((*coder)(&state)) {
+                        uint8_t* const tmp = state.stream.next;
+                        ECL_JH_WJump(&state.stream, state.n_new);
+                        if(state.stream.is_valid) {
+                            ECL_usize i;
+                            for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                                tmp[i] = state.first_undone[i];
                             }
-                            buf_map[src[i]] = pos;
+                            // update tables for referenced sequence
+                            for(i = 0; i < state.n_copy; ++i, ++pos) {
+                                const ECL_usize table_index = pos >> 1;
+                                if((buf_window + table_index) >= state.stream.next) {
+                                    const uint8_t prev_pos = buf_map[src[i]];
+                                    buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
+                                }
+                                buf_map[src[i]] = pos;
+                            }
+                            src += state.n_copy;
+                            state.first_undone = src;
+                            continue;
+                        } else {
+                            break;
                         }
-                        src += state.n_copy;
-                        state.first_undone = src;
-                        continue;
-                    } else {
-                        break;
                     }
                 }
             }
@@ -300,7 +304,7 @@ void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p) {
 
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
     ECL_NanoLZ_CompressorState state;
-    ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     if((! coder) || (! p)) {
         return 0;
     }
@@ -327,7 +331,6 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx, n_checks;
-            state.n_new = src - state.first_undone;
             state.n_copy = 0;
 
             checked_idx = buf_map[*src];
@@ -357,24 +360,27 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 checked_idx = buf_window[checked_idx & window_mask];
             }
 
-            state.offset = pos - state.offset;
-            if((state.n_copy > 1) && (*coder)(&state)) {
-                uint8_t* const tmp = state.stream.next;
-                ECL_JH_WJump(&state.stream, state.n_new);
-                if(state.stream.is_valid) {
-                    ECL_usize i;
-                    for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
-                        tmp[i] = state.first_undone[i];
+            if(state.n_copy > 1) {
+                state.offset = pos - state.offset;
+                state.n_new = src - state.first_undone;
+                if((*coder)(&state)) {
+                    uint8_t* const tmp = state.stream.next;
+                    ECL_JH_WJump(&state.stream, state.n_new);
+                    if(state.stream.is_valid) {
+                        ECL_usize i;
+                        for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                            tmp[i] = state.first_undone[i];
+                        }
+                        for(i = 0; i < state.n_copy; ++i, ++pos) {
+                            buf_window[pos & window_mask] = buf_map[src[i]];
+                            buf_map[src[i]] = pos;
+                        }
+                        src += state.n_copy;
+                        state.first_undone = src;
+                        continue;
+                    } else {
+                        break;
                     }
-                    for(i = 0; i < state.n_copy; ++i, ++pos) {
-                        buf_window[pos & window_mask] = buf_map[src[i]];
-                        buf_map[src[i]] = pos;
-                    }
-                    src += state.n_copy;
-                    state.first_undone = src;
-                    continue;
-                } else {
-                    break;
                 }
             }
             buf_window[pos & window_mask] = buf_map[*src];
@@ -388,7 +394,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
 
 ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
     ECL_NanoLZ_CompressorState state;
-    ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
+    const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     if((! coder) || (! p)) {
         return 0;
     }
@@ -417,7 +423,6 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx, n_checks;
-            state.n_new = src - state.first_undone;
             state.n_copy = 0;
 
             checked_idx = buf_map[ECL_READ_U16(src)];
@@ -447,25 +452,28 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
                 checked_idx = buf_window[checked_idx & window_mask];
             }
 
-            state.offset = pos - state.offset;
-            if((state.n_copy > 1) && (*coder)(&state)) {
-                uint8_t* const tmp = state.stream.next;
-                ECL_JH_WJump(&state.stream, state.n_new);
-                if(state.stream.is_valid) {
-                    ECL_usize i;
-                    for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
-                        tmp[i] = state.first_undone[i];
+            if(state.n_copy > 1) {
+                state.offset = pos - state.offset;
+                state.n_new = src - state.first_undone;
+                if((*coder)(&state)) {
+                    uint8_t* const tmp = state.stream.next;
+                    ECL_JH_WJump(&state.stream, state.n_new);
+                    if(state.stream.is_valid) {
+                        ECL_usize i;
+                        for(i = 0; i < state.n_new; ++i) { // memcpy is inefficient here
+                            tmp[i] = state.first_undone[i];
+                        }
+                        for(i = 0; i < state.n_copy; ++i, ++pos) {
+                            key = ECL_READ_U16(src + i);
+                            buf_window[pos & window_mask] = buf_map[key];
+                            buf_map[key] = pos;
+                        }
+                        src += state.n_copy;
+                        state.first_undone = src;
+                        continue;
+                    } else {
+                        break;
                     }
-                    for(i = 0; i < state.n_copy; ++i, ++pos) {
-                        key = ECL_READ_U16(src + i);
-                        buf_window[pos & window_mask] = buf_map[key];
-                        buf_map[key] = pos;
-                    }
-                    src += state.n_copy;
-                    state.first_undone = src;
-                    continue;
-                } else {
-                    break;
                 }
             }
             key = ECL_READ_U16(src);
