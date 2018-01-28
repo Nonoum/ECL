@@ -11,9 +11,14 @@ void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize 
         size = 1;
     }
     state->is_valid = input_is_valid * (start < size ? 1 : 0);
-    state->byte = ptr + start * state->is_valid;
-    state->next = state->byte + state->is_valid;
     state->end = ptr + size;
+    if(state->is_valid) {
+        state->byte = ptr + start;
+        state->next = state->byte + 1;
+    } else {
+        state->byte = ptr;
+        state->next = state->end; // if invalid - next==end
+    }
     state->n_bits = 8;
     *(state->byte) = 0;
 }
@@ -26,9 +31,14 @@ void ECL_JH_RInit(ECL_JH_RState* state, const uint8_t* ptr, ECL_usize size, ECL_
         size = 1;
     }
     state->is_valid = input_is_valid * (start < size ? 1 : 0);
-    state->byte = ptr + start * state->is_valid;
-    state->next = state->byte + state->is_valid;
     state->end = ptr + size;
+    if(state->is_valid) {
+        state->byte = ptr + start;
+        state->next = state->byte + 1;
+    } else {
+        state->byte = ptr;
+        state->next = state->end;
+    }
     state->n_bits = 8;
 }
 
@@ -44,27 +54,25 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
             return;
         }
         state->byte = state->next;
-        state->next += state->is_valid;
+        ++(state->next);
         *(state->byte) = value;
         state->n_bits = 8 - bits;
     } else { // 2 parts
         *(state->byte) |= value << (8 - state->n_bits);
-        value >>= state->n_bits;
-        bits -= state->n_bits;
         if(state->next == state->end) {
             state->is_valid = 0;
             return;
         }
         state->byte = state->next;
-        state->next += state->is_valid;
-        *(state->byte) = value;
-        state->n_bits = 8 - bits;
+        ++(state->next);
+        *(state->byte) = value >> state->n_bits;
+        state->n_bits = 8 - bits + state->n_bits;
     }
 }
 
 uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
     ECL_ASSERT(bits && (bits < 9));
-    uint8_t b, res;
+    uint8_t res;
     if(bits <= state->n_bits) { // fits easily
         res = *(state->byte) >> (8 - state->n_bits);
         state->n_bits -= bits;
@@ -74,23 +82,21 @@ uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
             return 0;
         }
         state->byte = state->next;
-        state->next += state->is_valid;
+        ++(state->next);
         res = *(state->byte);
         state->n_bits = 8 - bits;
     } else { // 2 parts
-        b = state->n_bits;
-        res = *(state->byte) >> (8 - b);
+        res = *(state->byte) >> (8 - state->n_bits);
         if(state->next == state->end) {
             state->is_valid = 0;
             return 0;
         }
         state->byte = state->next;
-        state->next += state->is_valid;
-        res |= *(state->byte) << b;
-        state->n_bits = 8 - bits + b;
+        ++(state->next);
+        res |= *(state->byte) << state->n_bits;
+        state->n_bits = 8 - bits + state->n_bits;
     }
-    res &= c_bmasks8[bits];
-    return res;
+    return res & c_bmasks8[bits];
 }
 
 void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance) {
