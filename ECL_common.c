@@ -121,15 +121,9 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
     #define ECL_CALC_E(value, n_bits) \
         (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
 
-    #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
-        ((the_e) & (((uint8_t)(the_shift) - ECL_SIZE_TYPE_BITS_COUNT - 1) >> (7 - (n_bits))))
-
 #else
     #define ECL_CALC_E(value, n_bits) \
         ((value) > ((ECL_usize)(1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
-
-    #define ECL_CHECK_E_AND_SHIFT(the_e, the_shift, n_bits) \
-        ((e) && ((shift) < ECL_SIZE_TYPE_BITS_COUNT))
 
 #endif
 
@@ -140,25 +134,25 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
 */
 #define ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(num) \
     void ECL_JH_Write_E##num(ECL_JH_WState* state, ECL_usize value) {          \
-        uint8_t e;                                                             \
         do {                                                                   \
-            e = ECL_CALC_E(value, num);                                        \
-            ECL_JH_Write(state, (value & ((1 << num) - 1)) | e, num + 1);      \
+            const uint8_t e = ECL_CALC_E(value, num);                          \
+            ECL_JH_Write(state, (uint8_t)value | e, num + 1);                  \
             value >>= num;                                                     \
         } while(value);                                                        \
     }                                                                          \
     ECL_usize ECL_JH_Read_E##num(ECL_JH_RState* state) {                       \
-        ECL_usize result, workaround;                                          \
-        uint8_t e, code, shift;                                                \
+        ECL_usize result;                                                      \
+        uint8_t shift;                                                         \
         shift = 0;                                                             \
         result = 0;                                                            \
         do {                                                                   \
-            code = ECL_JH_Read(state, (num + 1));                              \
-            e = code & (1 << num);                                             \
-            workaround = code & ((1 << num) - 1);                              \
-            result |= workaround << shift;                                     \
+            const uint8_t code = ECL_JH_Read(state, (num + 1));                \
+            result |= ((ECL_usize)(code & ((1 << num) - 1))) << shift;         \
+            if(! (code & (1 << num))) {                                        \
+                break;                                                         \
+            }                                                                  \
             shift += num;                                                      \
-        } while(ECL_CHECK_E_AND_SHIFT(e, shift, num));                         \
+        } while(shift < ECL_SIZE_TYPE_BITS_COUNT);                             \
         return result;                                                         \
     }                                                                          \
     uint8_t ECL_Evaluate_E##num(ECL_usize number) {                            \
@@ -185,30 +179,30 @@ ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(7)
 */
 #define ECL_E_NUMBER_DEFINE_X2_IMPL(num1, num2)                                 \
     void ECL_JH_Write_E##num1##E##num2(ECL_JH_WState* state, ECL_usize value) { \
-        uint8_t e;                                                              \
-        e = ECL_CALC_E(value, num1);                                            \
+        uint8_t e = ECL_CALC_E(value, num1);                                    \
         ECL_JH_Write(state, (uint8_t)value | e, num1 + 1);                      \
         value >>= num1;                                                         \
         while(value) {                                                          \
             e = ECL_CALC_E(value, num2);                                        \
-            ECL_JH_Write(state, (value & ((1 << num2) - 1)) | e, num2 + 1);     \
+            ECL_JH_Write(state, (uint8_t)value | e, num2 + 1);                  \
             value >>= num2;                                                     \
         }                                                                       \
     }                                                                           \
     ECL_usize ECL_JH_Read_E##num1##E##num2(ECL_JH_RState* state) {              \
-        ECL_usize result, workaround;                                           \
-        uint8_t e, code, shift;                                                 \
+        ECL_usize result;                                                       \
+        uint8_t code, shift;                                                    \
         code = ECL_JH_Read(state, num1 + 1);                                    \
         result = code & ((1 << num1) - 1);                                      \
         if(code & (1 << num1)) {                                                \
             shift = num1;                                                       \
             do {                                                                \
                 code = ECL_JH_Read(state, num2 + 1);                            \
-                e = code & (1 << num2);                                         \
-                workaround = code & ((1 << num2) - 1);                          \
-                result |= workaround << shift;                                  \
+                result |= ((ECL_usize)(code & ((1 << num2) - 1))) << shift;     \
+                if(! (code & (1 << num2))) {                                    \
+                    break;                                                      \
+                }                                                               \
                 shift += num2;                                                  \
-            } while(ECL_CHECK_E_AND_SHIFT(e, shift, num2));                     \
+            } while(shift < ECL_SIZE_TYPE_BITS_COUNT);                          \
         }                                                                       \
         return result;                                                          \
     }                                                                           \
