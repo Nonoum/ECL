@@ -218,5 +218,5 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             }
         }
     }
-    return dst - dst_start;
+    return ((state.next == state.end) && state.is_valid) ? (dst - dst_start) : 0;
 }

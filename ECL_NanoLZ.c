@@ -501,13 +501,14 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
     for(++dst; ; ) {
         const ECL_usize left = dst_end - dst;
         if(! left) {
-            break;
+            break; // ok - done
         }
         (*decoder)(&state);
         if(! state.stream.is_valid) {
             break; // error in stream
         }
         if((state.n_new + state.n_copy) > left) {
+            state.stream.is_valid = 0;
             break; // output doesn't fit this
         }
         if(state.n_new) {
@@ -524,6 +525,7 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
         }
         if(state.n_copy) {
             if(state.offset > (dst - dst_start)) {
+                state.stream.is_valid = 0;
                 break; // points outside of data. error in stream
             }
             if(state.offset == 1) {
@@ -538,7 +540,7 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
             }
         }
     }
-    return dst - dst_start;
+    return ((state.stream.next == state.stream.end) && state.stream.is_valid) ? (dst - dst_start) : 0;
 }
 
 #undef ECL_NANO_LZ_COUNTER_APPEND
