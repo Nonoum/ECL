@@ -40,16 +40,6 @@ typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
 #include "ECL_NanoLZ_schemes_inline.h"
 
 
-static ECL_usize ECL_NanoLZ_CalcEqualLength(const uint8_t* src1, const uint8_t* src2, ECL_usize limit) {
-    // TODO dummy version, optimize later
-    ECL_usize i;
-    for(i = 0; i < limit; ++i) {
-        if(src1[i] != src2[i]) {
-            return i;
-        }
-    }
-    return limit;
-}
 
 static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, ECL_NanoLZ_SchemeCoder coder, const uint8_t* dst_start) {
     uint8_t* tmp;
@@ -88,18 +78,22 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         const uint8_t* const back_search_end = src - ECL_MIN((ECL_usize)(src - state.src_start), search_limit);
         const uint8_t* candidate = src;
         const uint16_t w1 = *(uint16_t*)candidate;
-        const ECL_usize limit_length = state.src_end - src - 2;
+        const ECL_usize limit_length = state.src_end - src;
         state.n_copy = 0;
         for(--candidate; candidate >= back_search_end; --candidate) {
             ECL_usize curr_length;
             if(w1 != *((uint16_t*)candidate)) {
                 continue;
             }
-            curr_length = ECL_NanoLZ_CalcEqualLength(src + 2, candidate + 2, limit_length) + 2;
+            for(curr_length = 2; curr_length < limit_length; ++curr_length) {
+                if(src[curr_length] != candidate[curr_length]) {
+                    break;
+                }
+            }
             if(curr_length > state.n_copy) {
                 state.n_copy = curr_length;
                 state.offset = src - candidate;
-                if(state.n_copy == (limit_length + 2)) {
+                if(state.n_copy == limit_length) {
                     break;
                 }
             }
