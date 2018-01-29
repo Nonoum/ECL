@@ -128,7 +128,6 @@ NTEST(test_NanoLZ_mid1_random_data) {
                 src[j] &= mask;
             }
             auto enough_size = ECL_NANO_LZ_GET_BOUND(src_size);
-            tmp.resize(enough_size);
             ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
             for(auto limit : search_limits) {
                 for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {

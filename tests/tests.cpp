@@ -58,6 +58,7 @@ void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
 #include "tests_datasets_inline.hpp"
 #include "tests_random_data_inline.hpp"
 #include "tests_perf_inline.hpp"
+#include "tests_errors_inline.hpp"
 #endif
 
 NTEST(test_string_constants) {
