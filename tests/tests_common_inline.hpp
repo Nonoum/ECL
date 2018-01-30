@@ -36,6 +36,19 @@
         free(data);                                                                         \
     }
 
+
+NTEST(test_number_E7) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E7, ECL_JH_Read_E7, ECL_Evaluate_E7);
+}
+
+NTEST(test_number_E6) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E6, ECL_JH_Read_E6, ECL_Evaluate_E6);
+}
+
+NTEST(test_number_E5) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E5, ECL_JH_Read_E5, ECL_Evaluate_E5);
+}
+
 NTEST(test_number_E4) {
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E4, ECL_JH_Read_E4, ECL_Evaluate_E4);
 }
@@ -44,12 +57,20 @@ NTEST(test_number_E3) {
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E3, ECL_JH_Read_E3, ECL_Evaluate_E3);
 }
 
+NTEST(test_number_E2) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E2, ECL_JH_Read_E2, ECL_Evaluate_E2);
+}
+
 NTEST(test_number_E7E4) {
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E7E4, ECL_JH_Read_E7E4, ECL_Evaluate_E7E4);
 }
 
 NTEST(test_number_E6E3) {
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E6E3, ECL_JH_Read_E6E3, ECL_Evaluate_E6E3);
+}
+
+NTEST(test_number_E4E5) {
+    ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E4E5, ECL_JH_Read_E4E5, ECL_Evaluate_E4E5);
 }
 
 #undef ECL_TEST_E_NEXT_VALUE
