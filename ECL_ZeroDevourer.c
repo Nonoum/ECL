@@ -6,8 +6,10 @@
 static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
     ECL_ASSERT((cnt_x >= 1) && (cnt_x <= 4));
     uint8_t* dst;
-    ECL_JH_Write(state, 0x01, 3);
-    ECL_JH_Write(state, cnt_x - 1, 2);
+    /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 1) << 3) + 0x01, 5);"
+        and equal to "ECL_JH_Write(state, 0x01, 3); ECL_JH_Write(state, cnt_x - 1, 2);"
+    */
+    ECL_JH_Write(state, (cnt_x << 3) + 0xF9, 5);
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
@@ -21,8 +23,10 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
 static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
     ECL_ASSERT((cnt_x >= 5) && (cnt_x <= 20));
     uint8_t* dst;
-    ECL_JH_Write(state, 0x03, 3);
-    ECL_JH_Write(state, cnt_x - 5, 4);
+    /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 5) << 3) + 0x03, 7);"
+        and equal to "ECL_JH_Write(state, 0x03, 3); ECL_JH_Write(state, cnt_x - 5, 4);"
+    */
+    ECL_JH_Write(state, (cnt_x << 3) + 0xDB, 7);
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
@@ -32,8 +36,15 @@ static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src
 
 static void ECL_ZeroDevourer_DumpSeq110(ECL_JH_WState* state, ECL_usize cnt_0) {
     ECL_ASSERT(cnt_0 >= 9);
-    ECL_JH_Write(state, 0x05, 3);
-    ECL_JH_Write_E4(state, cnt_0 - 9);
+    if(cnt_0 < 25) {
+        /* next line is equal to "ECL_JH_Write(state, ((cnt_0 - 9) << 3) | 0x05, 8);"
+            which is and valid replacement for 'else' branch for 'cnt_0 < 25'
+        */
+        ECL_JH_Write(state, (cnt_0 << 3) + 0xBD, 8);
+    } else {
+        ECL_JH_Write(state, 0x05, 3);
+        ECL_JH_Write_E4(state, cnt_0 - 9);
+    }
 }
 
 static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
@@ -103,10 +114,8 @@ static bool ECL_ZeroDevourer_IsWorth(ECL_usize cnt_x, ECL_usize cnt_0) {
 
 ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
     ECL_JH_WState state;
-    ECL_usize cnt_x, cnt_0;
     const uint8_t* first_undone;
     const uint8_t* first_x;
-    const uint8_t* first_0;
     const uint8_t* const src_end = src + src_size;
 
     ECL_JH_WInit(&state, dst, dst_size, 0);
@@ -116,6 +125,8 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
     first_undone = src;
     first_x = src;
     while((first_undone < src_end) && (state.is_valid)) {
+        ECL_usize cnt_x, cnt_0;
+        const uint8_t* first_0;
         for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); // search for zero from where last search ended
 
         cnt_x = first_0 - first_undone; // count of non-zeroes in beginning
