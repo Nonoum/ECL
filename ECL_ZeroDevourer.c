@@ -110,7 +110,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
     const uint8_t* const src_end = src + src_size;
 
     ECL_JH_WInit(&state, dst, dst_size, 0);
-    if((! src) || (! state.is_valid)) {
+    if((! src) || (! src_size) || (! state.is_valid)) {
         return 0;
     }
     first_undone = src;

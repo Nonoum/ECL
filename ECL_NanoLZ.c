@@ -66,7 +66,7 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         return 0;
     }
     ECL_JH_WInit(&state.stream, dst, dst_size, 1);
-    if((! src) || (! state.stream.is_valid)) {
+    if((! src) || (! src_size) || (! state.stream.is_valid)) {
         return 0;
     }
     *dst = *src; // copy first byte as is
@@ -138,7 +138,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         return 0; // not allowed for this mode
     }
     ECL_JH_WInit(&state.stream, dst, dst_size, 1);
-    if((! src) || (! state.stream.is_valid)) {
+    if((! src) || (! src_size) || (! state.stream.is_valid)) {
         return 0;
     }
     memset(buf_256, 0, 256);
@@ -303,7 +303,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         return 0;
     }
     ECL_JH_WInit(&state.stream, dst, dst_size, 1);
-    if((! src) || (! state.stream.is_valid)) {
+    if((! src) || (! src_size) || (! state.stream.is_valid)) {
         return 0;
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
@@ -393,7 +393,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         return 0;
     }
     ECL_JH_WInit(&state.stream, dst, dst_size, 1);
-    if((! src) || (! state.stream.is_valid)) {
+    if((! src) || (! src_size) || (! state.stream.is_valid)) {
         return 0;
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
@@ -494,7 +494,7 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
         return 0;
     }
     ECL_JH_RInit(&state.stream, src, src_size, 1);
-    if((! dst) || (! state.stream.is_valid) || (! dst_size)) {
+    if((! dst) || (! dst_size) || (! state.stream.is_valid)) {
         return 0;
     }
     *dst = *src; // copy first byte as is
