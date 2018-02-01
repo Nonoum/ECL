@@ -72,23 +72,21 @@ static void ECL_ZeroDevourer_DumpGeneric(ECL_JH_WState* state, const uint8_t* sr
     // cnt_x + cnt_0 > 0
     if(! cnt_x) {
         ECL_ZeroDevourer_DumpZeroGeneric(state, cnt_0);
-        return;
-    }
-    if(! cnt_0) {
+    } else if(! cnt_0) {
         ECL_ZeroDevourer_DumpSeq111(state, src, cnt_x);
-        return;
-    }
-    if(cnt_x <= 4) {
-        ECL_ZeroDevourer_DumpSeq100(state, src, cnt_x);
-        --cnt_0;
-    } else if(cnt_x <= 20) {
-        ECL_ZeroDevourer_DumpSeq101(state, src, cnt_x);
-        --cnt_0;
     } else {
-        ECL_ZeroDevourer_DumpSeq111(state, src, cnt_x);
-    }
-    if(cnt_0) {
-        ECL_ZeroDevourer_DumpZeroGeneric(state, cnt_0);
+        if(cnt_x <= 4) {
+            ECL_ZeroDevourer_DumpSeq100(state, src, cnt_x);
+            --cnt_0;
+        } else if(cnt_x <= 20) {
+            ECL_ZeroDevourer_DumpSeq101(state, src, cnt_x);
+            --cnt_0;
+        } else {
+            ECL_ZeroDevourer_DumpSeq111(state, src, cnt_x);
+        }
+        if(cnt_0) {
+            ECL_ZeroDevourer_DumpZeroGeneric(state, cnt_0);
+        }
     }
 }
 
@@ -96,18 +94,20 @@ static bool ECL_ZeroDevourer_IsWorth(ECL_usize cnt_x, ECL_usize cnt_0) {
     ECL_usize bits_needed;
     if(cnt_x <= 20) {
         return true;
-    }
-    if(cnt_x <= (1U << 9)) {
+    } else if(cnt_x <= (1U << 9)) {
         return cnt_0 >= 2;
-    }
-    if(cnt_x <= (1U << 12)) {
+    } else if(cnt_x <= (1U << 12)) {
         return cnt_0 >= 3;
+    } else if(cnt_x <= (1U << 18)) {
+        return cnt_0 >= 4;
     }
     bits_needed = 3 + ECL_Evaluate_E6E3(cnt_x - 1);
     if(cnt_0 < 9) {
         bits_needed += cnt_0;
-    } else {
+    } else if (cnt_0 < 25) {
         bits_needed += 8;
+    } else {
+        bits_needed += 3 + ECL_Evaluate_E4(cnt_0 - 9);
     }
     return bits_needed <= (cnt_0 << 3);
 }
