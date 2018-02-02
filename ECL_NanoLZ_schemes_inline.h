@@ -8,14 +8,17 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
     // TODO optimize/minimize checks
     if(state->n_copy == 2) {
         if((state->n_new <= 3) && (state->offset <= 8)) { // opcode 0
-            ECL_JH_Write(&state->stream, 0, 3);
-            ECL_JH_Write(&state->stream, state->n_new, 2);
-            ECL_JH_Write(&state->stream, state->offset - 1, 3);
+            // commented-out lines are replaced with single call:
+            //ECL_JH_Write(&state->stream, 0, 3);
+            //ECL_JH_Write(&state->stream, state->n_new, 2);
+            //ECL_JH_Write(&state->stream, state->offset - 1, 3);
+            ECL_JH_Write(&state->stream, ((state->n_new << 3) | ((state->offset - 1) << 5)), 8);
             return true;
         } else if((state->n_new <= 8) && (state->offset <= 32)) { // opcode 1
             if(state->n_new) {
-                ECL_JH_Write(&state->stream, 1, 4);
-                ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                //ECL_JH_Write(&state->stream, 1, 4);
+                //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF1, 7);
             } else {
                 ECL_JH_Write(&state->stream, 0x9, 4);
             }
@@ -23,8 +26,9 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
             return true;
         } else if((state->n_new <= 8) && (state->offset <= (32 + 128))) { // opcode 2
             if(state->n_new) {
-                ECL_JH_Write(&state->stream, 2, 4);
-                ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                //ECL_JH_Write(&state->stream, 2, 4);
+                //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF2, 7);
             } else {
                 ECL_JH_Write(&state->stream, 0xA, 4);
             }
@@ -38,8 +42,9 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
         if(state->n_copy <= 10) {
             if((state->n_new <= 8) && (state->offset <= 8)) { // opcode 3
                 if(state->n_new) {
-                    ECL_JH_Write(&state->stream, 3, 4);
-                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    //ECL_JH_Write(&state->stream, 3, 4);
+                    //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF3, 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xB, 4);
                 }
@@ -48,8 +53,9 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32))) { // opcode 4
                 if(state->n_new) {
-                    ECL_JH_Write(&state->stream, 4, 4);
-                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    //ECL_JH_Write(&state->stream, 4, 4);
+                    //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF4, 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xC, 4);
                 }
@@ -58,8 +64,9 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32 + 64))) { // opcode 5
                 if(state->n_new) {
-                    ECL_JH_Write(&state->stream, 5, 4);
-                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    //ECL_JH_Write(&state->stream, 5, 4);
+                    //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF5, 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xD, 4);
                 }
@@ -68,8 +75,9 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
                 return true;
             } else if((state->n_new <= 8) && (state->offset <= (8 + 32 + 64 + 256))) { // opcode 6
                 if(state->n_new) {
-                    ECL_JH_Write(&state->stream, 6, 4);
-                    ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    //ECL_JH_Write(&state->stream, 6, 4);
+                    //ECL_JH_Write(&state->stream, state->n_new - 1, 3);
+                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF6, 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xE, 4);
                 }
@@ -81,16 +89,15 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
             }
         }
     }
-    estimate_bits = (1 + (state->n_new ? ECL_Evaluate_E2(state->n_new - 1) : 0))
+    estimate_bits = (state->n_new ? ECL_Evaluate_E2(state->n_new - 1) : 0)
                   + ECL_Evaluate_E3(state->n_copy - 2)
                   + ECL_Evaluate_E6E3(state->offset - offset_sub)
-                  + 3;
+                  + (3 + 1);
     if(estimate_bits <= (state->n_copy << 3)) {
-        ECL_JH_Write(&state->stream, 7, 3);
         if(! state->n_new) {
-            ECL_JH_Write(&state->stream, 1, 1);
+            ECL_JH_Write(&state->stream, 0x0F, 4);
         } else {
-            ECL_JH_Write(&state->stream, 0, 1);
+            ECL_JH_Write(&state->stream, 0x07, 4);
             ECL_JH_Write_E2(&state->stream, state->n_new - 1);
         }
         ECL_JH_Write_E3(&state->stream, state->n_copy - 2);
@@ -102,16 +109,14 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
 
 static bool ECL_NanoLZ_Write_Scheme1_nocopy(ECL_NanoLZ_CompressorState* state) {
     ECL_ASSERT(! state->n_copy);
-    ECL_JH_Write(&state->stream, 7, 3);
     if(! state->n_new) {
-        ECL_JH_Write(&state->stream, 1, 1);
-    } else {
-        ECL_JH_Write(&state->stream, 0, 1);
-        ECL_JH_Write_E2(&state->stream, state->n_new - 1);
-    }
-    ECL_JH_Write(&state->stream, 0, 4); // 0 in E3 format
-    if(! state->n_new) { // stream alignment opcode for flow mode
+        ECL_JH_Write(&state->stream, 0x0F, 8); // glued {111, 1, (0000 = 0 in E3 format)}
+        // stream alignment opcode for flow mode (reserved for possible addition of streaming modes)
         ECL_JH_Write(&state->stream, 0, state->stream.n_bits);
+    } else {
+        ECL_JH_Write(&state->stream, 0x07, 4);
+        ECL_JH_Write_E2(&state->stream, state->n_new - 1);
+        ECL_JH_Write(&state->stream, 0, 4); // 0 in E3 format
     }
     return true;
 }
