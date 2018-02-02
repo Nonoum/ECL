@@ -1,22 +1,8 @@
 // schemes inline file
 
 // scheme 1 coder & decoder --------------------------------------------------------------------------------------
-static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
+static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
     ECL_usize estimate_bits, offset_sub;
-    if(! state->n_copy) { // only new bytes
-        ECL_JH_Write(&state->stream, 7, 3);
-        if(! state->n_new) {
-            ECL_JH_Write(&state->stream, 1, 1);
-        } else {
-            ECL_JH_Write(&state->stream, 0, 1);
-            ECL_JH_Write_E2(&state->stream, state->n_new - 1);
-        }
-        ECL_JH_Write(&state->stream, 0, 4); // 0 in E3 format
-        if(! state->n_new) { // stream alignment opcode for flow mode
-            ECL_JH_Write(&state->stream, 0, state->stream.n_bits);
-        }
-        return true;
-    }
     ECL_ASSERT(state->n_copy >= 2);
 
     // TODO optimize/minimize checks
@@ -114,6 +100,22 @@ static bool ECL_NanoLZ_Write_Scheme1(ECL_NanoLZ_CompressorState* state) {
     return false;
 }
 
+static bool ECL_NanoLZ_Write_Scheme1_nocopy(ECL_NanoLZ_CompressorState* state) {
+    ECL_ASSERT(! state->n_copy);
+    ECL_JH_Write(&state->stream, 7, 3);
+    if(! state->n_new) {
+        ECL_JH_Write(&state->stream, 1, 1);
+    } else {
+        ECL_JH_Write(&state->stream, 0, 1);
+        ECL_JH_Write_E2(&state->stream, state->n_new - 1);
+    }
+    ECL_JH_Write(&state->stream, 0, 4); // 0 in E3 format
+    if(! state->n_new) { // stream alignment opcode for flow mode
+        ECL_JH_Write(&state->stream, 0, state->stream.n_bits);
+    }
+    return true;
+}
+
 static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
     uint8_t opcode;
     opcode = ECL_JH_Read(&state->stream, 3);
@@ -173,19 +175,28 @@ static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
 
 // ---------------------------------------------------------------------------------------------------------------
 
+// returns a coder that expects only sequences with n_copy >= 2
 static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoder(ECL_NanoLZ_Scheme scheme) {
     switch(scheme) {
-    case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Write_Scheme1;
-    case ECL_NANOLZ_SCHEME2: return 0;
+    case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Write_Scheme1_copy;
     default: break;
     }
     return 0;
 }
 
+// returns a coder that expects only sequences with n_copy == 0
+static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoderNoCopy(ECL_NanoLZ_Scheme scheme) {
+    switch(scheme) {
+    case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Write_Scheme1_nocopy;
+    default: break;
+    }
+    return 0;
+}
+
+// returns a decoder
 static ECL_NanoLZ_SchemeDecoder ECL_NanoLZ_GetSchemeDecoder(ECL_NanoLZ_Scheme scheme) {
     switch(scheme) {
     case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Read_Scheme1;
-    case ECL_NANOLZ_SCHEME2: return 0;
     default: break;
     }
     return 0;

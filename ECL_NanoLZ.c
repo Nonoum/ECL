@@ -22,6 +22,8 @@ typedef struct {
 
 /*
     ECL_NanoLZ_SchemeCoder is a pointer to coder function.
+    Coder function returns whether code is applied (worth applying).
+
     ECL_NanoLZ_SchemeDecoder is a pointer to decoder function.
 */
 typedef bool(*ECL_NanoLZ_SchemeCoder)(ECL_NanoLZ_CompressorState*);
@@ -41,11 +43,16 @@ typedef void(*ECL_NanoLZ_SchemeDecoder)(ECL_NanoLZ_DecompressorState*);
 
 
 
-static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, ECL_NanoLZ_SchemeCoder coder, const uint8_t* dst_start) {
-    uint8_t* tmp;
+static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, ECL_NanoLZ_Scheme scheme, const uint8_t* dst_start) {
     s->n_new = s->src_end - s->first_undone;
     if(s->stream.is_valid && s->n_new) {
+        uint8_t* tmp;
+        ECL_NanoLZ_SchemeCoder coder;
         s->n_copy = 0;
+        coder = ECL_NanoLZ_GetSchemeCoderNoCopy(scheme);
+        if(! coder) {
+            return 0;
+        }
         (*coder)(s);
         tmp = s->stream.next;
         ECL_JH_WJump(&s->stream, s->n_new);
@@ -119,7 +126,7 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
         ++src;
     }
     // main cycle done. dump last seq
-    return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+    return ECL_NanoLZ_CompleteCompression(&state, scheme, dst);
 }
 
 // 'mid' versions --------------------------------------------------------
@@ -267,7 +274,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
             ++pos;
         }
     }
-    return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+    return ECL_NanoLZ_CompleteCompression(&state, scheme, dst);
 }
 
 ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_512){
@@ -383,7 +390,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
             ++pos;
         }
     }
-    return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+    return ECL_NanoLZ_CompleteCompression(&state, scheme, dst);
 }
 
 ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
@@ -477,7 +484,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
             ++pos;
         }
     }
-    return ECL_NanoLZ_CompleteCompression(&state, coder, dst);
+    return ECL_NanoLZ_CompleteCompression(&state, scheme, dst);
 }
 
 // -----------------------------------------------------------------------

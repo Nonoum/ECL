@@ -44,7 +44,6 @@ extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION
 */
 typedef enum {
     ECL_NANOLZ_SCHEME1,
-    ECL_NANOLZ_SCHEME2,
 } ECL_NanoLZ_Scheme;
 
 #define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1}
