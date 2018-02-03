@@ -134,7 +134,7 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
-    const ECL_usize window_length = (src_size >> 1) + (src_size & 1);
+    const ECL_usize window_length = (src_size >> 1) + (src_size & 1); // half, round up
     if(! coder) {
         return 0;
     }
@@ -285,6 +285,10 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 // 'fast' versions ------------------------------------------------------------------------------
 
 bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits) {
+    memset(p, 0, sizeof(*p));
+    if(! window_size_bits) {
+        return false;
+    }
     p->buf_map = malloc(ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
     p->buf_window = malloc(ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits));
     p->window_size_bits = window_size_bits;
@@ -292,6 +296,10 @@ bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_
 }
 
 bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits) {
+    memset(p, 0, sizeof(*p));
+    if(! window_size_bits) {
+        return false;
+    }
     p->buf_map = malloc(ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
     p->buf_window = malloc(ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits));
     p->window_size_bits = window_size_bits;
@@ -301,6 +309,7 @@ bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_
 void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p) {
     free(p->buf_map);
     free(p->buf_window);
+    memset(p, 0, sizeof(*p));
 }
 
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {

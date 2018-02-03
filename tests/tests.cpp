@@ -27,6 +27,12 @@
         }                                                          \
     }
 
+#ifdef ECL_TEST_DEEP
+#define ECL_TEST_IS_DEEP 1
+#else
+#define ECL_TEST_IS_DEEP 0
+#endif
+
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
     vector_name.resize(capacity + 1); \
     vector_name[capacity] = 0x39;
