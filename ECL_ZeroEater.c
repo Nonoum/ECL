@@ -147,10 +147,10 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
                 cnt_x = ((opcode >> 3) & 0x07) + 1;
                 cnt_0 = (opcode & 0x07) + 1;
                 // check if fits output buffer and unpack
-                if((cnt_x + cnt_0) > (dst_end - dst)) {
+                if((cnt_x + cnt_0) > (ECL_usize)(dst_end - dst)) {
                     break;
                 }
-                if(cnt_x > (src_end - src)) {
+                if(cnt_x > (ECL_usize)(src_end - src)) {
                     break; // invalid stream
                 }
                 memcpy(dst, src, cnt_x);
@@ -159,7 +159,7 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
                 src += cnt_x;
             } else { // method 2
                 cnt_0 = (opcode & 0x3F) + 1;
-                if(cnt_0 > (dst_end - dst)) {
+                if(cnt_0 > (ECL_usize)(dst_end - dst)) {
                     break;
                 }
                 memset(dst, 0, cnt_0);
@@ -167,10 +167,10 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
             }
         } else { // method 1
             cnt_x = (opcode & 0x7F) + 1;
-            if(cnt_x > (dst_end - dst)) {
+            if(cnt_x > (ECL_usize)(dst_end - dst)) {
                 break;
             }
-            if(cnt_x > (src_end - src)) {
+            if(cnt_x > (ECL_usize)(src_end - src)) {
                 break; // invalid stream
             }
             memcpy(dst, src, cnt_x);
