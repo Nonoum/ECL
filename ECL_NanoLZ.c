@@ -61,6 +61,13 @@ static bool ECL_NanoLZ_SetupCompression(ECL_NanoLZ_CompressorState* s, const uin
     return true;
 }
 
+static bool ECL_NanoLZ_ValidateU16size(ECL_usize src_size) {
+    if(src_size > 0x0FFFE) {
+        return false;
+    }
+    return true;
+}
+
 static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, ECL_NanoLZ_Scheme scheme, const uint8_t* dst_start) {
     s->n_new = s->src_end - s->first_undone;
     if(s->stream.is_valid && s->n_new) {
@@ -148,7 +155,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     const ECL_usize window_length = (src_size >> 1) + (src_size & 1); // half, round up
-    if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
+    if(! ECL_NanoLZ_ValidateU16size(src_size)) {
         return 0; // not allowed for this mode
     }
     if(window_length >= dst_size) {
@@ -284,7 +291,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
     const ECL_usize window_length = (src_size >> 1) + (src_size & 1); // half, round up
-    if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
+    if(! ECL_NanoLZ_ValidateU16size(src_size)) {
         return 0; // not allowed for this mode
     }
     if(window_length >= dst_size) {
@@ -409,7 +416,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_256) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
-    if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
+    if(! ECL_NanoLZ_ValidateU16size(src_size)) {
         return 0; // not allowed for this mode
     }
     if((! buf_256) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
@@ -478,7 +485,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
 ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_513) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
-    if((sizeof(ECL_usize) > 2) && (src_size > 0x0FFFF)) {
+    if(! ECL_NanoLZ_ValidateU16size(src_size)) {
         return 0; // not allowed for this mode
     }
     if((! buf_513) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
