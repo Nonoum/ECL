@@ -6,6 +6,7 @@
 #include <vector>
 
 NTEST(test_ZeroEater_cut_stream) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -37,6 +38,7 @@ NTEST(test_ZeroEater_cut_stream) {
 }
 
 NTEST(test_ZeroDevourer_cut_stream) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -68,6 +70,7 @@ NTEST(test_ZeroDevourer_cut_stream) {
 }
 
 NTEST(test_NanoLZ_cut_stream) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -107,6 +110,7 @@ NTEST(test_NanoLZ_cut_stream) {
 }
 
 NTEST(test_ZeroDevourer_insufficient_dst_compr) {
+    NTEST_SUPPRESS_UNUSED;
     // ZeroEater compressor behaves differently for tested scenario so no such test provided
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
@@ -141,6 +145,7 @@ NTEST(test_ZeroDevourer_insufficient_dst_compr) {
 }
 
 NTEST(test_NanoLZ_insufficient_dst_compr) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -182,6 +187,7 @@ NTEST(test_NanoLZ_insufficient_dst_compr) {
 }
 
 NTEST(test_ZeroEater_insufficient_dst_decompr) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -215,6 +221,7 @@ NTEST(test_ZeroEater_insufficient_dst_decompr) {
 }
 
 NTEST(test_ZeroDevourer_insufficient_dst_decompr) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -248,6 +255,7 @@ NTEST(test_ZeroDevourer_insufficient_dst_decompr) {
 }
 
 NTEST(test_NanoLZ_insufficient_dst_decompr) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;

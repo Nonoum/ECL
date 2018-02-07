@@ -120,6 +120,7 @@ ECLTestDatasetsInitializer ECLTestDatasetsInitializer_instance;
 #undef ECL_TEST_APPEND_DATASET
 
 NTEST(test_ZeroEater_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
@@ -141,6 +142,7 @@ NTEST(test_ZeroEater_datasets) {
 }
 
 NTEST(test_ZeroDevourer_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
@@ -161,6 +163,7 @@ NTEST(test_ZeroDevourer_datasets) {
 }
 
 NTEST(test_NanoLZ_slow_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
     for(auto& rec : GetDatasetRecords()) {
@@ -182,6 +185,7 @@ NTEST(test_NanoLZ_slow_datasets) {
 }
 
 NTEST(test_NanoLZ_fast1_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
 
@@ -207,6 +211,7 @@ NTEST(test_NanoLZ_fast1_datasets) {
 }
 
 NTEST(test_NanoLZ_fast2_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
 
@@ -232,6 +237,7 @@ NTEST(test_NanoLZ_fast2_datasets) {
 }
 
 NTEST(test_NanoLZ_mid1_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
     uint8_t buf_x[256];
@@ -259,6 +265,7 @@ NTEST(test_NanoLZ_mid1_datasets) {
 }
 
 NTEST(test_NanoLZ_mid2_datasets) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
     uint8_t buf_x[512];
@@ -308,6 +315,7 @@ ECL_usize ECL_Test_NanoLZ_CompressWith(ECL_NanoLZ_Scheme scheme, const std::vect
 }
 
 bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ_FastParams& preallocated_params) {
+    (void)log;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -387,6 +395,7 @@ bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ
 }
 
 NTEST(test_NanoLZ_fast1_generic_datasets) { // use only for fast1 version, as it's optimal for target data sizes
+    NTEST_SUPPRESS_UNUSED;
     ECL_NanoLZ_FastParams fp;
     ECL_NanoLZ_FastParams_Alloc1(&fp, 10);
     approve(ECL_Test_NanoLZ_OnLinearGenericData(log, 1, fp));
@@ -443,6 +452,7 @@ bool ECL_Test_NanoLZ_AllCompressorsAreEqual(const std::vector<uint8_t>& src, std
 }
 
 NTEST(test_NanoLZ_check_modes_equal_result) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     const int n_sets = 20 * (ECL_TEST_IS_DEEP ? 10 : 1);
     const int max_size = 10000;

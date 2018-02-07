@@ -33,6 +33,8 @@ protected:
 
 } //end ntest
 
+#define NTEST_SUPPRESS_UNUSED (void)log
+
 #define NTEST(test_name) \
     class test_name : public ntest::TestBase { \
     public: \

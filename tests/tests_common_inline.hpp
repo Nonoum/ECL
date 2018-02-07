@@ -38,44 +38,54 @@
 
 
 NTEST(test_number_E7) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E7, ECL_JH_Read_E7, ECL_Evaluate_E7);
 }
 
 NTEST(test_number_E6) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E6, ECL_JH_Read_E6, ECL_Evaluate_E6);
 }
 
 NTEST(test_number_E5) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E5, ECL_JH_Read_E5, ECL_Evaluate_E5);
 }
 
 NTEST(test_number_E4) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E4, ECL_JH_Read_E4, ECL_Evaluate_E4);
 }
 
 NTEST(test_number_E3) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E3, ECL_JH_Read_E3, ECL_Evaluate_E3);
 }
 
 NTEST(test_number_E2) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E2, ECL_JH_Read_E2, ECL_Evaluate_E2);
 }
 
 NTEST(test_number_E7E4) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E7E4, ECL_JH_Read_E7E4, ECL_Evaluate_E7E4);
 }
 
 NTEST(test_number_E6E3) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E6E3, ECL_JH_Read_E6E3, ECL_Evaluate_E6E3);
 }
 
 NTEST(test_number_E4E5) {
+    NTEST_SUPPRESS_UNUSED;
     ECL_TEST_E_NUMBER_GENERIC(ECL_JH_Write_E4E5, ECL_JH_Read_E4E5, ECL_Evaluate_E4E5);
 }
 
 #undef ECL_TEST_E_NEXT_VALUE
 
 NTEST(test_JH_generic) {
+    NTEST_SUPPRESS_UNUSED;
     uint8_t bit_counts[] = {1,2,3,4,4,5,6,7,8};
     uint8_t data[5];
     ECL_JH_WState wstate;
@@ -104,6 +114,7 @@ NTEST(test_JH_generic) {
 }
 
 NTEST(test_JH_writing_failures) {
+    NTEST_SUPPRESS_UNUSED;
     uint8_t data[6];
     ECL_JH_WState state;
     {
@@ -251,6 +262,7 @@ NTEST(test_JH_writing_failures) {
 }
 
 NTEST(test_JH_reading_failures) {
+    NTEST_SUPPRESS_UNUSED;
     uint8_t data[6];
     ECL_JH_RState state;
     {

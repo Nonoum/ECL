@@ -68,6 +68,7 @@ void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
 #endif
 
 NTEST(test_string_constants) {
+    NTEST_SUPPRESS_UNUSED;
     // test some weird stuff used in other tests for comfortability
     approve(char(3) == "\x3\x5"[0]);
     approve(char(5) == "\x3\x5"[1]);

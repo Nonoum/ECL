@@ -9,6 +9,7 @@ static const int ECL_test_perf_data_block_size = 50000;
 static const int ECL_test_perf_data_repeats = 2000;
 
 NTEST(test_perf_ZeroDevourer_compressor) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -29,6 +30,7 @@ NTEST(test_perf_ZeroDevourer_compressor) {
 }
 
 NTEST(test_perf_ZeroDevourer_decompressor) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -48,6 +50,7 @@ NTEST(test_perf_ZeroDevourer_decompressor) {
 }
 
 NTEST(test_perf_ZeroEater_compressor) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -68,6 +71,7 @@ NTEST(test_perf_ZeroEater_compressor) {
 }
 
 NTEST(test_perf_ZeroEater_decompressor) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;

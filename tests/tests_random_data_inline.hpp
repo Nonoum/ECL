@@ -6,6 +6,7 @@
 #include <vector>
 
 NTEST(test_ZeroEater_random_data) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -38,6 +39,7 @@ NTEST(test_ZeroEater_random_data) {
 }
 
 NTEST(test_ZeroDevourer_random_data) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -69,6 +71,7 @@ NTEST(test_ZeroDevourer_random_data) {
 }
 
 NTEST(test_NanoLZ_slow_random_data) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -104,6 +107,7 @@ NTEST(test_NanoLZ_slow_random_data) {
 }
 
 NTEST(test_NanoLZ_mid1_random_data) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
@@ -144,6 +148,7 @@ NTEST(test_NanoLZ_mid1_random_data) {
 }
 
 NTEST(test_NanoLZ_mid2_random_data) {
+    NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
