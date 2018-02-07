@@ -157,7 +157,7 @@ NTEST(test_NanoLZ_mid2_random_data) {
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
     const int search_limits[] = {1, 2, 5, 10, -1};
-    uint8_t buf_x[512];
+    uint8_t buf_x[513];
 
     src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {

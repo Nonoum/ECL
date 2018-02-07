@@ -268,7 +268,7 @@ NTEST(test_NanoLZ_mid2_datasets) {
     NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    uint8_t buf_x[512];
+    uint8_t buf_x[513];
     const int search_limits[] = {1, 2, 5, 10, -1};
 
     for(auto& rec : GetDatasetRecords()) {

@@ -78,7 +78,4 @@
 #define ECL_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ECL_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#define ECL_READ_U16(pointer) *((const uint16_t*)(pointer))
-#define ECL_READ_U32(pointer) *((const uint32_t*)(pointer))
-
 #endif
