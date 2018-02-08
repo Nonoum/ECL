@@ -64,7 +64,7 @@ typedef enum {
 
 
 /*
-    Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
+    The slowest mode, compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
     Function returns amount of bytes in resulted compressed stream or 0 if failed.
     Extra memory usage: 0.
     - 'search_limit' is maximum amount of bytes to look back when searching for a match, increasing this parameter can decrease performance dramatically.
@@ -74,7 +74,19 @@ typedef enum {
 ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
 
 
-// TODO docs
+/*
+    All mid* compressors are the most applicable for embedded. Require temporary buffer (not intersecting src or dst) provided via last parameter:
+    - mid1, mid1min have 'buf_256' parameter which has to point to a buffer of 256 bytes;
+    - mid2, mid2min have 'buf_513' (NOTE: not 512) parameter which has to point to a buffer of 513 bytes;
+
+    All mid* algorithms require 'src_size' to not exceed 64k.
+
+    In particular mid1, mid2 algorithms require 'dst_size' to be bigger than 'src_size'/2 (in case you planned to neglect ECL_NANO_LZ_GET_BOUND macro),
+    also if your data is barely compressible - these two algorithms will work better if you give 'dst_size' = up to ECL_NANO_LZ_GET_BOUND(src_size) + src_size/2;
+
+    mid1min, mid2min are optimized versions of mid1, mid2 with 'search_limit'==1. Provide higher performance and smaller code size (but only basic compression),
+    these are by fact the fastest NanoLZ compression methods.
+*/
 ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256);
 ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_513);
 ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_256);
@@ -111,14 +123,14 @@ bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_
 void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
 
 /*
-    Indexed (optimized) compressors using pre-allocated buffers, behave equally to ECL_NanoLZ_Compress_slow with only difference in speed and used memory.
-    - prefer fast1 algorithm for small data sets (up to hundreds of bytes)
-    - prefer fast2 for big datasets (thousands of bytes and more)
+    Faster indexed (optimized) compressors using pre-allocated buffers, behave equally to ECL_NanoLZ_Compress_slow with only difference in speed and used memory.
+    - prefer fast1 algorithm for small datasets (roughly, < 1500 bytes);
+    - prefer fast2 for bigger datasets;
 
     Memory consumption of these methods is big for embedded but it would work well if you compress data on powerful (say, PC) side and send it
-    to embedded hardware where it's decompressed. To Compress data on hardware with limited resources you would sacrifice either compression ratio or time.
+    to embedded hardware where it's decompressed. To compress data on hardware with limited resources you would sacrifice either compression ratio or time.
 
-    Normal 'search_limit' value is typically around 10 - 50, for small datasets don't hesitate to set to -1.
+    Normal 'search_limit' value is typically around 10 - 50. Value of '-1' aims to maximum (and longest) compression - for small datasets should be fine.
 
     Usage:
         MyPODDataStruct my_data;
@@ -140,7 +152,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         MyPODDataStruct my_data;
         ECL_usize compressed_size_limit = ECL_NANO_LZ_GET_BOUND(sizeof(my_data));
         uint8_t* compressed_stream = (uint8_t*)malloc( compressed_size_limit );
-        ECL_usize compressed_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 1000);
+        ECL_usize compressed_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 30);
         // ... <- transferring 'compressed_size' bytes of 'compressed_stream' to receiver side
         ECL_usize uncompressed_size = ECL_NanoLZ_Decompress(ECL_NANOLZ_SCHEME1, compressed_stream, compressed_size, (uint8_t*)&my_data, sizeof(my_data));
         if(uncompressed_size != sizeof(my_data)) {
