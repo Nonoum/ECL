@@ -776,15 +776,15 @@ ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, EC
             dst += state.n_new;
         }
         if(state.n_copy) {
-            if(state.offset > (dst - dst_start)) {
-                state.stream.is_valid = 0;
-                break; // points outside of data. error in stream
-            }
             if(state.offset == 1) {
                 memset(dst, dst[-1], state.n_copy); // memset wins against cycle in average case
                 dst += state.n_copy;
             } else {
-                const ECL_usize offs = state.offset;
+                const ECL_ssize offs = state.offset;
+                if(offs > (dst - dst_start)) {
+                    state.stream.is_valid = 0;
+                    break; // points outside of data. error in stream
+                }
                 ECL_usize i = state.n_copy;
                 for(; i; --i, ++dst) { // memcpy is inefficient here
                     *dst = *(dst - offs);
