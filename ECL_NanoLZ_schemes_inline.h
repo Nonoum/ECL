@@ -1,6 +1,8 @@
 // schemes inline file
 
 // scheme 1 coder & decoder --------------------------------------------------------------------------------------
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
+
 static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
     ECL_usize estimate_bits, offset_sub;
     ECL_ASSERT(state->n_copy >= 2);
@@ -179,14 +181,50 @@ static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
     ECL_NANO_LZ_COUNTER_APPEND(8, state->n_new)
 }
 
+#endif
 // scheme 2 coder & decoder --------------------------------------------------------------------------------------
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
 
+static bool ECL_NanoLZ_Write_Scheme2_copy(ECL_NanoLZ_CompressorState* state) {
+    ECL_ASSERT(state->n_copy >= 2);
+    if(state->n_copy >= 5) { // ignore smaller match - this weakens compression and increases decompression speed
+        // we estimated roughly - in some cases it can result in compressed output > original data
+        ECL_JH_Write_E3(&state->stream, state->n_new);
+        ECL_JH_Write_E3(&state->stream, state->n_copy - 4);
+        ECL_JH_Write_E7(&state->stream, state->offset - 1);
+        return true;
+    }
+    return false;
+}
+
+static bool ECL_NanoLZ_Write_Scheme2_nocopy(ECL_NanoLZ_CompressorState* state) {
+    ECL_ASSERT(! state->n_copy);
+    ECL_JH_Write_E3(&state->stream, state->n_new);
+    ECL_JH_Write_E3(&state->stream, 0); // n_copy = 0
+    return true;
+}
+
+static void ECL_NanoLZ_Read_Scheme2(ECL_NanoLZ_DecompressorState* state) {
+    state->n_new = ECL_JH_Read_E3(&state->stream);
+    state->n_copy = ECL_JH_Read_E3(&state->stream);
+    if(state->n_copy) { // 0 is 0 and assumes no offset encoded (last block in stream)
+        state->n_copy += 4;
+        state->offset = ECL_JH_Read_E7(&state->stream) + 1;
+    }
+}
+
+#endif
 // ---------------------------------------------------------------------------------------------------------------
 
 // returns a coder that expects only sequences with n_copy >= 2
 static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoder(ECL_NanoLZ_Scheme scheme) {
     switch(scheme) {
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
     case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Write_Scheme1_copy;
+#endif
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
+    case ECL_NANOLZ_SCHEME2_DEMO: return ECL_NanoLZ_Write_Scheme2_copy;
+#endif
     default: break;
     }
     return 0;
@@ -195,7 +233,12 @@ static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoder(ECL_NanoLZ_Scheme scheme
 // returns a coder that expects only sequences with n_copy == 0
 static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoderNoCopy(ECL_NanoLZ_Scheme scheme) {
     switch(scheme) {
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
     case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Write_Scheme1_nocopy;
+#endif
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
+    case ECL_NANOLZ_SCHEME2_DEMO: return ECL_NanoLZ_Write_Scheme2_nocopy;
+#endif
     default: break;
     }
     return 0;
@@ -204,7 +247,12 @@ static ECL_NanoLZ_SchemeCoder ECL_NanoLZ_GetSchemeCoderNoCopy(ECL_NanoLZ_Scheme 
 // returns a decoder
 static ECL_NanoLZ_SchemeDecoder ECL_NanoLZ_GetSchemeDecoder(ECL_NanoLZ_Scheme scheme) {
     switch(scheme) {
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
     case ECL_NANOLZ_SCHEME1: return ECL_NanoLZ_Read_Scheme1;
+#endif
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
+    case ECL_NANOLZ_SCHEME2_DEMO: return ECL_NanoLZ_Read_Scheme2;
+#endif
     default: break;
     }
     return 0;

@@ -371,8 +371,8 @@ bool ECL_Test_NanoLZ_OnLinearGenericData(std::ostream& log, int mode, ECL_NanoLZ
                         }
 
                         // test
-                        tmp.resize(ECL_NANO_LZ_GET_BOUND(src_size));
                         for(auto scheme : ECL_NANO_LZ_SCHEMES_ALL) {
+                            tmp.resize(ECL_NANO_LZ_GET_BOUND(src_size));
                             ECL_usize comp_size = ECL_Test_NanoLZ_CompressWith(scheme, src, tmp, mode, preallocated_params);
                             if(! comp_size) {
                                 return false;

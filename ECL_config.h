@@ -2,7 +2,7 @@
 #define ECL_CONFIG_H_
 
 #include <stdint.h>
-#include <stdlib.h> // alloc
+#include <stdlib.h>
 #include <string.h> // memcpy, memset
 
 #define ECL_VERSION_MAJOR 0
@@ -23,7 +23,7 @@
 #ifndef ECL_USE_BITNESS_32
 #ifndef ECL_USE_BITNESS_64
 // none of these is defined with force for compilation, use 32 bits by default
-#define ECL_USE_BITNESS_32 // default bitness
+#define ECL_USE_BITNESS_32 // default bitness if nothing else specified via compilation parameters
 #endif
 #endif
 #endif
@@ -32,7 +32,14 @@
 //#define ECL_USE_BRANCHLESS
 //#define ECL_USE_STAT_COUNTERS
 
+#ifndef ECL_NANO_LZ_ONLY_SCHEME
+// set to 0 to unlock all schemes, set to 1 to have only scheme1, 2 = scheme2 etc. Having single scheme allows compiler to inline for better performance
+// default is 1 since most likely you will use only scheme1 and want better performance
+#define ECL_NANO_LZ_ONLY_SCHEME 1
+#endif
 
+// non-user part ------------------------------------------
+#define ECL_NANO_LZ_IS_SCHEME_ENABLED(scheme_num) ((ECL_NANO_LZ_ONLY_SCHEME == 0) || (ECL_NANO_LZ_ONLY_SCHEME == scheme_num))
 
 // size types ---------------------------------------------
 #ifdef ECL_USE_BITNESS_16
@@ -55,7 +62,7 @@
 #define ECL_POINTER_BITS_COUNT (sizeof(void*) * 8)
 
 /*
-    Helper paranoid macro to ensure that estimated compression bound isn't overflowed.
+    Helper paranoid macro to ensure that estimated compression bound doesn't overflow ECL_usize.
     Results in bool. Makes sense for ECL_USE_BITNESS_16.
     Usage: assert( ECL_VALIDATE_BOUND_OK( ECL_NANO_LZ_GET_BOUND(src_size), src_size ) );
 */
@@ -65,10 +72,8 @@
 // asserts ---------------------------------------------
 #ifdef ECL_USE_ASSERT
     #include <assert.h>
-    #define ECL_STATIC_ASSERT(expr, msg) static_assert((expr), msg)
     #define ECL_ASSERT(expr) assert(expr)
 #else
-    #define ECL_STATIC_ASSERT(expr, msg)
     #define ECL_ASSERT(expr)
 #endif
 

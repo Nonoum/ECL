@@ -67,13 +67,16 @@ Formats of compressors are described in "formats/" dir, there are common feature
 CONFIGURING:
 See ECL_config.h:
 - you can explicitly specify bitness of length variables on your consideration (ECL_USE_BITNESS_16 / 32 / 64 macro);
-- you can enable/disable branchless optimizations for your consideration (ECL_USE_BRANCHLESS macro);
+- you can enable/disable branchless optimizations for your consideration (ECL_USE_BRANCHLESS macro) - currently inefficient;
+- you can enable/disable internal asserts (work if system assert works, e.g. no NDEBUG macro specified);
+- you can allow all NanoLZ schemes or only specific one to let compiler inline more for better performance;
 - in case you don't have uint*_t types defined in stdint.h - define those types there near "user setup part";
 
 
 PERFORMANCE BENCHMARKS:
 *Tested for Intel core i5-3570k @ 3.4 GHz / Windows 7 64 bit / 16gb RAM 1600 MHz
 *Compiled with GCC 4.8.1, options = -O3 -DECL_USE_BITNESS_32 -DECL_USE_ASSERT
+*ECL sources are compiled as single .c file (tests/all_c.c with -DECL_BUILD_AS_C)
 *Tested with data samples from "Silesia compression corpus" (file sizes = 6 .. 51 mb)
 *Speed is in megabytes per second (mb/s)
 

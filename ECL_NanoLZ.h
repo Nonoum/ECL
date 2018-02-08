@@ -38,15 +38,30 @@ extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION
 /*
     Schemes are:
     - incompatible between each other, so you have to use same scheme during compression and decompression of your dataset for correct result;
-    - not included as identifiers in compressed stream in any way (so decompression method has such parameter as well);
-    - intended to be tested with target datasets to determine optimal one (different schemes would provide different compression level);
+    - not included as identifiers in compressed stream in any way (so decompression method has 'scheme' parameter as well);
+    - intended to be tested with target datasets to determine optimal one (different schemes would provide different compression level and performance);
     - can be extended with your own scheme, optimized for your particular data (if you know what you're doing);
+    Don't serialize these values as is.
 */
 typedef enum {
-    ECL_NANOLZ_SCHEME1,
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
+    ECL_NANOLZ_SCHEME1, // main scheme, seriously optimized for small datasets
+#endif
+#if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
+    ECL_NANOLZ_SCHEME2_DEMO, // demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme
+#endif
 } ECL_NanoLZ_Scheme;
 
-#define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1}
+
+// macro representing set of all schemes (used for testing)
+#if (ECL_NANO_LZ_ONLY_SCHEME == 0)
+    #define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1, ECL_NANOLZ_SCHEME2_DEMO}
+#elif (ECL_NANO_LZ_ONLY_SCHEME == 1)
+    #define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1}
+#else
+    #define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME2_DEMO}
+#endif
+
 
 /*
     Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
