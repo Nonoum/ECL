@@ -248,7 +248,10 @@ NTEST(test_ZeroDevourer_insufficient_dst_decompr) {
             const auto output_size = src_size - i;
             ECL_TEST_MAGIC_RESIZE(tmp_output, output_size);
             auto sz = ECL_ZeroDevourer_Decompress(tmp.data(), comp_size, tmp_output.data(), output_size);
-            approve(! sz);
+            if(sz) { // if succeeded - can be only a coincidence: output_size decompressed but last compressed byte is not fully consumed
+                approve(sz == output_size);
+                approve(0 == memcmp(src.data(), tmp_output.data(), output_size));
+            }
             ECL_TEST_MAGIC_VALIDATE(tmp_output);
         }
     }
@@ -287,7 +290,10 @@ NTEST(test_NanoLZ_insufficient_dst_decompr) {
                     const auto output_size = src_size - i;
                     ECL_TEST_MAGIC_RESIZE(tmp_output, output_size);
                     auto sz = ECL_NanoLZ_Decompress(scheme, tmp.data(), comp_size, tmp_output.data(), output_size);
-                    approve(! sz);
+                    if(sz) { // if succeeded - can be only a coincidence: output_size decompressed but last compressed byte is not fully consumed
+                        approve(sz == output_size);
+                        approve(0 == memcmp(src.data(), tmp_output.data(), output_size));
+                    }
                     ECL_TEST_MAGIC_VALIDATE(tmp_output);
                 }
             }
