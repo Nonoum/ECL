@@ -112,13 +112,13 @@ typedef struct {
     - *Alloc1 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST1* macros
     - *Alloc2 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST2* macros
 
-    For maximum efficiency window_size_bits should be = [log2(src_size)].
+    For maximum efficiency window_size_bits should be = [log2(src_size)] (see ECL_LogRoundUp function).
 */
 bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
 bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
 
 /*
-    Deallocates buffers - call after you're done with FastParams.
+    Deallocates buffers - call after you're done with FastParams. Necessary to call if *Alloc succeeded.
 */
 void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
 
@@ -143,6 +143,12 @@ void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
 */
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
 ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
+
+/*
+    Generic compression method for non-limited environment (not embedded).
+    Calls one of other compression methods (and allocates appropriate buffers according to input data size), to result in maximum performance.
+*/
+ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
 
 /*
     Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.

@@ -37,6 +37,10 @@ uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits); // returns value of 'bi
 void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); // moves pointer to next byte at 'distance' if possible
 void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); // -:-
 
+
+uint8_t ECL_LogRoundUp(ECL_usize value); // util function. returns [log2(value)].
+
+
 // E-numbers part
 void ECL_JH_Write_E2(ECL_JH_WState* state, ECL_usize value); // writes 'value' to 'state' in E2 number format
 ECL_usize ECL_JH_Read_E2(ECL_JH_RState* state); // reads from 'state' a value in E2 number format

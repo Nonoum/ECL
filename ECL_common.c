@@ -117,6 +117,24 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
     }
 }
 
+
+uint8_t ECL_LogRoundUp(ECL_usize value) {
+    ECL_usize tmp;
+    uint8_t result;
+    if(value < 2) {
+        return 1;
+    }
+    result = sizeof(value) * 8;
+    tmp = 1;
+    tmp <<= result - 1;
+    while(value <= tmp) {
+        tmp >>= 1;
+        --result;
+    }
+    return result;
+}
+
+
 #ifdef ECL_USE_BRANCHLESS
     #define ECL_CALC_E(value, n_bits) \
         (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
