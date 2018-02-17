@@ -10,7 +10,7 @@ NTEST(test_ZeroEater_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 1000 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 60000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -43,7 +43,7 @@ NTEST(test_ZeroDevourer_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 1000 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 60000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -75,7 +75,7 @@ NTEST(test_NanoLZ_slow_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 1000 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -111,7 +111,7 @@ NTEST(test_NanoLZ_mid1_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 100 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 10 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -152,7 +152,7 @@ NTEST(test_NanoLZ_mid2_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 100 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 10 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -193,7 +193,7 @@ NTEST(test_NanoLZ_mid1min_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 100 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 10 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
@@ -231,7 +231,7 @@ NTEST(test_NanoLZ_mid2min_random_data) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const int n_sets = 100 * (ECL_TEST_IS_DEEP ? 10 : 1);
+    const int n_sets = 10 * (BoundVMinMax(depth + 10, 0, 100) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};

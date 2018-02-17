@@ -24,7 +24,7 @@ TestBase :: TestBase(const char* _name)
         : name(_name), result(INIT), time_mcs(0) {
 }
 
-TestBase::Result TestBase :: run(std::ostream& log, int verbosity) {
+TestBase::Result TestBase :: run(std::ostream& log, int depth) {
     struct Guard {
         TestBase* const b;
         const uint64_t before;
@@ -32,7 +32,7 @@ TestBase::Result TestBase :: run(std::ostream& log, int verbosity) {
         ~Guard() { b->time_mcs = GetTimeMicroseconds() - before; }
     } guard(this);
     result = INIT;
-    runInternal(log, verbosity);
+    runInternal(log, depth);
     return result;
 }
 
@@ -65,18 +65,18 @@ const char* TestBase :: ResultToStr(Result result) {
 
 int TestBase :: BoundVMinMax(int v, int min, int max) {
     if(min > max) {
-        throw std::exception();
+        throw std::runtime_error("min > max in BoundVMinMax");
     }
     if(v < min) {
         return min;
     }
-    if(v < max) {
+    if(v > max) {
         return max;
     }
     return v;
 }
 
-size_t TestBase :: RunTests(std::ostream& log_output, int verbosity) {
+size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
     const auto comp = [](const TestBase* left, const TestBase* right) {
         return strcmp(left->getName(), right->getName()) < 0;
     };
@@ -86,12 +86,12 @@ size_t TestBase :: RunTests(std::ostream& log_output, int verbosity) {
     size_t n_succeeded = 0;
     size_t n_skipped = 0;
     size_t n_crashed = 0;
-    log_output << "ntest: Running tests with verbosity=" << verbosity << std::endl;
+    log_output << "ntest: Running tests with depth = " << depth << std::endl;
     for(auto runner : tests) {
         const auto name = runner->getName();
         Result result = INIT;
         try {
-            result = runner->run(log_output, verbosity);
+            result = runner->run(log_output, depth);
         } catch (const std::exception& e) {
             log_output << "* test " << name << " thrown exception: " << e.what() << std::endl;
             result = CRASH;

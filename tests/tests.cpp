@@ -27,12 +27,6 @@
         }                                                          \
     }
 
-#ifdef ECL_TEST_DEEP
-#define ECL_TEST_IS_DEEP 1
-#else
-#define ECL_TEST_IS_DEEP 0
-#endif
-
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
     vector_name.resize(capacity + 1); \
     vector_name[capacity] = 0x39; ntest::ntest_noop()
@@ -79,9 +73,9 @@ NTEST(test_stat_dir) {
 #endif
 
 int main(int argc, char* argv[]) {
-    int verbosity = 0;
+    int depth = 0;
     if(argc == 2) {
-        verbosity = atoi(argv[1]);
+        depth = atoi(argv[1]);
     }
-    return ntest::TestBase::RunTests(std::cout, verbosity);
+    return ntest::TestBase::RunTests(std::cout, depth);
 }

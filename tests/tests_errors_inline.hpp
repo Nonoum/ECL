@@ -149,7 +149,21 @@ NTEST(test_NanoLZ_insufficient_dst_compr) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const uint8_t masks[] = {0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
+    std::vector<uint8_t> masks;
+    const auto dep = BoundVMinMax(depth + 10, 0, 100);
+    if(dep > 50) {
+        masks = {0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
+    } else if(dep > 20) {
+        masks = {0x3F, 0x0F, 0x07, 0x03, 0x01};
+    } else if(dep > 5) {
+        masks = {0x3F, 0x0F, 0x03, 0x01};
+    } else if(dep > 0) {
+        masks = {0x3F, 0x03, 0x01};
+    } else if(dep > -5) {
+        masks = {0x3F, 0x03};
+    } else {
+        masks = {0x3F};
+    }
     const int search_limits[] = {1, 5, -1};
     const ECL_usize src_size = 2000;
 

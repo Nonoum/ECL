@@ -1,10 +1,11 @@
 #pragma once
-// ntest version 2.0
+// ntest version 2.1.1
 #include <iostream>
 #include <cstdint>
 
 namespace ntest {
 
+// a stub to force adding semicolons after macro
 inline void ntest_noop() {}
 
 uint64_t GetTimeMicroseconds();
@@ -20,14 +21,14 @@ public:
     };
 
     TestBase(const char* _name);
-    Result run(std::ostream& log, int verbosity);
+    Result run(std::ostream& log, int depth);
     const char* getName() const;
     uint64_t getDurationMicroseconds() const;
     bool isFailed() const { return result == FAIL; };
 
     static const char* ResultToStr(Result result);
     static int BoundVMinMax(int v, int min, int max); // returns value 'v' bounded to [min..max]. min <= max
-    static size_t RunTests(std::ostream& log_output, int verbosity); // returns amount of failed tests
+    static size_t RunTests(std::ostream& log_output, int depth); // returns amount of failed tests
 
 protected:
     static void PushRunner(TestBase*);
@@ -45,7 +46,9 @@ private:
 
 } //end ntest
 
-#define NTEST_SUPPRESS_UNUSED (void)log; (void)verbosity; ntest::ntest_noop()
+#define NTEST_SUPPRESS_UNUSED (void)log; (void)depth; ntest::ntest_noop()
+
+#define NTEST_REQUIRE_DEPTH_ABOVE(value) if(depth <= (value)) { skip(); return; } ntest::ntest_noop()
 
 #define NTEST(test_name) \
     class test_name : public ntest::TestBase { \
@@ -54,7 +57,7 @@ private:
             PushRunner(this); \
         }; \
     protected: \
-        void runInternal(std::ostream& log, int verbosity) override; \
+        void runInternal(std::ostream& log, int depth) override; \
     }; \
     static test_name test_name##_instance; \
-    void test_name :: runInternal(std::ostream& log, int verbosity)
+    void test_name :: runInternal(std::ostream& log, int depth)
