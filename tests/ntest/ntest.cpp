@@ -1,8 +1,10 @@
 #include "ntest.h"
 
+#include <vector>
+#include <iomanip>
 #include <algorithm>
-#include <string.h>
 #include <chrono>
+#include <string.h> // strcmp
 
 namespace ntest {
 
@@ -22,13 +24,16 @@ TestBase :: TestBase(const char* _name)
         : name(_name), result(INIT), time_mcs(0) {
 }
 
-bool TestBase :: run(std::ostream& log) {
+TestBase::Result TestBase :: run(std::ostream& log, int verbosity) {
+    struct Guard {
+        TestBase* const b;
+        const uint64_t before;
+        Guard(TestBase* _b) : b(_b), before(GetTimeMicroseconds()) {}
+        ~Guard() { b->time_mcs = GetTimeMicroseconds() - before; }
+    } guard(this);
     result = INIT;
-    uint64_t before = GetTimeMicroseconds();
-    runInternal(log);
-    uint64_t after = GetTimeMicroseconds();
-    time_mcs = after - before;
-    return result == SUCCESS;
+    runInternal(log, verbosity);
+    return result;
 }
 
 const char* TestBase :: getName() const {
@@ -40,42 +45,89 @@ uint64_t TestBase :: getDurationMicroseconds() const {
 }
 
 void TestBase :: PushRunner(TestBase* test) {
-    auto comp = [](const TestBase* left, const TestBase* right) {
-        return strcmp(left->getName(), right->getName()) < 0;
-    };
-    auto& tests = GetRunners();
-    tests.insert(std::upper_bound(tests.begin(), tests.end(), test, comp), test);
+    GetRunners().push_back(test);
 }
 
 bool TestBase :: hasntFailed() const {
     return result != FAIL;
 }
 
-size_t TestBase :: RunTests(std::ostream& log_output) {
+const char* TestBase :: ResultToStr(Result result) {
+    switch (result) {
+    case INIT: return "?";
+    case SUCCESS: return "PASS";
+    case SKIP: return "SKIPPED";
+    case FAIL: return "FAILED";
+    case CRASH: return "CRASH";
+    };
+    return nullptr;
+}
+
+int TestBase :: BoundVMinMax(int v, int min, int max) {
+    if(min > max) {
+        throw std::exception();
+    }
+    if(v < min) {
+        return min;
+    }
+    if(v < max) {
+        return max;
+    }
+    return v;
+}
+
+size_t TestBase :: RunTests(std::ostream& log_output, int verbosity) {
+    const auto comp = [](const TestBase* left, const TestBase* right) {
+        return strcmp(left->getName(), right->getName()) < 0;
+    };
+    auto& tests = GetRunners();
+    std::sort(tests.begin(), tests.end(), comp);
     size_t n_failed = 0;
     size_t n_succeeded = 0;
-    log_output << ":: Running tests...." << std::endl;
-    for(auto runner : GetRunners()) {
-        log_output << runner->getName() << " : ";
-        bool result = false;
+    size_t n_skipped = 0;
+    size_t n_crashed = 0;
+    log_output << "ntest: Running tests with verbosity=" << verbosity << std::endl;
+    for(auto runner : tests) {
+        const auto name = runner->getName();
+        Result result = INIT;
         try {
-            result = runner->run(log_output);
-            result ? ++n_succeeded : ++n_failed;
+            result = runner->run(log_output, verbosity);
+        } catch (const std::exception& e) {
+            log_output << "* test " << name << " thrown exception: " << e.what() << std::endl;
+            result = CRASH;
         } catch (...) {
-            ++n_failed;
+            result = CRASH;
         }
-        log_output << (result ? "success\t\t| ~" : "fail\t\t| ~") << std::fixed << (double(runner->getDurationMicroseconds()) / 1000000.) << std::endl;
+        switch (result) {
+        case SUCCESS: ++n_succeeded; break;
+        case SKIP: ++n_skipped; break;
+        case CRASH: ++n_crashed; // fallthru
+        default: ++n_failed; break;
+        }
+        const auto seconds = (double(runner->getDurationMicroseconds()) / 1000000.);
+        log_output << '[' << std::setw(7) << std::left << ResultToStr(result) << "] " << std::fixed << seconds << " : " << name << std::endl;
     }
-    log_output << ":: Total tests : " << (n_failed + n_succeeded) << std::endl;
-    log_output << ":: Succeeded : " << n_succeeded << std::endl;
-    log_output << ":: Failed : " << n_failed << std::endl;
+    log_output << "ntest: Total tests : " << (n_failed + n_succeeded) << std::endl;
+    log_output << "ntest: Succeeded : " << n_succeeded << std::endl;
+    log_output << "ntest: Skipped : " << n_skipped << std::endl;
+    log_output << "ntest: Failed : " << n_failed;
+    if(n_crashed) {
+        log_output << " (crashed: " << n_crashed << ")";
+    }
+    log_output << std::endl;
     return n_failed;
 }
 
-void TestBase :: approve(bool condition) {
-    if(result != FAIL) {
-        result = condition ? SUCCESS : FAIL;
-    }
+void TestBase :: skip() {
+    result = SKIP;
 }
 
+bool TestBase :: approve(bool condition) {
+    if(result != FAIL) {
+        result = condition ? SUCCESS : FAIL;
+        return result == FAIL;
+    }
+    return false;
 }
+
+} // end namespace ntest

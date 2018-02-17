@@ -445,6 +445,7 @@ NTEST(test_ECL_LogSize) {
 }
 
 NTEST(test_ECL_GetAlignedPointer2) {
+    NTEST_SUPPRESS_UNUSED;
     typedef uint16_t Ty;
     const int type_size = sizeof(Ty);
     const int buf_size = 20;
@@ -463,6 +464,7 @@ NTEST(test_ECL_GetAlignedPointer2) {
 }
 
 NTEST(test_ECL_GetAlignedPointerS) {
+    NTEST_SUPPRESS_UNUSED;
     typedef ECL_usize Ty;
     const int type_size = sizeof(Ty);
     const int buf_size = 20;
