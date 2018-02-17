@@ -134,6 +134,17 @@ uint8_t ECL_LogRoundUp(ECL_usize value) {
     return result;
 }
 
+uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
+    ECL_ASSERT(ptr);
+    return (uint16_t*) ( (((int)ptr) & 1) ? (ptr + 1) : ptr);
+}
+
+ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
+    ECL_ASSERT(ptr);
+    const int offset = ((int)ptr) & (sizeof(ECL_usize) - 1);
+    return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
+}
+
 
 #ifdef ECL_USE_BRANCHLESS
     #define ECL_CALC_E(value, n_bits) \

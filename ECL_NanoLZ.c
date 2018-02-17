@@ -91,11 +91,6 @@ static ECL_usize ECL_NanoLZ_CompleteCompression(ECL_NanoLZ_CompressorState* s, E
     return s->stream.next - dst_start;
 }
 
-static uint16_t* ECL_NanoLZ_GetAlignedPointer2(uint8_t* ptr) {
-    ECL_ASSERT(ptr);
-    return (uint16_t*) ( (((int)ptr) & 1) ? (ptr + 1) : ptr);
-}
-
 ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
@@ -302,7 +297,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     }
     memset(buf_513, 0, 513);
     {
-        uint16_t* const buf_map = ECL_NanoLZ_GetAlignedPointer2((uint8_t*)buf_513);
+        uint16_t* const buf_map = ECL_GetAlignedPointer2((uint8_t*)buf_513);
         uint8_t* const buf_window = dst + dst_size - window_length;
         ECL_usize pos = 1;
 
@@ -493,7 +488,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
     }
     memset(buf_513, 0, 513);
     {
-        uint16_t* const buf_map = ECL_NanoLZ_GetAlignedPointer2((uint8_t*)buf_513);
+        uint16_t* const buf_map = ECL_GetAlignedPointer2((uint8_t*)buf_513);
         ECL_usize pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
@@ -584,8 +579,8 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
     {
-        ECL_usize* const buf_map = (ECL_usize*)p->buf_map;
-        ECL_usize* const buf_window = (ECL_usize*)p->buf_window;
+        ECL_usize* const buf_map = ECL_GetAlignedPointerS((uint8_t*)(p->buf_map));
+        ECL_usize* const buf_window = ECL_GetAlignedPointerS((uint8_t*)(p->buf_window));
         const ECL_usize window_size = ((ECL_usize)1) << p->window_size_bits;
         const ECL_usize window_mask = (((ECL_usize)1) << p->window_size_bits) - 1;
         ECL_usize pos = 1;
@@ -664,8 +659,8 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
     {
-        ECL_usize* const buf_map = (ECL_usize*)p->buf_map;
-        ECL_usize* const buf_window = (ECL_usize*)p->buf_window;
+        ECL_usize* const buf_map = ECL_GetAlignedPointerS((uint8_t*)(p->buf_map));
+        ECL_usize* const buf_window = ECL_GetAlignedPointerS((uint8_t*)(p->buf_window));
         const ECL_usize window_size = ((ECL_usize)1) << p->window_size_bits;
         const ECL_usize window_mask = (((ECL_usize)1) << p->window_size_bits) - 1;
         ECL_usize pos;

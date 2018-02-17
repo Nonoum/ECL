@@ -15,10 +15,10 @@
 /*
     Following macros are for manual allocations of buffers for fast1/fast2 algorithms.
 */
-#define ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE() (256 * sizeof(ECL_usize))
+#define ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE() (257 * sizeof(ECL_usize))
 #define ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits) ((1UL << (window_size_bits)) * sizeof(ECL_usize))
 //
-#define ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE() (65536 * sizeof(ECL_usize))
+#define ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE() (65537 * sizeof(ECL_usize))
 #define ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits) ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits)
 
 
@@ -105,8 +105,8 @@ typedef struct {
 
 /*
     TLDR version:
-    - consumption with alloc1 is 256*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
-    - consumption with alloc2 is 65536*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+    - consumption with alloc1 is 257*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+    - consumption with alloc2 is 65537*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
 
     Initializers for fast1/fast2 compressors, return whether succeeded.
     - *Alloc1 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST1* macros
