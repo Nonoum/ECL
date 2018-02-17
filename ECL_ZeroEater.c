@@ -48,7 +48,7 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
             ++(state->dst);
         }
         if(part_block_cnt) {
-            *(state->dst) = (uint8_t)part_block_cnt - 0x81; // subtract -1, subtract extra 0x80 to get 1 in higher bit
+            *(state->dst) = (uint8_t)part_block_cnt - 0x81; // subtract 1, subtract extra 0x80 to get 1 in higher bit
             ++(state->dst);
         }
     }
@@ -56,7 +56,7 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
 
 static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
     // count_x = [1..8]; count_0 = [1..8];
-    ECL_usize length = count_x + 1;
+    const ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
         *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); // subtract extra 0x40 to get 11 in higher bits
@@ -68,10 +68,9 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
 
 static void ECL_ZeroEater_DumpGeneric(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
     // count_x > 0; count_0 > 0
-    ECL_usize x_full_blocks, tmp;
-    x_full_blocks = count_x >> 7;
+    const ECL_usize x_full_blocks = count_x >> 7;
     if(x_full_blocks) {
-        tmp = count_x & 0x7F; // last block size
+        const ECL_usize tmp = count_x & 0x7F; // last block size
         ECL_ZeroEater_DumpSeq1(state, count_x - tmp);
         count_x = tmp;
     }
@@ -93,7 +92,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
     ECL_usize cnt_x, cnt_0;
     const uint8_t* first_x;
     const uint8_t* first_0;
-    const uint8_t* src_end = src + src_size;
+    const uint8_t* const src_end = src + src_size;
     if(! src) {
         return 0;
     }
@@ -160,13 +159,13 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
             } else { // method 2
                 cnt_0 = (opcode & 0x3F) + 1;
                 if(cnt_0 > (ECL_usize)(dst_end - dst)) {
-                    break;
+                    return 0;
                 }
                 memset(dst, 0, cnt_0);
                 dst += cnt_0;
             }
         } else { // method 1
-            cnt_x = (opcode & 0x7F) + 1;
+            cnt_x = opcode + 1;
             if(cnt_x > (ECL_usize)(dst_end - dst)) {
                 break;
             }
