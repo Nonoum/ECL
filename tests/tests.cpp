@@ -67,36 +67,6 @@ void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
 #include "tests_errors_inline.hpp"
 #endif
 
-NTEST(test_string_constants) {
-    NTEST_SUPPRESS_UNUSED;
-    // test some weird stuff used in other tests for comfortability
-    approve(char(3) == "\x3\x5"[0]);
-    approve(char(5) == "\x3\x5"[1]);
-    approve(char(5) == "\x0\x5"[1]);
-    approve(char(0x70) == "\x70\x75"[0]);
-    approve(char(0x75) == "\x70\x75"[1]);
-}
-
-NTEST(test_ECL_LogSize) {
-    NTEST_SUPPRESS_UNUSED;
-    ECL_TEST_COMPARE(ECL_LogRoundUp(0), 1);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(1), 1);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(2), 1);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(3), 2);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(4), 2);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(5), 3);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(8), 3);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(9), 4);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(16), 4);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(17), 5);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(32), 5);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(33), 6);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(64), 6);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(65), 7);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(128), 7);
-    ECL_TEST_COMPARE(ECL_LogRoundUp(129), 8);
-}
-
 #ifdef ECL_TEST_LOCAL
 
 #include "stat_dir_inline.hpp"

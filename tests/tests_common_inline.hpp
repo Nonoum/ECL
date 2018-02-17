@@ -412,3 +412,80 @@ NTEST(test_JH_reading_failures) {
         ECL_TEST_ASSERT(! state.is_valid);
     }
 }
+
+
+NTEST(test_string_constants) {
+    NTEST_SUPPRESS_UNUSED;
+    // test some weird stuff used in other tests for comfortability
+    approve(char(3) == "\x3\x5"[0]);
+    approve(char(5) == "\x3\x5"[1]);
+    approve(char(5) == "\x0\x5"[1]);
+    approve(char(0x70) == "\x70\x75"[0]);
+    approve(char(0x75) == "\x70\x75"[1]);
+}
+
+NTEST(test_ECL_LogSize) {
+    NTEST_SUPPRESS_UNUSED;
+    ECL_TEST_COMPARE(ECL_LogRoundUp(0), 1);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(1), 1);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(2), 1);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(3), 2);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(4), 2);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(5), 3);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(8), 3);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(9), 4);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(16), 4);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(17), 5);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(32), 5);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(33), 6);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(64), 6);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(65), 7);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(128), 7);
+    ECL_TEST_COMPARE(ECL_LogRoundUp(129), 8);
+}
+
+NTEST(test_ECL_GetAlignedPointer2) {
+    typedef uint16_t Ty;
+    const int type_size = sizeof(Ty);
+    const int buf_size = 20;
+    uint8_t tmp[buf_size];
+    const int shift = ((int)tmp) & 1;
+    auto ptr = tmp + shift;
+    const auto first = (Ty*)(ptr);
+    const auto next = (Ty*)(ptr + type_size);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer2(ptr), first);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer2(ptr + 1), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer2(ptr + 2), next);
+    for(int i = 0; i < (buf_size - type_size); ++i) {
+        auto p = ECL_GetAlignedPointer2(tmp + i);
+        approve((int(p) & 1) == 0);
+    }
+}
+
+NTEST(test_ECL_GetAlignedPointerS) {
+    typedef ECL_usize Ty;
+    const int type_size = sizeof(Ty);
+    const int buf_size = 20;
+    uint8_t tmp[buf_size];
+    const int shift = sizeof(Ty) - (((int)tmp) & (type_size - 1));
+    auto ptr = tmp + shift;
+    const auto first = (Ty*)(ptr);
+    const auto next = (Ty*)(ptr + type_size);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr), first);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 1), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 2), next);
+    if(sizeof(Ty) > 2) {
+        ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 3), next);
+        ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 4), next);
+        if(sizeof(Ty) > 4) {
+            ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 5), next);
+            ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 6), next);
+            ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 7), next);
+            ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 8), next);
+        }
+    }
+    for(int i = 0; i < (buf_size - type_size); ++i) {
+        auto p = ECL_GetAlignedPointerS(tmp + i);
+        approve((int(p) & (type_size - 1)) == 0);
+    }
+}
