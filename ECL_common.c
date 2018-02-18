@@ -71,8 +71,8 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
 }
 
 uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
-    ECL_ASSERT(bits && (bits < 9));
     uint8_t res;
+    ECL_ASSERT(bits && (bits < 9));
     if(bits <= state->n_bits) { /* fits easily */
         res = *(state->byte) >> (8 - state->n_bits);
         state->n_bits -= bits;
@@ -140,8 +140,8 @@ uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
 }
 
 ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
-    ECL_ASSERT(ptr);
     const int offset = ((int)ptr) & (sizeof(ECL_usize) - 1);
+    ECL_ASSERT(ptr);
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }
 

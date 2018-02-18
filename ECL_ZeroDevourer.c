@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    ECL_ASSERT((cnt_x >= 1) && (cnt_x <= 4));
     uint8_t* dst;
+    ECL_ASSERT((cnt_x >= 1) && (cnt_x <= 4));
     /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 1) << 3) + 0x01, 5);"
         and equal to "ECL_JH_Write(state, 0x01, 3); ECL_JH_Write(state, cnt_x - 1, 2);"
     */
@@ -21,8 +21,8 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
 }
 
 static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    ECL_ASSERT((cnt_x >= 5) && (cnt_x <= 20));
     uint8_t* dst;
+    ECL_ASSERT((cnt_x >= 5) && (cnt_x <= 20));
     /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 5) << 3) + 0x03, 7);"
         and equal to "ECL_JH_Write(state, 0x03, 3); ECL_JH_Write(state, cnt_x - 5, 4);"
     */
@@ -48,8 +48,8 @@ static void ECL_ZeroDevourer_DumpSeq110(ECL_JH_WState* state, ECL_usize cnt_0) {
 }
 
 static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x) {
-    ECL_ASSERT(cnt_x >= 1);
     uint8_t* dst;
+    ECL_ASSERT(cnt_x >= 1);
     ECL_JH_Write(state, 0x07, 3);
     ECL_JH_Write_E6E3(state, cnt_x - 1);
     dst = state->next;
