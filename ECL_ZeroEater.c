@@ -96,6 +96,9 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
     if(! src) {
         return 0;
     }
+    if(! dst) {
+        dst_size = 0;
+    }
     state.src = src;
     state.result_size = 0;
     state.dst = dst;

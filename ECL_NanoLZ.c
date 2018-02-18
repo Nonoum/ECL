@@ -739,19 +739,42 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
 // -----------------------------------------------------------------------
 
 ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit) {
+    return ECL_NanoLZ_Compress_auto_ex(scheme, src, src_size, dst, dst_size, search_limit, 0, 0);
+}
+
+ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
+                                      , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2)
+{
     ECL_usize result = 0;
-    // no mid* algorithms used here cause they can have weaker compression in bad cases
-    if(src_size < 1500) {
-        ECL_NanoLZ_FastParams fp;
-        if(ECL_NanoLZ_FastParams_Alloc1(&fp, ECL_LogRoundUp(src_size))) {
-            result = ECL_NanoLZ_Compress_fast1(scheme, src, src_size, dst, dst_size, search_limit, &fp);
-            ECL_NanoLZ_FastParams_Destroy(&fp);
+    if((search_limit < 2) && ECL_NanoLZ_ValidateU16size(src_size)) { // for minimal limit mid2min is fastest choice
+        uint8_t buf[513];
+        result = ECL_NanoLZ_Compress_mid2min(scheme, src, src_size, dst, dst_size, buf);
+    } else if(src_size < 70) { // prefer mid2
+        uint8_t buf[513];
+        uint8_t tmp[ECL_NANO_LZ_MID_GET_BOUND_OPTIMAL(70)];
+        result = ECL_NanoLZ_Compress_mid2(scheme, src, src_size, tmp, sizeof(tmp), search_limit, buf);
+        if(result && (result <= dst_size)) {
+            memcpy(dst, tmp, result);
         }
-    } else {
-        ECL_NanoLZ_FastParams fp;
-        if(ECL_NanoLZ_FastParams_Alloc2(&fp, ECL_LogRoundUp(src_size))) {
-            result = ECL_NanoLZ_Compress_fast2(scheme, src, src_size, dst, dst_size, search_limit, &fp);
-            ECL_NanoLZ_FastParams_Destroy(&fp);
+    } else if(src_size < 1500) { // prefer fast1
+        if(prealloc1) {
+            result = ECL_NanoLZ_Compress_fast1(scheme, src, src_size, dst, dst_size, search_limit, prealloc1);
+        } else {
+            ECL_NanoLZ_FastParams fp;
+            if(ECL_NanoLZ_FastParams_Alloc1(&fp, ECL_LogRoundUp(src_size))) {
+                result = ECL_NanoLZ_Compress_fast1(scheme, src, src_size, dst, dst_size, search_limit, &fp);
+                ECL_NanoLZ_FastParams_Destroy(&fp);
+            }
+        }
+    } else { // prefer fast2
+        if(prealloc2) {
+            result = ECL_NanoLZ_Compress_fast2(scheme, src, src_size, dst, dst_size, search_limit, prealloc2);
+        } else {
+            ECL_NanoLZ_FastParams fp;
+            if(ECL_NanoLZ_FastParams_Alloc2(&fp, ECL_LogRoundUp(src_size))) {
+                result = ECL_NanoLZ_Compress_fast2(scheme, src, src_size, dst, dst_size, search_limit, &fp);
+                ECL_NanoLZ_FastParams_Destroy(&fp);
+            }
         }
     }
     return result;

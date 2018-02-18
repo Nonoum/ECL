@@ -14,7 +14,7 @@ extern "C" {
 
 /*
     Compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
-    Function returns amount of bytes in resulted compressed stream or 0 if failed.
+    Function returns amount of bytes in resulted compressed stream, or 0 in case of error.
     To find enough size for output buffer:
     - use maximum size: dst_size = ECL_ZERO_DEVOURER_GET_BOUND(src_size);
     See full compress/decompress example usage near decompression function.
@@ -23,7 +23,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
 
 /*
     Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.
-    Function returns: amount of bytes in uncompressed stream, which is equal to 'dst_size' if decompression succeeded.
+    Function returns: amount of bytes in uncompressed stream (which is 'dst_size') if decompression succeeded, or 0 in case of error.
     Usage:
         MyPODDataStruct my_data;
         const uint8_t* src = (const uint8_t*)&my_data;

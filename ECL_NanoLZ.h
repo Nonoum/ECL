@@ -45,7 +45,7 @@ extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION
 */
 typedef enum {
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
-    ECL_NANOLZ_SCHEME1, // main scheme, seriously optimized for small datasets
+    ECL_NANOLZ_SCHEME1, // main scheme, highly optimized for small datasets
 #endif
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
     ECL_NANOLZ_SCHEME2_DEMO, // demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme
@@ -65,7 +65,7 @@ typedef enum {
 
 /*
     The slowest mode, compresses 'src_size' bytes starting at 'src' to destination 'dst' that can hold at most 'dst_size' bytes.
-    Function returns amount of bytes in resulted compressed stream or 0 if failed.
+    Function returns amount of bytes in resulted compressed stream, or 0 in case of error.
     Extra memory usage: 0.
     - 'search_limit' is maximum amount of bytes to look back when searching for a match, increasing this parameter can decrease performance dramatically.
     - to find enough size for output buffer: dst_size = ECL_NANO_LZ_GET_BOUND(src_size);
@@ -82,7 +82,8 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     All mid* algorithms require 'src_size' to not exceed 64k.
 
     In particular mid1, mid2 algorithms require 'dst_size' to be bigger than 'src_size'/2 (in case you planned to neglect ECL_NANO_LZ_GET_BOUND macro),
-    also if your data is barely compressible - these two algorithms will work better if you give 'dst_size' = up to ECL_NANO_LZ_GET_BOUND(src_size) + src_size/2;
+    also if your data is barely compressible - these two algorithms will work better if you give 'dst_size' = up to "ECL_NANO_LZ_GET_BOUND(src_size) + src_size/2 + 1"
+    (see ECL_NANO_LZ_MID_GET_BOUND_OPTIMAL).
 
     mid1min, mid2min are optimized versions of mid1, mid2 with 'search_limit'==1. Provide higher performance and smaller code size (but only basic compression),
     these are by fact the fastest NanoLZ compression methods.
@@ -91,6 +92,12 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
 ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_513);
 ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_256);
 ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_513);
+
+/*
+    Helper macro defining optimal reserved output size for mid* algorithms (except mid*min)
+    - reserving extra space in output can improve compression ratio of mid* algorithms in cases when data is poorly compressible.
+*/
+#define ECL_NANO_LZ_MID_GET_BOUND_OPTIMAL(src_size) (ECL_NANO_LZ_GET_BOUND(src_size) + ((src_size)/2) + 1)
 
 
 /*
@@ -105,12 +112,12 @@ typedef struct {
 
 /*
     TLDR version:
-    - consumption with alloc1 is 257*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
-    - consumption with alloc2 is 65537*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+    - consumption with *Alloc1 is 257*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
+    - consumption with *Alloc2 is 65537*sizeof(ECL_usize) + (1 << window_size_bits)*sizeof(ECL_usize)
 
     Initializers for fast1/fast2 compressors, return whether succeeded.
-    - *Alloc1 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST1* macros
-    - *Alloc2 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST2* macros
+    - *Alloc1 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST1* macros - valid for fast1 algorithm;
+    - *Alloc2 allocates buffers with sizes according to ECL_NANO_LZ_GET_FAST2* macros - valid for fast2 and fast1 algorithms;
 
     For maximum efficiency window_size_bits should be = [log2(src_size)] (see ECL_LogRoundUp function).
 */
@@ -149,10 +156,19 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
     Calls one of other compression methods (and allocates appropriate buffers according to input data size), to result in maximum performance.
 */
 ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
+/*
+    Extended _auto version - allows to specify successfully preallocated FastParams with *Alloc1 and *Alloc2 (prealloc1 and prealloc2 correspondingly).
+    If a preallocated parameter is NULL - default allocation occurs inside.
+    Allows:
+    - to store successfully preallocated FastParams outside and use them for multiple compression runs, thus saving time on malloc/free calls;
+    - to specify custom window size.
+*/
+ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
+                                      , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2);
 
 /*
     Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.
-    Function returns: amount of bytes in uncompressed stream, which is equal to 'dst_size' if decompression succeeded.
+    Function returns: amount of bytes in uncompressed stream (which is 'dst_size') if decompression succeeded, or 0 in case of error.
     Extra memory usage: 0.
     Usage:
         MyPODDataStruct my_data;
