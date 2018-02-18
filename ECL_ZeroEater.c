@@ -19,13 +19,13 @@ static void ECL_ZeroEater_DumpSeq1(ECL_ZeroEaterComprssorState* state, ECL_usize
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
         for(; full_blocks > 0; --full_blocks) {
-            *(state->dst) = 0x7F; // opcode
+            *(state->dst) = 0x7F; /* opcode */
             memcpy(state->dst + 1, state->src, 128);
             state->src += 128;
             state->dst += 1 + 128;
         }
         if(part_block_cnt) {
-            *(state->dst) = (uint8_t)part_block_cnt - 1; // opcode
+            *(state->dst) = (uint8_t)part_block_cnt - 1; /* opcode */
             memcpy(state->dst + 1, state->src, part_block_cnt);
             state->src += part_block_cnt;
             state->dst += 1 + part_block_cnt;
@@ -44,22 +44,22 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
         for(; full_blocks > 0; --full_blocks) {
-            *(state->dst) = 0xBF; // opcode
+            *(state->dst) = 0xBF; /* opcode */
             ++(state->dst);
         }
         if(part_block_cnt) {
-            *(state->dst) = (uint8_t)part_block_cnt - 0x81; // subtract 1, subtract extra 0x80 to get 1 in higher bit
+            *(state->dst) = (uint8_t)part_block_cnt - 0x81; /* subtract 1, subtract extra 0x80 to get 1 in higher bit */
             ++(state->dst);
         }
     }
 }
 
 static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
-    // count_x = [1..8]; count_0 = [1..8];
+    /* count_x = [1..8]; count_0 = [1..8]; */
     const ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
-        *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); // subtract extra 0x40 to get 11 in higher bits
+        *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); /* subtract extra 0x40 to get 11 in higher bits */
         memcpy(state->dst + 1, state->src, count_x);
         state->src += count_x;
         state->dst += 1 + count_x;
@@ -67,10 +67,10 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
 }
 
 static void ECL_ZeroEater_DumpGeneric(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
-    // count_x > 0; count_0 > 0
+    /* count_x > 0; count_0 > 0 */
     const ECL_usize x_full_blocks = count_x >> 7;
     if(x_full_blocks) {
-        const ECL_usize tmp = count_x & 0x7F; // last block size
+        const ECL_usize tmp = count_x & 0x7F; /* last block size */
         ECL_ZeroEater_DumpSeq1(state, count_x - tmp);
         count_x = tmp;
     }
@@ -105,27 +105,27 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
     state.dst_end = dst ? (dst + dst_size) : dst;
     first_x = src;
     while(state.src < src_end) {
-        for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); // search for zero from where last search ended
+        for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); /* search for zero from where last search ended */
 
-        cnt_x = first_0 - state.src; // count of non-zeroes in beginning
-        if(first_0 == src_end) { // complete it (1)
+        cnt_x = first_0 - state.src; /* count of non-zeroes in beginning */
+        if(first_0 == src_end) { /* complete it (1) */
             ECL_ZeroEater_DumpSeq1(&state, cnt_x);
             break;
         }
-        // we found zero, find next non-zero
+        /* we found zero, find next non-zero */
         for(first_x = first_0; (first_x < src_end) && (! *first_x); ++first_x);
 
-        cnt_0 = first_x - first_0; // count of zeroes afterwards
-        // stream looks like {state.src: [xx..x] first_0: [00..0] first_x: ...}
-        if(cnt_x) { // has non-zero stream too (3)
-            if((cnt_0 == 1) && (cnt_x > 8)) { // bad deal
-                // this particular case is the worst, this single zero-byte should be considered as non-zero for better compression
-                // this data will be processed in next iteration
+        cnt_0 = first_x - first_0; /* count of zeroes afterwards */
+        /* stream looks like {state.src: [xx..x] first_0: [00..0] first_x: ...} */
+        if(cnt_x) { /* has non-zero stream too (3) */
+            if((cnt_0 == 1) && (cnt_x > 8)) { /* bad deal */
+                /* this particular case is the worst, this single zero-byte should be considered as non-zero for better compression */
+                /* this data will be processed in next iteration */
                 continue;
             }
             ECL_ZeroEater_DumpGeneric(&state, cnt_x, cnt_0);
             state.src = first_x;
-        } else { // only zero stream (2)
+        } else { /* only zero stream (2) */
             ECL_ZeroEater_DumpSeq2(&state, cnt_0);
             state.src = first_x;
         }
@@ -137,29 +137,29 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
     const uint8_t* src_end = src + src_size;
     const uint8_t* dst_start = dst;
     const uint8_t* dst_end = dst + dst_size;
-    if((! src) || (! dst)) { // invalid parameters
+    if((! src) || (! dst)) { /* invalid parameters */
         return 0;
     }
     for(; src < src_end; ) {
         ECL_usize cnt_x, cnt_0;
         const uint8_t opcode = *src;
         ++src;
-        if(opcode & 0x80) { // method 2 or 3
-            if(opcode & 0x40) { // method 3
+        if(opcode & 0x80) { /* method 2 or 3 */
+            if(opcode & 0x40) { /* method 3 */
                 cnt_x = ((opcode >> 3) & 0x07) + 1;
                 cnt_0 = (opcode & 0x07) + 1;
-                // check if fits output buffer and unpack
+                /* check if fits output buffer and unpack */
                 if((cnt_x + cnt_0) > (ECL_usize)(dst_end - dst)) {
                     break;
                 }
                 if(cnt_x > (ECL_usize)(src_end - src)) {
-                    break; // invalid stream
+                    break; /* invalid stream */
                 }
                 memcpy(dst, src, cnt_x);
                 memset(dst + cnt_x, 0, cnt_0);
                 dst += cnt_x + cnt_0;
                 src += cnt_x;
-            } else { // method 2
+            } else { /* method 2 */
                 cnt_0 = (opcode & 0x3F) + 1;
                 if(cnt_0 > (ECL_usize)(dst_end - dst)) {
                     return 0;
@@ -167,18 +167,18 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
                 memset(dst, 0, cnt_0);
                 dst += cnt_0;
             }
-        } else { // method 1
+        } else { /* method 1 */
             cnt_x = opcode + 1;
             if(cnt_x > (ECL_usize)(dst_end - dst)) {
                 break;
             }
             if(cnt_x > (ECL_usize)(src_end - src)) {
-                break; // invalid stream
+                break; /* invalid stream */
             }
             memcpy(dst, src, cnt_x);
             dst += cnt_x;
             src += cnt_x;
         }
     }
-    return (src == src_end) ? (dst - dst_start) : 0; // ensure all source is consumed
+    return (src == src_end) ? (dst - dst_start) : 0; /* ensure all source is consumed */
 }

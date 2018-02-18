@@ -17,7 +17,7 @@
 */
 #define ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE() (257 * sizeof(ECL_usize))
 #define ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits) ((1UL << (window_size_bits)) * sizeof(ECL_usize))
-//
+/* */
 #define ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE() (65537 * sizeof(ECL_usize))
 #define ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits) ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits)
 
@@ -45,15 +45,15 @@ extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION
 */
 typedef enum {
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
-    ECL_NANOLZ_SCHEME1, // main scheme, highly optimized for small datasets
+    ECL_NANOLZ_SCHEME1, /* main scheme, highly optimized for small datasets */
 #endif
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
-    ECL_NANOLZ_SCHEME2_DEMO, // demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme
+    ECL_NANOLZ_SCHEME2_DEMO, /* demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme */
 #endif
 } ECL_NanoLZ_Scheme;
 
 
-// macro representing set of all schemes (used for testing)
+/* macro representing set of all schemes (used for testing) */
 #if (ECL_NANO_LZ_ONLY_SCHEME == 0)
     #define ECL_NANO_LZ_SCHEMES_ALL {ECL_NANOLZ_SCHEME1, ECL_NANOLZ_SCHEME2_DEMO}
 #elif (ECL_NANO_LZ_ONLY_SCHEME == 1)
@@ -175,7 +175,7 @@ ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* s
         ECL_usize compressed_size_limit = ECL_NANO_LZ_GET_BOUND(sizeof(my_data));
         uint8_t* compressed_stream = (uint8_t*)malloc( compressed_size_limit );
         ECL_usize compressed_size = ECL_NanoLZ_Compress_slow(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 30);
-        // ... <- transferring 'compressed_size' bytes of 'compressed_stream' to receiver side
+        // <- transferring 'compressed_size' bytes of 'compressed_stream' to receiver side
         ECL_usize uncompressed_size = ECL_NanoLZ_Decompress(ECL_NANOLZ_SCHEME1, compressed_stream, compressed_size, (uint8_t*)&my_data, sizeof(my_data));
         if(uncompressed_size != sizeof(my_data)) {
             // failed

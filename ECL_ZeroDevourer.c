@@ -60,7 +60,7 @@ static void ECL_ZeroDevourer_DumpSeq111(ECL_JH_WState* state, const uint8_t* src
 }
 
 static void ECL_ZeroDevourer_DumpZeroGeneric(ECL_JH_WState* state, ECL_usize cnt_0) {
-    // cnt_0 > 0
+    /* cnt_0 > 0 */
     if(cnt_0 >= 9) {
         ECL_ZeroDevourer_DumpSeq110(state, cnt_0);
     } else {
@@ -69,7 +69,7 @@ static void ECL_ZeroDevourer_DumpZeroGeneric(ECL_JH_WState* state, ECL_usize cnt
 }
 
 static void ECL_ZeroDevourer_DumpGeneric(ECL_JH_WState* state, const uint8_t* src, ECL_usize cnt_x, ECL_usize cnt_0) {
-    // cnt_x + cnt_0 > 0
+    /* cnt_x + cnt_0 > 0 */
     if(! cnt_x) {
         ECL_ZeroDevourer_DumpZeroGeneric(state, cnt_0);
     } else if(! cnt_0) {
@@ -127,18 +127,18 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
     while((first_undone < src_end) && (state.is_valid)) {
         ECL_usize cnt_x, cnt_0;
         const uint8_t* first_0;
-        for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); // search for zero from where last search ended
+        for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); /* search for zero from where last search ended */
 
-        cnt_x = first_0 - first_undone; // count of non-zeroes in beginning
-        if(first_0 == src_end) { // complete it (1)
+        cnt_x = first_0 - first_undone; /* count of non-zeroes in beginning */
+        if(first_0 == src_end) { /* complete it (1) */
             ECL_ZeroDevourer_DumpSeq111(&state, first_undone, cnt_x);
             break;
         }
-        // we found zero, find next non-zero
+        /* we found zero, find next non-zero */
         for(first_x = first_0; (first_x < src_end) && (! *first_x); ++first_x);
 
-        cnt_0 = first_x - first_0; // count of zeroes afterwards
-        // stream looks like {first_undone: [xx..x] first_0: [00..0] first_x: ...}
+        cnt_0 = first_x - first_0; /* count of zeroes afterwards */
+        /* stream looks like {first_undone: [xx..x] first_0: [00..0] first_x: ...} */
         if(ECL_ZeroDevourer_IsWorth(cnt_x, cnt_0)) {
             ECL_ZeroDevourer_DumpGeneric(&state, first_undone, cnt_x, cnt_0);
             first_undone = first_x;
@@ -171,9 +171,9 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             } else {
                 return 0;
             }
-        } else { // wide codes
+        } else { /* wide codes */
             switch (ECL_JH_Read(&state, 2)) {
-            case 0: // seq 1.00
+            case 0: /* seq 1.00 */
                 cnt_x = ECL_JH_Read(&state, 2) + 1;
                 {
                     const uint8_t* const src_block_start = state.next;
@@ -190,7 +190,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
                     }
                 }
                 break;
-            case 1: // seq 1.01
+            case 1: /* seq 1.01 */
                 cnt_x = ECL_JH_Read(&state, 4) + 5;
                 {
                     const uint8_t* const src_block_start = state.next;
@@ -204,7 +204,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
                     }
                 }
                 break;
-            case 2: // seq 1.10
+            case 2: /* seq 1.10 */
                 cnt_0 = ECL_JH_Read_E4(&state) + 9;
                 if(state.is_valid && (cnt_0 <= left)) {
                     memset(dst, 0, cnt_0);
@@ -213,7 +213,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
                     return 0;
                 }
                 break;
-            case 3: // seq 1.11
+            case 3: /* seq 1.11 */
                 cnt_x = ECL_JH_Read_E6E3(&state) + 1;
                 {
                     const uint8_t* const src_block_start = state.next;

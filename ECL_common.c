@@ -1,6 +1,6 @@
 #include "ECL_JH_States.h"
 
-static uint8_t ECL_JH_dummy_buffer; // dummy data storage to simplify some checks
+static uint8_t ECL_JH_dummy_buffer; /* dummy data storage to simplify some checks */
 static const uint8_t c_bmasks8[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
 
 void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start) {
@@ -17,7 +17,7 @@ void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize 
         state->next = state->byte + 1;
     } else {
         state->byte = ptr;
-        state->next = state->end; // if invalid - next==end
+        state->next = state->end; /* if invalid - next==end */
     }
     state->n_bits = 8;
     *(state->byte) = 0;
@@ -45,10 +45,10 @@ void ECL_JH_RInit(ECL_JH_RState* state, const uint8_t* ptr, ECL_usize size, ECL_
 void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
     ECL_ASSERT(bits && (bits < 9));
     value &= c_bmasks8[bits];
-    if(bits <= state->n_bits) { // fits easily
+    if(bits <= state->n_bits) { /* fits easily */
         *(state->byte) |= value << (8 - state->n_bits);
         state->n_bits -= bits;
-    } else if(! state->n_bits) { // to next
+    } else if(! state->n_bits) { /* to next */
         if(state->next == state->end) {
             state->is_valid = 0;
             return;
@@ -57,7 +57,7 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
         ++(state->next);
         *(state->byte) = value;
         state->n_bits = 8 - bits;
-    } else { // 2 parts
+    } else { /* 2 parts */
         *(state->byte) |= value << (8 - state->n_bits);
         if(state->next == state->end) {
             state->is_valid = 0;
@@ -73,10 +73,10 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits) {
 uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
     ECL_ASSERT(bits && (bits < 9));
     uint8_t res;
-    if(bits <= state->n_bits) { // fits easily
+    if(bits <= state->n_bits) { /* fits easily */
         res = *(state->byte) >> (8 - state->n_bits);
         state->n_bits -= bits;
-    } else if(! state->n_bits) { // to next
+    } else if(! state->n_bits) { /* to next */
         if(state->next == state->end) {
             state->is_valid = 0;
             return 0;
@@ -85,7 +85,7 @@ uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits) {
         ++(state->next);
         res = *(state->byte);
         state->n_bits = 8 - bits;
-    } else { // 2 parts
+    } else { /* 2 parts */
         res = *(state->byte) >> (8 - state->n_bits);
         if(state->next == state->end) {
             state->is_valid = 0;
@@ -258,6 +258,6 @@ ECL_E_NUMBER_DEFINE_X2_IMPL(7, 4)
 
 #undef ECL_E_NUMBER_DEFINE_X2_IMPL
 
-// cleanup in case of compiling as single file
+/* cleanup in case of compiling as single file */
 #undef ECL_CALC_E
 #undef ECL_CHECK_E_AND_SHIFT

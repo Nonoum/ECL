@@ -30,7 +30,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
         ECL_usize compressed_size_limit = ECL_ZERO_EATER_GET_BOUND(src_size);
         uint8_t* compressed = (uint8_t*)malloc( compressed_size_limit );
         ECL_usize compressed_size = ECL_ZeroEater_Compress(src, src_size, compressed, compressed_size_limit);
-        // ... <- transferring 'compressed_size' bytes of 'compressed' to receiver side
+        // <- transferring 'compressed_size' bytes of 'compressed' to receiver side
         ECL_usize uncompressed_size = ECL_ZeroEater_Decompress(compressed, compressed_size, (uint8_t*)&my_data, sizeof(my_data));
         if(uncompressed_size != sizeof(my_data)) {
             // failed

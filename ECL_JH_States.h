@@ -18,7 +18,7 @@ typedef struct {
     uint8_t* next;
     uint8_t* end;
     uint8_t n_bits;
-    uint8_t is_valid; // to check after any transaction
+    uint8_t is_valid; /* to check after any transaction */
 } ECL_JH_WState;
 
 typedef struct {
@@ -26,34 +26,34 @@ typedef struct {
     const uint8_t* next;
     const uint8_t* end;
     uint8_t n_bits;
-    uint8_t is_valid; // to check after any transaction
+    uint8_t is_valid; /* to check after any transaction */
 } ECL_JH_RState;
 
 
-void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start); // state's constructor
-void ECL_JH_RInit(ECL_JH_RState* state, const uint8_t* ptr, ECL_usize size, ECL_usize start); // -:-
-void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits); // writes 'bits' bits of 'value' to 'state'
-uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits); // returns value of 'bits' size read from 'state'
-void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); // moves pointer to next byte at 'distance' if possible
-void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); // -:-
+void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start); /* state's constructor */
+void ECL_JH_RInit(ECL_JH_RState* state, const uint8_t* ptr, ECL_usize size, ECL_usize start); /* -:- */
+void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits); /* writes 'bits' bits of 'value' to 'state' */
+uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits); /* returns value of 'bits' size read from 'state' */
+void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); /* moves pointer to next byte at 'distance' if possible */
+void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); /* -:- */
 
 
-// util functions
-uint8_t ECL_LogRoundUp(ECL_usize value); // returns [log2(value)]. for 0 returns 1
-uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr); // returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment
-ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr); // returns aligned pointer (shifts ptr forward if needed) matching ECL_usize alignment
+/* util functions */
+uint8_t ECL_LogRoundUp(ECL_usize value); /* returns [log2(value)]. for 0 returns 1 */
+uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment */
+ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching ECL_usize alignment */
 
 
-// E-numbers part
-void ECL_JH_Write_E2(ECL_JH_WState* state, ECL_usize value); // writes 'value' to 'state' in E2 number format
-ECL_usize ECL_JH_Read_E2(ECL_JH_RState* state); // reads from 'state' a value in E2 number format
-uint8_t ECL_Evaluate_E2(ECL_usize number); // returns amount of bits required for coding 'number' in E2 format
+/* E-numbers part */
+void ECL_JH_Write_E2(ECL_JH_WState* state, ECL_usize value); /* writes 'value' to 'state' in E2 number format */
+ECL_usize ECL_JH_Read_E2(ECL_JH_RState* state); /* reads from 'state' a value in E2 number format */
+uint8_t ECL_Evaluate_E2(ECL_usize number); /* returns amount of bits required for coding 'number' in E2 format */
 
-void ECL_JH_Write_E4E5(ECL_JH_WState* state, ECL_usize value); // -:-
-ECL_usize ECL_JH_Read_E4E5(ECL_JH_RState* state); // -:-
-uint8_t ECL_Evaluate_E4E5(ECL_usize number); // -:-
+void ECL_JH_Write_E4E5(ECL_JH_WState* state, ECL_usize value); /* -:- */
+ECL_usize ECL_JH_Read_E4E5(ECL_JH_RState* state); /* -:- */
+uint8_t ECL_Evaluate_E4E5(ECL_usize number); /* -:- */
 
-// other numbers are declared via macros below
+/* other numbers are declared via macros below */
 
 #define ECL_E_NUMBER_DECLARE_SIMPLE(num) \
     void ECL_JH_Write_E##num(ECL_JH_WState* state, ECL_usize value); \

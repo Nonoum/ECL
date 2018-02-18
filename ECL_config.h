@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h> // memcpy, memset
+#include <string.h> /* memcpy, memset */
 
 #define ECL_VERSION_MAJOR 0
 #define ECL_VERSION_MINOR 1
@@ -11,7 +11,7 @@
 #define ECL_VERSION_BRANCH 'm'
 
 
-// user setup part ---------------------------------------------
+/* user setup part --------------------------------------------- */
 /*
     Add your own definitions here if you don't have available:
     - uint8_t
@@ -22,26 +22,26 @@
 #ifndef ECL_USE_BITNESS_16
 #ifndef ECL_USE_BITNESS_32
 #ifndef ECL_USE_BITNESS_64
-// none of these is defined with force for compilation, use 32 bits by default
-#define ECL_USE_BITNESS_32 // default bitness if nothing else specified via compilation parameters
+/* none of these is defined with force for compilation, use 32 bits by default */
+#define ECL_USE_BITNESS_32 /* default bitness if nothing else specified via compilation parameters */
 #endif
 #endif
 #endif
 
-//#define ECL_USE_ASSERT
-//#define ECL_USE_BRANCHLESS
-//#define ECL_USE_STAT_COUNTERS
+/*#define ECL_USE_ASSERT */
+/*#define ECL_USE_BRANCHLESS */
+/*#define ECL_USE_STAT_COUNTERS */
 
 #ifndef ECL_NANO_LZ_ONLY_SCHEME
-// set to 0 to unlock all schemes, set to 1 to have only scheme1, 2 = scheme2 etc. Having single scheme allows compiler to inline for better performance
-// default is 1 since most likely you will use only scheme1 and want better performance
+/* set to 0 to unlock all schemes, set to 1 to have only scheme1, 2 = scheme2 etc. Having single scheme allows compiler to inline for better performance */
+/* default is 1 since most likely you will use only scheme1 and want better performance */
 #define ECL_NANO_LZ_ONLY_SCHEME 1
 #endif
 
-// non-user part ------------------------------------------
+/* non-user part ------------------------------------------ */
 #define ECL_NANO_LZ_IS_SCHEME_ENABLED(scheme_num) ((ECL_NANO_LZ_ONLY_SCHEME == 0) || (ECL_NANO_LZ_ONLY_SCHEME == scheme_num))
 
-// size types ---------------------------------------------
+/* size types --------------------------------------------- */
 #ifdef ECL_USE_BITNESS_16
     typedef uint16_t ECL_usize;
     typedef int16_t ECL_ssize;
@@ -69,7 +69,7 @@
 #define ECL_VALIDATE_BOUND_OK(estimated_max_compressed_size, src_size) (( (ECL_usize)(estimated_max_compressed_size) ) > ( (ECL_usize)(src_size) ))
 
 
-// asserts ---------------------------------------------
+/* asserts --------------------------------------------- */
 #ifdef ECL_USE_ASSERT
     #include <assert.h>
     #define ECL_ASSERT(expr) assert(expr)
@@ -79,7 +79,7 @@
 
 
 
-// helpful
+/* helpful */
 #define ECL_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ECL_MAX(a, b) ((a) > (b) ? (a) : (b))
 
