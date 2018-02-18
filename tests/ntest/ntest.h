@@ -1,7 +1,8 @@
 #pragma once
-// ntest version 2.1.1
 #include <iostream>
 #include <cstdint>
+
+#define NTEST_VERSION_STRING "2.2.1"
 
 namespace ntest {
 

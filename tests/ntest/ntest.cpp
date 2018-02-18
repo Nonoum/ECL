@@ -86,7 +86,8 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
     size_t n_succeeded = 0;
     size_t n_skipped = 0;
     size_t n_crashed = 0;
-    log_output << "ntest: Running tests with depth = " << depth << std::endl;
+    log_output << "ntest" << NTEST_VERSION_STRING << ": Running tests with depth = " << depth << std::endl;
+    double total_time = 0;
     for(auto runner : tests) {
         const auto name = runner->getName();
         Result result = INIT;
@@ -105,9 +106,10 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
         default: ++n_failed; break;
         }
         const auto seconds = (double(runner->getDurationMicroseconds()) / 1000000.);
+        total_time += seconds;
         log_output << '[' << std::setw(7) << std::left << ResultToStr(result) << "] " << std::fixed << seconds << " : " << name << std::endl;
     }
-    log_output << "ntest: Total tests : " << (n_failed + n_succeeded) << std::endl;
+    log_output << "ntest: Total tests run : " << (n_failed + n_succeeded) << " in " << std::fixed << total_time << " seconds" << std::endl;
     log_output << "ntest: Succeeded : " << n_succeeded << std::endl;
     log_output << "ntest: Skipped : " << n_skipped << std::endl;
     log_output << "ntest: Failed : " << n_failed;
