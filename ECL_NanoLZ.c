@@ -534,6 +534,10 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
 
 /* 'fast' versions ------------------------------------------------------------------------------ */
 
+static bool ECL_NanoLZ_FastParams_Validate(ECL_NanoLZ_FastParams* p) {
+    return p && (p->buf_map) && (p->buf_window);
+}
+
 static bool ECL_NanoLZ_FastParams_Alloc(ECL_NanoLZ_FastParams* p, uint8_t ver, uint8_t window_size_bits) {
     if(! p) {
         return false;
@@ -574,7 +578,10 @@ void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p) {
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
-    if((! p) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
+    if((! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
+        return 0;
+    }
+    if(! ECL_NanoLZ_FastParams_Validate(p)) {
         return 0;
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
@@ -654,7 +661,10 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
 ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
     ECL_NanoLZ_CompressorState state;
     const ECL_NanoLZ_SchemeCoder coder = ECL_NanoLZ_GetSchemeCoder(scheme);
-    if((! p) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
+    if((! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
+        return 0;
+    }
+    if(! ECL_NanoLZ_FastParams_Validate(p)) {
         return 0;
     }
     memset(p->buf_map, -1, ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
