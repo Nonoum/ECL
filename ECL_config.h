@@ -31,6 +31,7 @@
 /*#define ECL_USE_ASSERT */
 /*#define ECL_USE_BRANCHLESS */
 /*#define ECL_USE_STAT_COUNTERS */
+/*#define ECL_DISABLE_MALLOC */
 
 #ifndef ECL_NANO_LZ_ONLY_SCHEME
 /* set to 0 to unlock all schemes, set to 1 to have only scheme1, 2 = scheme2 etc. Having single scheme allows compiler to inline for better performance */
@@ -77,6 +78,14 @@
     #define ECL_ASSERT(expr)
 #endif
 
+/* malloc/free can be disabled (stubbed). useful if those functions don't compile on some particular platform */
+#ifdef ECL_DISABLE_MALLOC
+    #define ECL_MEM_ALLOC(size) 0
+    #define ECL_MEM_FREE(ptr)
+#else
+    #define ECL_MEM_ALLOC(size) malloc(size)
+    #define ECL_MEM_FREE(ptr) free(ptr)
+#endif
 
 
 /* helpful */

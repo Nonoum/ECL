@@ -547,11 +547,11 @@ static bool ECL_NanoLZ_FastParams_Alloc(ECL_NanoLZ_FastParams* p, uint8_t ver, u
         return false;
     }
     if(ver == 1) {
-        p->buf_map = malloc(ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
-        p->buf_window = malloc(ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits));
+        p->buf_map = ECL_MEM_ALLOC(ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE());
+        p->buf_window = ECL_MEM_ALLOC(ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits));
     } else if(ver == 2) {
-        p->buf_map = malloc(ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
-        p->buf_window = malloc(ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits));
+        p->buf_map = ECL_MEM_ALLOC(ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE());
+        p->buf_window = ECL_MEM_ALLOC(ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits));
     }
     p->window_size_bits = window_size_bits;
     if((p->buf_map) && (p->buf_window)) {
@@ -570,8 +570,8 @@ bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_
 }
 
 void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p) {
-    free(p->buf_map);
-    free(p->buf_window);
+    ECL_MEM_FREE(p->buf_map);
+    ECL_MEM_FREE(p->buf_window);
     memset(p, 0, sizeof(*p));
 }
 
