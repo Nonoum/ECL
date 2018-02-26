@@ -29,7 +29,7 @@
 
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
     vector_name.resize(capacity + 1); \
-    vector_name[capacity] = 0x39; ntest::ntest_noop()
+    vector_name[capacity] = 0x39; NTEST_NAMESPACE_NAME::ntest_noop()
 
 #define ECL_TEST_MAGIC_VALIDATE(vector_name) \
     ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x39)
@@ -77,5 +77,5 @@ int main(int argc, char* argv[]) {
     if(argc == 2) {
         depth = atoi(argv[1]);
     }
-    return ntest::TestBase::RunTests(std::cout, depth);
+    return NTEST_NAMESPACE_NAME::TestBase::RunTests(std::cout, depth);
 }

@@ -2,9 +2,14 @@
 #include <iostream>
 #include <cstdint>
 
-#define NTEST_VERSION_STRING "2.2.1"
+#define NTEST_VERSION_STRING "2.3.1"
 
-namespace ntest {
+// allow to override namespace to have ability of having multiple thirdparties with ntest easily launched within single project
+#ifndef NTEST_NAMESPACE_NAME
+    #define NTEST_NAMESPACE_NAME ntest
+#endif
+
+namespace NTEST_NAMESPACE_NAME {
 
 // a stub to force adding semicolons after macro
 inline void ntest_noop() {}
@@ -47,14 +52,14 @@ private:
 
 } //end ntest
 
-#define NTEST_SUPPRESS_UNUSED (void)log; (void)depth; ntest::ntest_noop()
+#define NTEST_SUPPRESS_UNUSED (void)log; (void)depth; NTEST_NAMESPACE_NAME::ntest_noop()
 
-#define NTEST_REQUIRE_DEPTH_ABOVE(value) if(depth <= (value)) { skip(); return; } ntest::ntest_noop()
+#define NTEST_REQUIRE_DEPTH_ABOVE(value) if(depth <= (value)) { skip(); return; } NTEST_NAMESPACE_NAME::ntest_noop()
 
 #define NTEST(test_name) \
-    class test_name : public ntest::TestBase { \
+    class test_name : public NTEST_NAMESPACE_NAME::TestBase { \
     public: \
-        test_name() : ntest::TestBase(#test_name) { \
+        test_name() : NTEST_NAMESPACE_NAME::TestBase(#test_name) { \
             PushRunner(this); \
         }; \
     protected: \

@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string.h> // strcmp
 
-namespace ntest {
+namespace NTEST_NAMESPACE_NAME {
 
 uint64_t GetTimeMicroseconds() {
     return std::chrono::duration_cast<std::chrono::microseconds>(
@@ -76,6 +76,10 @@ int TestBase :: BoundVMinMax(int v, int min, int max) {
     return v;
 }
 
+#define NTEST_STRING_OF_HELPER(x) #x
+#define NTEST_STRING_OF(x) NTEST_STRING_OF_HELPER(x)
+#define NTEST_NS_STRING NTEST_STRING_OF(NTEST_NAMESPACE_NAME)
+
 size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
     const auto comp = [](const TestBase* left, const TestBase* right) {
         return strcmp(left->getName(), right->getName()) < 0;
@@ -86,7 +90,8 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
     size_t n_succeeded = 0;
     size_t n_skipped = 0;
     size_t n_crashed = 0;
-    log_output << "ntest" << NTEST_VERSION_STRING << ": Running tests with depth = " << depth << std::endl;
+    log_output << "ntest" << NTEST_VERSION_STRING << " (compiled with namespace '" << NTEST_NS_STRING
+               << "'): Running tests with depth = " << depth << std::endl;
     double total_time = 0;
     for(auto runner : tests) {
         const auto name = runner->getName();
@@ -119,6 +124,10 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
     log_output << std::endl;
     return n_failed;
 }
+
+#undef NTEST_STRING_OF_HELPER
+#undef NTEST_STRING_OF
+#undef NTEST_NS_STRING
 
 void TestBase :: skip() {
     result = SKIP;
