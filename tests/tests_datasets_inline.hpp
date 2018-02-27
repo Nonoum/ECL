@@ -454,7 +454,7 @@ bool ECL_Test_NanoLZ_AllCompressorsAreEqual(const std::vector<uint8_t>& src, std
 NTEST(test_NanoLZ_check_modes_equal_result) {
     NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
-    const int n_sets = 2 * (BoundVMinMax(depth + 10, 0, 100) + 1);
+    const int n_sets = 2 * (BoundVMinMax(depth + 10, 0, 1010) + 1);
     const int max_size = 10000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
