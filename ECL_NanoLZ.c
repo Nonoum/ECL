@@ -592,7 +592,7 @@ ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         const ECL_usize window_mask = (((ECL_usize)1) << p->window_size_bits) - 1;
         ECL_usize pos = 1;
 
-        buf_window[0] = -1;
+        buf_window[0] = (ECL_usize)(-1);
         buf_map[*src] = 0;
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
@@ -677,7 +677,7 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
         uint16_t key;
 
         key = ECL_READ_U16_WHATEVER(src);
-        buf_window[0] = -1;
+        buf_window[0] = (ECL_usize)(-1);
         buf_map[key] = 0;
         pos = 1;
         for(src = state.first_undone; src < state.search_end;) {
