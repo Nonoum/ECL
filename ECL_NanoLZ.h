@@ -40,16 +40,18 @@ extern int ECL_NanoLZ_Decompression_OpcodePickCounters[ECL_NANO_LZ_DECOMPRESSION
     - incompatible between each other, so you have to use same scheme during compression and decompression of your dataset for correct result;
     - not included as identifiers in compressed stream in any way (so decompression method has 'scheme' parameter as well);
     - intended to be tested with target datasets to determine optimal one (different schemes would provide different compression level and performance);
-    - can be extended with your own scheme, optimized for your particular data (if you know what you're doing);
-    Don't serialize these values as is.
+    - can be extended with your own scheme, optimized for your particular data (if you know what you're doing),
+        in this case it's recommended to assign bigger values for them (e.g. ECL_NANOLZ_PETER_SCHEME = 128,)
+        in case you plan to use ECL as dynamic library and need binary compatibility.
 */
 typedef enum {
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(1)
-    ECL_NANOLZ_SCHEME1, /* main scheme, highly optimized for small datasets */
+    ECL_NANOLZ_SCHEME1 = 0, /* main scheme, highly optimized for small datasets */
 #endif
 #if ECL_NANO_LZ_IS_SCHEME_ENABLED(2)
-    ECL_NANOLZ_SCHEME2_DEMO, /* demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme */
+    ECL_NANOLZ_SCHEME2_DEMO = 1, /* demo scheme. small code size, weak compression, high decompression speed - example for writing custom scheme */
 #endif
+    /* user-defined scheme codes are recommended to start from 128 */
 } ECL_NanoLZ_Scheme;
 
 

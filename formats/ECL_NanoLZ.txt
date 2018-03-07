@@ -1,2 +1,8 @@
-For E4, E7E4 formats refer to ECL_E_number_format.txt.
-TBD
+For E2, E3, E6E3 formats refer to ECL_E_number_format.txt.
+
+First byte of compressed stream is exactly first byte of uncompressed data, further compressed data represent consequent
+blocks of format determined by used scheme (ECL_NanoLZ_Scheme enum).
+
+Stable schemes are: {ECL_NANOLZ_SCHEME1} - they're not to be changed.
+
+ECL_NANOLZ_SCHEME1 format: TBD (currently I just don't have time to document it).
