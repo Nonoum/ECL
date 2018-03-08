@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy, memset */
 
+/* see runtime version in ECL_utils.h */
 #define ECL_VERSION_MAJOR 0
 #define ECL_VERSION_MINOR 1
 #define ECL_VERSION_PATCH 0
-#define ECL_VERSION_BRANCH 'm'
+#define ECL_VERSION_NUMBER (ECL_VERSION_MAJOR*10000 + ECL_VERSION_MINOR*100 + ECL_VERSION_PATCH)
+
+#define ECL_VERSION_BRANCH "master"
 
 
 /* user setup part --------------------------------------------- */

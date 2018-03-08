@@ -30,6 +30,28 @@ static uint8_t ECL_JH_dummy_buffer; /* dummy data storage to simplify some check
 static const uint8_t c_bmasks8[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
 
 // utils part
+uint32_t ECL_GetSizeBitness() {
+    return ECL_SIZE_TYPE_BITS_COUNT;
+}
+
+uint32_t ECL_GetVersionNumber() {
+    return ECL_VERSION_NUMBER;
+}
+
+#define ECL_STRING_OF_HELPER(x) #x
+#define ECL_STRING_OF(x) ECL_STRING_OF_HELPER(x)
+
+const char* ECL_GetVersionString() {
+    return ECL_STRING_OF(ECL_VERSION_MAJOR.ECL_VERSION_MINOR.ECL_VERSION_PATCH);
+}
+
+#undef ECL_STRING_OF_HELPER
+#undef ECL_STRING_OF
+
+const char* ECL_GetVersionBranch() {
+    return ECL_VERSION_BRANCH;
+}
+
 uint8_t ECL_LogRoundUp(ECL_usize value) {
     ECL_usize tmp;
     uint8_t result;

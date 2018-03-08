@@ -3,6 +3,7 @@
 #include "../ECL_ZeroEater.h"
 #include "../ECL_ZeroDevourer.h"
 #include "../ECL_NanoLZ.h"
+#include "../ECL_utils.h"
 
 #ifndef ECL_BUILD_AS_C
 #include "../ECL_common.c"
@@ -58,3 +59,12 @@ static void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v
 #include "tests_random_data_inline.hpp"
 #include "tests_perf_inline.hpp"
 #include "tests_errors_inline.hpp"
+
+NTEST(test_version) {
+    NTEST_SUPPRESS_UNUSED;
+    log << "  ECL Size Bitness: " << ECL_GetSizeBitness() << std::endl;
+    log << "  ECL Version: " << ECL_GetVersionNumber() << std::endl;
+    log << "  ECL Version String: " << ECL_GetVersionString() << std::endl;
+    log << "  ECL Version Branch: " << ECL_GetVersionBranch() << std::endl;
+    approve(true);
+}
