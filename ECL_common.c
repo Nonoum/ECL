@@ -57,6 +57,50 @@ ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }
 
+uint8_t* ECL_Helper_WriteE7(uint8_t* data_start, ECL_usize max_bytes, ECL_usize value) {
+    if(data_start) {
+        while(max_bytes) {
+            const uint8_t e = value > 0x7F ? 0x80 : 0;
+            *data_start = (uint8_t)value | e;
+            value >>= 7;
+            ++data_start;
+            if(! e) {
+                return data_start;
+            }
+            --max_bytes;
+        }
+    }
+    return 0;
+}
+
+const uint8_t* ECL_Helper_ReadE7(const uint8_t* data_start, ECL_usize max_bytes, ECL_usize* output_value) {
+    if(data_start && output_value) {
+        uint8_t shift = 0;
+        *output_value = 0;
+        while(max_bytes) {
+            const ECL_usize adding = *data_start & 0x7F;
+            const uint8_t e = *data_start & 0x80;
+            *output_value |= adding << shift;
+            ++data_start;
+            if(! e) {
+                if(shift) {
+                    const uint8_t last_allowed_bits = ECL_SIZE_TYPE_BITS_COUNT - shift;
+                    if(( ((ECL_usize)1) << last_allowed_bits ) <= adding) {
+                        break; // failed - not enough capacity
+                    }
+                }
+                return data_start;
+            }
+            --max_bytes;
+            shift += 7;
+            if(shift >= ECL_SIZE_TYPE_BITS_COUNT) {
+                break; // failed - not enough capacity
+            }
+        }
+    }
+    return 0;
+}
+
 
 // JH part
 void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start) {

@@ -1,4 +1,5 @@
 #include "../ECL_JH_States.h"
+#include "../ECL_utils.h"
 #include "ntest/ntest.h"
 
 #include <algorithm>
@@ -17,7 +18,8 @@
         auto n_bytes = (n_bits / 8) + 1;                                                    \
         auto data = (uint8_t*)malloc(n_bytes);                                              \
         ECL_TEST_ASSERT(data);                                                              \
-        for(int i = 0; i < 1000; ++i) {                                                     \
+        const auto n_repeats = (BoundVMinMax(depth + 10, 0, 1010) + 2);                     \
+        for(int i = 0; i < n_repeats; ++i) {                                                \
             ECL_JH_WInit(&wstate, data, n_bytes, 0);                                        \
             for(uint64_t value = 0; value < limit; value = ECL_TEST_E_NEXT_VALUE(value)) {  \
                 write_func(&wstate, value);                                                 \
@@ -36,6 +38,42 @@
         free(data);                                                                         \
     }
 
+NTEST(test_number_E7_helpers) {
+    NTEST_SUPPRESS_UNUSED;
+    {
+        const uint64_t limit = 0x0FFFFFFFFFFFFFFLL & ((1ULL << (ECL_SIZE_TYPE_BITS_COUNT - 1)) - 1ULL);
+        ECL_usize n_bits = 0;
+        for(uint64_t value = 0; value < limit; value = ECL_TEST_E_NEXT_VALUE(value)) {
+            n_bits += ECL_Evaluate_E7(value);
+        }
+        const auto n_bytes = (n_bits / 8) + 1;
+        auto data = (uint8_t*)malloc(n_bytes);
+        const auto data_end = data + n_bytes;
+        ECL_TEST_ASSERT(data);
+        const auto n_repeats = (BoundVMinMax(depth + 10, 0, 1010) + 2);
+        for(int i = 0; i < n_repeats; ++i) {
+            uint8_t* next_wr = data;
+            for(uint64_t value = 0; value < limit; value = ECL_TEST_E_NEXT_VALUE(value)) {
+                next_wr = ECL_Helper_WriteE7(next_wr, data_end - next_wr, value);
+                ECL_TEST_ASSERT(next_wr);
+            }
+            auto finished_wr = next_wr;
+            // read back
+            const uint8_t* next_rd = data;
+            for(uint64_t value = 0; value < limit; value = ECL_TEST_E_NEXT_VALUE(value)) {
+                ECL_usize retrieved = 0;
+                next_rd = ECL_Helper_ReadE7(next_rd, data_end - next_rd, &retrieved);
+                ECL_TEST_ASSERT(next_rd);
+                ECL_TEST_COMPARE((ECL_usize)value, retrieved);
+            }
+            auto finished_rd = next_rd;
+            //
+            ECL_TEST_ASSERT(finished_wr <= data_end);
+            ECL_TEST_COMPARE((int)finished_wr, (int)finished_rd);
+        }
+        free(data);
+    }
+}
 
 NTEST(test_number_E7) {
     NTEST_SUPPRESS_UNUSED;
