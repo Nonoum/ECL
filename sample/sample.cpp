@@ -1,5 +1,6 @@
 #include "../ECL_common.c"
 #include "../ECL_NanoLZ.c"
+#include "../ECL_utils.h"
 
 #include <iostream>
 #include <fstream>
@@ -94,14 +95,12 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int limit) {
     output.resize(comp_size);
     // encode original file size in header - encode as E7 number
     uint8_t hdr[10];
-    ECL_JH_WState stream;
-    ECL_JH_WInit(&stream, hdr, sizeof(hdr), 0);
-    ECL_JH_Write_E7(&stream, src.size());
-    if(! stream.is_valid) {
+    const auto hdr_end = ECL_Helper_WriteE7(hdr, sizeof(hdr), src.size());
+    if(! hdr_end) {
         std::cout << "- error: unknown stream error :|" << std::endl;
         return false;
     }
-    const auto hdr_size = stream.next - hdr;
+    const auto hdr_size = hdr_end - hdr;
     const auto total_size = comp_size + hdr_size;
     // write file data
     std::cout << "- successfully compressed: original size = " << src.size() << std::endl;
@@ -117,14 +116,13 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     if(! src.size()) {
         return false;
     }
-    ECL_JH_RState stream;
-    ECL_JH_RInit(&stream, src.data(), src.size(), 0);
-    const auto original_size = ECL_JH_Read_E7(&stream);
-    if(! stream.is_valid) {
+    ECL_usize original_size;
+    const auto hdr_end = ECL_Helper_ReadE7(src.data(), src.size(), &original_size);
+    if(! hdr_end) {
         std::cout << "- error: invalid file content" << std::endl;
         return false;
     }
-    const auto comp_start = stream.next;
+    const auto comp_start = hdr_end;
     const auto comp_size = src.data() + src.size() - comp_start;
     Raw recovered;
     recovered.resize(original_size);
@@ -143,22 +141,20 @@ bool s_cmp_operand(const char* str, const char* expected) {
 
 int main(int argc, char* argv[]) {
     std::cout << "*** Sample ECL program to compress/decompress with ECL:NanoLZ format ***" << std::endl;
-    do {
-        if((argc == 4) && s_cmp_operand(argv[1], "d")) {
-            if(s_try_decompress(argv[2], argv[3])) {
-                return 0;
-            }
-        } else if((argc == 5) && s_cmp_operand(argv[1], "c")) {
-            int limit = atoi(argv[2]);
-            if(limit < 1) {
-                std::cout << "- error: limit has to be > 0" << std::endl;
-                break;
-            }
-            if(s_try_compress(argv[3], argv[4], limit)) {
-                return 0;
-            }
+    if((argc == 4) && s_cmp_operand(argv[1], "d")) {
+        if(s_try_decompress(argv[2], argv[3])) {
+            return 0;
         }
-    } while(0);
+        std::cout << std::endl;
+    } else if((argc == 5) && s_cmp_operand(argv[1], "c")) {
+        int limit = atoi(argv[2]);
+        if(limit < 1) {
+            std::cout << "- error: limit has to be > 0" << std::endl;
+        } else if(s_try_compress(argv[3], argv[4], limit)) {
+            return 0;
+        }
+        std::cout << std::endl;
+    }
     s_show_usage();
     return 0;
 }
