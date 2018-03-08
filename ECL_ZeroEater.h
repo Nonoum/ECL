@@ -18,7 +18,7 @@ extern "C" {
     - use maximum size: dst_size = ECL_ZERO_EATER_GET_BOUND(src_size);
     See full compress/decompress example usage near decompression function.
 */
-ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
 /*
     Decompresses full 'src' stream of 'src_size' bytes to destination 'dst' holding at most 'dst_size' uncompressed bytes.
@@ -36,7 +36,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
             // failed
         }
 */
-ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
 #ifdef __cplusplus
 }

@@ -99,7 +99,7 @@ typedef enum {
     - to find enough size for output buffer: dst_size = ECL_NANO_LZ_GET_BOUND(src_size);
     See full compress/decompress example usage near decompression function.
 */
-ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
 
 
 /*
@@ -116,10 +116,10 @@ ECL_usize ECL_NanoLZ_Compress_slow(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     mid1min, mid2min are optimized versions of mid1, mid2 with 'search_limit'==1. Provide higher performance and smaller code size (but only basic compression),
     these are by fact the fastest NanoLZ compression methods.
 */
-ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256);
-ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_513);
-ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_256);
-ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_513);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_256);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, void* buf_513);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_256);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, void* buf_513);
 
 /*
     Helper macro defining optimal reserved output size for mid* algorithms (except mid*min)
@@ -149,13 +149,13 @@ typedef struct {
 
     For maximum efficiency window_size_bits should be = [log2(src_size)] (see ECL_LogRoundUp function).
 */
-bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
-bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
+ECL_EXPORTED_API bool ECL_NanoLZ_FastParams_Alloc1(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
+ECL_EXPORTED_API bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_bits);
 
 /*
     Deallocates buffers - call after you're done with FastParams. Necessary to call if *Alloc succeeded.
 */
-void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
+ECL_EXPORTED_API void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
 
 /*
     Faster indexed (optimized) compressors using pre-allocated buffers, behave equally to ECL_NanoLZ_Compress_slow with only difference in speed and used memory.
@@ -176,14 +176,14 @@ void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p);
         ECL_usize compressed_size = ECL_NanoLZ_Compress_fast2(ECL_NANOLZ_SCHEME1, (const uint8_t*)&my_data, sizeof(my_data), compressed_stream, compressed_size_limit, 20, &fp);
         ECL_NanoLZ_FastParams_Destroy(&fp);
 */
-ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
-ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p);
 
 /*
     Generic compression method for non-limited environment (not embedded).
     Calls one of other compression methods (and allocates appropriate buffers according to input data size), to result in maximum performance.
 */
-ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit);
 /*
     Extended _auto version - allows to specify successfully preallocated FastParams with *Alloc1 and *Alloc2 (prealloc1 and prealloc2 correspondingly).
     If a preallocated parameter is NULL - default allocation occurs inside.
@@ -191,8 +191,8 @@ ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     - to store successfully preallocated FastParams outside and use them for multiple compression runs, thus saving time on malloc/free calls;
     - to specify custom window size.
 */
-ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
-                                      , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
+                                                       , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2);
 
 /*
     Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.
@@ -209,7 +209,7 @@ ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* s
             // failed
         }
 */
-ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Decompress(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size);
 
 #ifdef __cplusplus
 }

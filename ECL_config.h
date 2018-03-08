@@ -23,7 +23,7 @@
 #ifndef ECL_USE_BITNESS_32
 #ifndef ECL_USE_BITNESS_64
 /* none of these is defined with force for compilation, use 32 bits by default */
-#define ECL_USE_BITNESS_32 /* default bitness if nothing else specified via compilation parameters */
+#define ECL_USE_BITNESS_32
 #endif
 #endif
 #endif
@@ -32,6 +32,8 @@
 /*#define ECL_USE_BRANCHLESS */
 /*#define ECL_USE_STAT_COUNTERS */
 /*#define ECL_DISABLE_MALLOC */
+/*#define ECL_USE_DLL */
+
 
 #ifndef ECL_NANO_LZ_ONLY_SCHEME
 /* set to 0 to unlock all schemes, set to 1 to have only scheme1, 2 = scheme2 etc. Having single scheme allows compiler to inline for better performance */
@@ -91,5 +93,25 @@
 /* helpful */
 #define ECL_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ECL_MAX(a, b) ((a) > (b) ? (a) : (b))
+
+
+/* dyn library macros, etc */
+#ifndef ECL_API_VISIBILITY
+    #if defined(__GNUC__) && (__GNUC__ >= 4)
+        #define ECL_API_VISIBILITY __attribute__ ((visibility ("default")))
+    #else
+        #define ECL_API_VISIBILITY
+    #endif
+#endif
+
+#if defined(ECL_USE_DLL)
+    #if defined(ECL_DLL_EXPORT)
+        #define ECL_EXPORTED_API __declspec(dllexport) ECL_API_VISIBILITY
+    #else
+        #define ECL_EXPORTED_API __declspec(dllimport) ECL_API_VISIBILITY
+    #endif
+#else
+    #define ECL_EXPORTED_API ECL_API_VISIBILITY
+#endif
 
 #endif
