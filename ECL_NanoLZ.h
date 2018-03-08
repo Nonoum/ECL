@@ -27,6 +27,7 @@
 #define ECL_NANO_LZ_
 
 #include "ECL_config.h"
+#include "ECL_utils.h"
 
 #include <stdbool.h>
 

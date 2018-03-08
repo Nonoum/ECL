@@ -24,10 +24,41 @@
  */
 
 #include "ECL_JH_States.h"
+#include "ECL_utils.h"
 
 static uint8_t ECL_JH_dummy_buffer; /* dummy data storage to simplify some checks */
 static const uint8_t c_bmasks8[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
 
+// utils part
+uint8_t ECL_LogRoundUp(ECL_usize value) {
+    ECL_usize tmp;
+    uint8_t result;
+    if(value < 2) {
+        return 1;
+    }
+    result = sizeof(value) * 8;
+    tmp = 1;
+    tmp <<= result - 1;
+    while(value <= tmp) {
+        tmp >>= 1;
+        --result;
+    }
+    return result;
+}
+
+uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
+    ECL_ASSERT(ptr);
+    return (uint16_t*) ( (((int)ptr) & 1) ? (ptr + 1) : ptr);
+}
+
+ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
+    const int offset = ((int)ptr) & (sizeof(ECL_usize) - 1);
+    ECL_ASSERT(ptr);
+    return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
+}
+
+
+// JH part
 void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start) {
     uint8_t input_is_valid = 1;
     if((! ptr) || (! size)) {
@@ -143,34 +174,6 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
 }
 
 
-uint8_t ECL_LogRoundUp(ECL_usize value) {
-    ECL_usize tmp;
-    uint8_t result;
-    if(value < 2) {
-        return 1;
-    }
-    result = sizeof(value) * 8;
-    tmp = 1;
-    tmp <<= result - 1;
-    while(value <= tmp) {
-        tmp >>= 1;
-        --result;
-    }
-    return result;
-}
-
-uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
-    ECL_ASSERT(ptr);
-    return (uint16_t*) ( (((int)ptr) & 1) ? (ptr + 1) : ptr);
-}
-
-ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
-    const int offset = ((int)ptr) & (sizeof(ECL_usize) - 1);
-    ECL_ASSERT(ptr);
-    return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
-}
-
-
 #ifdef ECL_USE_BRANCHLESS
     #define ECL_CALC_E(value, n_bits) \
         (((ECL_usize)((1 << (n_bits)) - 1) - (value)) >> (ECL_SIZE_TYPE_BITS_COUNT - 1 - (n_bits))) & (1 << (n_bits));
@@ -180,7 +183,6 @@ ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
         ((value) > ((ECL_usize)(1 << (n_bits)) - 1) ? (1 << (n_bits)) : 0)
 
 #endif
-
 
 /*
     this should have been done in C++ templates, but unfortunately embedded rather use C.

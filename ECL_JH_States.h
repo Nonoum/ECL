@@ -63,12 +63,6 @@ void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); /* moves pointer to
 void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); /* -:- */
 
 
-/* util functions */
-uint8_t ECL_LogRoundUp(ECL_usize value); /* returns [log2(value)]. for 0 returns 1 */
-uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment */
-ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching ECL_usize alignment */
-
-
 /* E-numbers part */
 void ECL_JH_Write_E2(ECL_JH_WState* state, ECL_usize value); /* writes 'value' to 'state' in E2 number format */
 ECL_usize ECL_JH_Read_E2(ECL_JH_RState* state); /* reads from 'state' a value in E2 number format */
