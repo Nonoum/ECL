@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-ECL_EXPORTED_API uint32_t ECL_GetSizeBitness(); /* returns ECL_SIZE_TYPE_BITS_COUNT */
-ECL_EXPORTED_API uint32_t ECL_GetVersionNumber(); /* returns ECL_VERSION_NUMBER */
-ECL_EXPORTED_API const char* ECL_GetVersionString(); /* returns "major.minor.patch" version string */
-ECL_EXPORTED_API const char* ECL_GetVersionBranch(); /* returns ECL_VERSION_BRANCH */
+ECL_EXPORTED_API uint32_t ECL_GetSizeBitness(void); /* returns ECL_SIZE_TYPE_BITS_COUNT */
+ECL_EXPORTED_API uint32_t ECL_GetVersionNumber(void); /* returns ECL_VERSION_NUMBER */
+ECL_EXPORTED_API const char* ECL_GetVersionString(void); /* returns "major.minor.patch" version string */
+ECL_EXPORTED_API const char* ECL_GetVersionBranch(void); /* returns ECL_VERSION_BRANCH */
 
 ECL_EXPORTED_API uint8_t ECL_LogRoundUp(ECL_usize value); /* returns [log2(value)]. for 0 returns 1 */
 ECL_EXPORTED_API uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment */

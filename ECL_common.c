@@ -29,26 +29,26 @@
 static uint8_t ECL_JH_dummy_buffer; /* dummy data storage to simplify some checks */
 static const uint8_t c_bmasks8[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
 
-// utils part
-uint32_t ECL_GetSizeBitness() {
+/* utils part */
+uint32_t ECL_GetSizeBitness(void) {
     return ECL_SIZE_TYPE_BITS_COUNT;
 }
 
-uint32_t ECL_GetVersionNumber() {
+uint32_t ECL_GetVersionNumber(void) {
     return ECL_VERSION_NUMBER;
 }
 
 #define ECL_STRING_OF_HELPER(x) #x
 #define ECL_STRING_OF(x) ECL_STRING_OF_HELPER(x)
 
-const char* ECL_GetVersionString() {
+const char* ECL_GetVersionString(void) {
     return ECL_STRING_OF(ECL_VERSION_MAJOR.ECL_VERSION_MINOR.ECL_VERSION_PATCH);
 }
 
 #undef ECL_STRING_OF_HELPER
 #undef ECL_STRING_OF
 
-const char* ECL_GetVersionBranch() {
+const char* ECL_GetVersionBranch(void) {
     return ECL_VERSION_BRANCH;
 }
 
@@ -70,11 +70,11 @@ uint8_t ECL_LogRoundUp(ECL_usize value) {
 
 uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
     ECL_ASSERT(ptr);
-    return (uint16_t*) ( (((int)ptr) & 1) ? (ptr + 1) : ptr);
+    return (uint16_t*) ( (((long)ptr) & 1) ? (ptr + 1) : ptr);
 }
 
 ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
-    const int offset = ((int)ptr) & (sizeof(ECL_usize) - 1);
+    const int offset = ((long)ptr) & (sizeof(ECL_usize) - 1);
     ECL_ASSERT(ptr);
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }
@@ -108,7 +108,7 @@ const uint8_t* ECL_Helper_ReadE7(const uint8_t* data_start, ECL_usize max_bytes,
                 if(shift) {
                     const uint8_t last_allowed_bits = ECL_SIZE_TYPE_BITS_COUNT - shift;
                     if(( ((ECL_usize)1) << last_allowed_bits ) <= adding) {
-                        break; // failed - not enough capacity
+                        break; /* failed - not enough capacity */
                     }
                 }
                 return data_start;
@@ -116,7 +116,7 @@ const uint8_t* ECL_Helper_ReadE7(const uint8_t* data_start, ECL_usize max_bytes,
             --max_bytes;
             shift += 7;
             if(shift >= ECL_SIZE_TYPE_BITS_COUNT) {
-                break; // failed - not enough capacity
+                break; /* failed - not enough capacity */
             }
         }
     }
@@ -124,7 +124,7 @@ const uint8_t* ECL_Helper_ReadE7(const uint8_t* data_start, ECL_usize max_bytes,
 }
 
 
-// JH part
+/* JH part */
 void ECL_JH_WInit(ECL_JH_WState* state, uint8_t* ptr, ECL_usize size, ECL_usize start) {
     uint8_t input_is_valid = 1;
     if((! ptr) || (! size)) {

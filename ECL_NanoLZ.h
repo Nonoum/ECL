@@ -135,7 +135,7 @@ ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme,
 typedef struct {
     void* buf_map;
     void* buf_window;
-    uint8_t window_size_bits;
+    uint32_t window_size_bits;
 } ECL_NanoLZ_FastParams;
 
 /*

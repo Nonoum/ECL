@@ -559,6 +559,13 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
 
 /* 'fast' versions ------------------------------------------------------------------------------ */
 
+static void ECL_NanoLZ_FastParams_Cleanup(ECL_NanoLZ_FastParams* p) {
+    /* avoid memset, just in case */
+    p->buf_map = 0;
+    p->buf_window = 0;
+    p->window_size_bits = 0;
+}
+
 static bool ECL_NanoLZ_FastParams_Validate(ECL_NanoLZ_FastParams* p) {
     return p && (p->buf_map) && (p->buf_window);
 }
@@ -567,8 +574,8 @@ static bool ECL_NanoLZ_FastParams_Alloc(ECL_NanoLZ_FastParams* p, uint8_t ver, u
     if(! p) {
         return false;
     }
-    memset(p, 0, sizeof(*p));
-    if(! window_size_bits) {
+    ECL_NanoLZ_FastParams_Cleanup(p);
+    if((! window_size_bits) || (window_size_bits >= ( (sizeof(long)*8) - sizeof(ECL_usize) ))) {
         return false;
     }
     if(ver == 1) {
@@ -597,7 +604,7 @@ bool ECL_NanoLZ_FastParams_Alloc2(ECL_NanoLZ_FastParams* p, uint8_t window_size_
 void ECL_NanoLZ_FastParams_Destroy(ECL_NanoLZ_FastParams* p) {
     ECL_MEM_FREE(p->buf_map);
     ECL_MEM_FREE(p->buf_window);
-    memset(p, 0, sizeof(*p));
+    ECL_NanoLZ_FastParams_Cleanup(p);
 }
 
 ECL_usize ECL_NanoLZ_Compress_fast1(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit, ECL_NanoLZ_FastParams* p) {
