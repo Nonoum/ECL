@@ -6,8 +6,8 @@
 #include <string.h> /* memcpy, memset */
 
 /* see runtime version in ECL_utils.h */
-#define ECL_VERSION_MAJOR 0
-#define ECL_VERSION_MINOR 1
+#define ECL_VERSION_MAJOR 1
+#define ECL_VERSION_MINOR 0
 #define ECL_VERSION_PATCH 0
 #define ECL_VERSION_NUMBER (ECL_VERSION_MAJOR*10000 + ECL_VERSION_MINOR*100 + ECL_VERSION_PATCH)
 
