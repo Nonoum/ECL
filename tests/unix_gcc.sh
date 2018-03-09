@@ -7,9 +7,9 @@ arch="-m32"
 opts="$arch -Wall -Wextra -pedantic -O3 -DECL_BUILD_AS_C -DECL_USE_ASSERT"
 cpp_opts="-std=c++11"
 linker_opts="$arch -lstdc++"
-cc="clang"
-cxx="clang++"
-link=$cxx
+cc="gcc"
+cxx="g++"
+link="gcc"
 
 # param 1 = bitness
 get_opts() {
