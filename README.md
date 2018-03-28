@@ -7,7 +7,7 @@ EMBEDDED COMPRESSION LIBRARY
 ### Language: C
 ### Platforms: any
 ### Endianness: any
-### Library version: 1.0.0
+### Library version: 1.0.1
 ---
 ### Tested on
 - Windows 7: msvc2013, msvc2015, gcc 4.8, gcc 7.2
@@ -19,8 +19,6 @@ EMBEDDED COMPRESSION LIBRARY
 ## COMPRESSORS
 Some of modes of some compressors use intermediate buffers for compression, they don't use any implicit allocation (unless otherwise specified) - user can easily choose how to allocate buffers.
 Every compression method that uses temporary buffer (say, more than 10 bytes) - has it specified in documentation near method declaration.
-
-### ECL:AHOC - TBD
 
 ### ECL:NanoLZ - meticulously formatted version of traditional LZ77 algorithm.
 - use cases - various, same with other pure LZ algorithms;

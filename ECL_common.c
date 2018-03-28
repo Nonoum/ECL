@@ -70,11 +70,11 @@ uint8_t ECL_LogRoundUp(ECL_usize value) {
 
 uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
     ECL_ASSERT(ptr);
-    return (uint16_t*) ( (((long)ptr) & 1) ? (ptr + 1) : ptr);
+    return (uint16_t*) ( (((uintptr_t)ptr) & 1) ? (ptr + 1) : ptr);
 }
 
 ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
-    const int offset = ((long)ptr) & (sizeof(ECL_usize) - 1);
+    const int offset = ((uintptr_t)ptr) & (sizeof(ECL_usize) - 1);
     ECL_ASSERT(ptr);
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }

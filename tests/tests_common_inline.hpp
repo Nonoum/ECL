@@ -69,7 +69,7 @@ NTEST(test_number_E7_helpers) {
             auto finished_rd = next_rd;
             //
             ECL_TEST_ASSERT(finished_wr <= data_end);
-            ECL_TEST_COMPARE((int)finished_wr, (int)finished_rd);
+            ECL_TEST_COMPARE((uintptr_t)finished_wr, (uintptr_t)finished_rd);
         }
         free(data);
     }
@@ -494,7 +494,7 @@ NTEST(test_ECL_GetAlignedPointer2) {
     const int type_size = sizeof(Ty);
     const int buf_size = 20;
     uint8_t tmp[buf_size];
-    const int shift = ((int)tmp) & 1;
+    const int shift = ((uintptr_t)tmp) & 1;
     auto ptr = tmp + shift;
     const auto first = (Ty*)(ptr);
     const auto next = (Ty*)(ptr + type_size);
@@ -503,7 +503,7 @@ NTEST(test_ECL_GetAlignedPointer2) {
     ECL_TEST_COMPARE(ECL_GetAlignedPointer2(ptr + 2), next);
     for(int i = 0; i < (buf_size - type_size); ++i) {
         auto p = ECL_GetAlignedPointer2(tmp + i);
-        approve((int(p) & 1) == 0);
+        approve((uintptr_t(p) & 1) == 0);
     }
 }
 
@@ -513,7 +513,7 @@ NTEST(test_ECL_GetAlignedPointerS) {
     const int type_size = sizeof(Ty);
     const int buf_size = 20;
     uint8_t tmp[buf_size];
-    const int shift = sizeof(Ty) - (((int)tmp) & (type_size - 1));
+    const int shift = sizeof(Ty) - (((uintptr_t)tmp) & (type_size - 1));
     auto ptr = tmp + shift;
     const auto first = (Ty*)(ptr);
     const auto next = (Ty*)(ptr + type_size);
@@ -532,6 +532,6 @@ NTEST(test_ECL_GetAlignedPointerS) {
     }
     for(int i = 0; i < (buf_size - type_size); ++i) {
         auto p = ECL_GetAlignedPointerS(tmp + i);
-        approve((int(p) & (type_size - 1)) == 0);
+        approve((uintptr_t(p) & (type_size - 1)) == 0);
     }
 }

@@ -25,6 +25,7 @@
 
 #include "ECL_NanoLZ.h"
 #include "ECL_JH_States.h"
+#include "ECL_utils.h"
 
 typedef struct {
     const uint8_t* src_start;
@@ -184,12 +185,12 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     if((! buf_256) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
         return 0;
     }
-    memset(buf_256, 0, 256);
     {
         uint8_t* const buf_map = (uint8_t*)buf_256;
         uint8_t* const buf_window = dst + dst_size - window_length;
         ECL_usize pos = 1;
 
+        memset(buf_map, 0, 256);
         memset(buf_window, 0, window_length); /* fill with zeroes */
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
@@ -277,7 +278,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                             for(i = 0; i < state.n_copy; ++i, ++pos) {
                                 const ECL_usize table_index = pos >> 1;
                                 if((buf_window + table_index) >= state.stream.next) {
-                                    const uint8_t prev_pos = buf_map[src[i]];
+                                    const uint8_t prev_pos = (uint8_t)buf_map[src[i]];
                                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                                 }
                                 buf_map[src[i]] = pos;
@@ -295,7 +296,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                 /* update tables for passed byte */
                 const ECL_usize table_index = pos >> 1;
                 if((buf_window + table_index) >= state.stream.next) {
-                    const uint8_t prev_pos = buf_map[*src];
+                    const uint8_t prev_pos = (uint8_t)buf_map[*src];
                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                 }
                 buf_map[*src] = pos;
@@ -320,12 +321,12 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
     if((! buf_513) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
         return 0;
     }
-    memset(buf_513, 0, 513);
     {
         uint16_t* const buf_map = ECL_GetAlignedPointer2((uint8_t*)buf_513);
         uint8_t* const buf_window = dst + dst_size - window_length;
         ECL_usize pos = 1;
 
+        memset(buf_map, 0, 512);
         memset(buf_window, 0, window_length); /* fill with zeroes */
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
@@ -401,7 +402,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                             for(i = 0; i < state.n_copy; ++i, ++pos) {
                                 const ECL_usize table_index = pos >> 1;
                                 if((buf_window + table_index) >= state.stream.next) {
-                                    const uint8_t prev_pos = buf_map[src[i]];
+                                    const uint8_t prev_pos = (uint8_t)buf_map[src[i]];
                                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                                 }
                                 buf_map[src[i]] = pos;
@@ -419,7 +420,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                 /* update tables for passed byte */
                 const ECL_usize table_index = pos >> 1;
                 if((buf_window + table_index) >= state.stream.next) {
-                    const uint8_t prev_pos = buf_map[*src];
+                    const uint8_t prev_pos = (uint8_t)buf_map[*src];
                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                 }
                 buf_map[*src] = pos;
@@ -442,10 +443,10 @@ ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
     if((! buf_256) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
         return 0;
     }
-    memset(buf_256, 0, 256);
     {
         uint8_t* const buf_map = (uint8_t*)buf_256;
         ECL_usize pos = 1;
+        memset(buf_map, 0, 256);
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
             ECL_usize checked_idx = ((ECL_usize)buf_map[*src]) | (pos & ~(ECL_usize)0x0FF);
@@ -511,10 +512,10 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
     if((! buf_513) || (! coder) || (! ECL_NanoLZ_SetupCompression(&state, src, src_size, dst, dst_size))) {
         return 0;
     }
-    memset(buf_513, 0, 513);
     {
         uint16_t* const buf_map = ECL_GetAlignedPointer2((uint8_t*)buf_513);
         ECL_usize pos = 1;
+        memset(buf_map, 0, 512);
         for(src = state.first_undone; src < state.search_end;) {
             const ECL_usize limit_length = state.src_end - src;
             const ECL_usize checked_idx = buf_map[*src];

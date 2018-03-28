@@ -63,7 +63,7 @@ static void ECL_ZeroDevourer_DumpSeq110(ECL_JH_WState* state, ECL_usize cnt_0) {
     ECL_ASSERT(cnt_0 >= 9);
     if(cnt_0 < 25) {
         /* next line is equal to "ECL_JH_Write(state, ((cnt_0 - 9) << 3) | 0x05, 8);"
-            which is and valid replacement for 'else' branch for 'cnt_0 < 25'
+            which is valid replacement for 'else' branch for 'cnt_0 < 25'
         */
         ECL_JH_Write(state, (cnt_0 << 3) + 0xBD, 8);
     } else {

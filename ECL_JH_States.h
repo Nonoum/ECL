@@ -92,6 +92,7 @@ ECL_E_NUMBER_DECLARE_SIMPLE(7)
     ECL_usize ECL_JH_Read_E##num1##E##num2(ECL_JH_RState* state); \
     uint8_t ECL_Evaluate_E##num1##E##num2(ECL_usize number);
 
+ECL_E_NUMBER_DECLARE_X2(4, 5)
 ECL_E_NUMBER_DECLARE_X2(5, 2)
 ECL_E_NUMBER_DECLARE_X2(5, 3)
 ECL_E_NUMBER_DECLARE_X2(5, 4)
