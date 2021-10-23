@@ -74,7 +74,7 @@ uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
 }
 
 ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
-    const int offset = ((uintptr_t)ptr) & (sizeof(ECL_usize) - 1);
+    ECL_SCOPED_CONST int offset = ((uintptr_t)ptr) & (sizeof(ECL_usize) - 1);
     ECL_ASSERT(ptr);
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }
@@ -82,7 +82,7 @@ ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
 uint8_t* ECL_Helper_WriteE7(uint8_t* data_start, ECL_usize max_bytes, ECL_usize value) {
     if(data_start) {
         while(max_bytes) {
-            const uint8_t e = value > 0x7F ? 0x80 : 0;
+            ECL_SCOPED_CONST uint8_t e = value > 0x7F ? 0x80 : 0;
             *data_start = (uint8_t)value | e;
             value >>= 7;
             ++data_start;
@@ -100,13 +100,13 @@ const uint8_t* ECL_Helper_ReadE7(const uint8_t* data_start, ECL_usize max_bytes,
         uint8_t shift = 0;
         *output_value = 0;
         while(max_bytes) {
-            const ECL_usize adding = *data_start & 0x7F;
-            const uint8_t e = *data_start & 0x80;
+            ECL_SCOPED_CONST ECL_usize adding = *data_start & 0x7F;
+            ECL_SCOPED_CONST uint8_t e = *data_start & 0x80;
             *output_value |= adding << shift;
             ++data_start;
             if(! e) {
                 if(shift) {
-                    const uint8_t last_allowed_bits = ECL_SIZE_TYPE_BITS_COUNT - shift;
+                    ECL_SCOPED_CONST uint8_t last_allowed_bits = ECL_SIZE_TYPE_BITS_COUNT - shift;
                     if(( ((ECL_usize)1) << last_allowed_bits ) <= adding) {
                         break; /* failed - not enough capacity */
                     }
@@ -257,7 +257,7 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
 #define ECL_E_NUMBER_DEFINE_SIMPLE_IMPL(num) \
     void ECL_JH_Write_E##num(ECL_JH_WState* state, ECL_usize value) {          \
         do {                                                                   \
-            const uint8_t e = ECL_CALC_E(value, num);                          \
+            ECL_SCOPED_CONST uint8_t e = ECL_CALC_E(value, num);               \
             ECL_JH_Write(state, (uint8_t)value | e, num + 1);                  \
             value >>= num;                                                     \
         } while(value);                                                        \
@@ -268,7 +268,7 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
         shift = 0;                                                             \
         result = 0;                                                            \
         do {                                                                   \
-            const uint8_t code = ECL_JH_Read(state, (num + 1));                \
+            ECL_SCOPED_CONST uint8_t code = ECL_JH_Read(state, (num + 1));     \
             result |= ((ECL_usize)(code & ((1 << num) - 1))) << shift;         \
             if(! (code & (1 << num))) {                                        \
                 break;                                                         \

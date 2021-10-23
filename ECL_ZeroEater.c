@@ -81,7 +81,7 @@ static void ECL_ZeroEater_DumpSeq2(ECL_ZeroEaterComprssorState* state, ECL_usize
 
 static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
     /* count_x = [1..8]; count_0 = [1..8]; */
-    const ECL_usize length = count_x + 1;
+    ECL_SCOPED_CONST ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
         *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); /* subtract extra 0x40 to get 11 in higher bits */
@@ -93,9 +93,9 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
 
 static void ECL_ZeroEater_DumpGeneric(ECL_ZeroEaterComprssorState* state, ECL_usize count_x, ECL_usize count_0) {
     /* count_x > 0; count_0 > 0 */
-    const ECL_usize x_full_blocks = count_x >> 7;
+    ECL_SCOPED_CONST ECL_usize x_full_blocks = count_x >> 7;
     if(x_full_blocks) {
-        const ECL_usize tmp = count_x & 0x7F; /* last block size */
+        ECL_SCOPED_CONST ECL_usize tmp = count_x & 0x7F; /* last block size */
         ECL_ZeroEater_DumpSeq1(state, count_x - tmp);
         count_x = tmp;
     }
@@ -117,7 +117,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
     ECL_usize cnt_x, cnt_0;
     const uint8_t* first_x;
     const uint8_t* first_0;
-    const uint8_t* const src_end = src + src_size;
+    const uint8_t* ECL_SCOPED_CONST src_end = src + src_size;
     if(! src) {
         return 0;
     }
@@ -167,7 +167,7 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
     }
     for(; src < src_end; ) {
         ECL_usize cnt_x, cnt_0;
-        const uint8_t opcode = *src;
+        ECL_SCOPED_CONST uint8_t opcode = *src;
         ++src;
         if(opcode & 0x80) { /* method 2 or 3 */
             if(opcode & 0x40) { /* method 3 */

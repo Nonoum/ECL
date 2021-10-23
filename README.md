@@ -7,7 +7,7 @@ EMBEDDED COMPRESSION LIBRARY
 ### Language: C
 ### Platforms: any
 ### Endianness: any
-### Library version: 1.0.1
+### Library version: 1.0.2
 ---
 ### Tested on
 - Windows 7: msvc2013, msvc2015, gcc 4.8, gcc 7.2
@@ -81,6 +81,7 @@ See **ECL_config.h** for details on configuring, mostly controlled by ECL_USE* m
 - you can enable/disable branchless optimizations for your consideration (currently inefficient) - see `ECL_USE_BRANCHLESS`;
 - you can enable/disable internal asserts (work if system assert works e.g. no `NDEBUG` macro specified) - see `ECL_USE_ASSERT`;
 - you can disable malloc/free in case they cause compilation errors on some restricted platforms - see `ECL_DISABLE_MALLOC`;
+- you can disable/exclude memory-demanding functions by defining ECL_EXCLUDE_HIMEM (useful for 16bit compilers, e.g. arduino environment) to fix some warnings;
 - you can allow all `NanoLZ` schemes or only specific one - to let compiler inline more for better performance - see `ECL_NANO_LZ_ONLY_SCHEME`;
 - to use ECL as dynamic library - uncomment define for `ECL_USE_DLL`, to build dynamic library - define also `ECL_DLL_EXPORT`;
 - in case you don't have uint*_t types defined in `stdint.h` - define those types there near "user setup part";
@@ -88,6 +89,7 @@ See **ECL_config.h** for details on configuring, mostly controlled by ECL_USE* m
 
 ## PERFORMANCE BENCHMARKS
 PC benchmarks are performed for *Intel core i5-3570k @ 3.4 GHz / Windows 7 64 bit / 16gb RAM 1600 MHz*.
+All benchmarks are performed for ECL version 1.0.0.
 Compiled with GCC 7.2.0, options: `-m32 -Wall -Wextra -pedantic -O3`.
 - ECL sources are compiled as single file: "ecl-all-c-included/ECL_all_c_included.c" (and for Embedded benchmarks too);
 - Speed is in megabytes per second (mb/s);

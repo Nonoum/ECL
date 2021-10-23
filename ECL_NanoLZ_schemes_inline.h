@@ -151,7 +151,7 @@ static bool ECL_NanoLZ_Write_Scheme1_nocopy(ECL_NanoLZ_CompressorState* state) {
 
 static void ECL_NanoLZ_Read_Scheme1(ECL_NanoLZ_DecompressorState* state) {
     uint8_t tmp;
-    const uint8_t opcode = ECL_JH_Read(&state->stream, 3);
+    ECL_SCOPED_CONST uint8_t opcode = ECL_JH_Read(&state->stream, 3);
     ECL_NANO_LZ_COUNTER_APPEND(opcode, 1)
     switch (opcode) {
     case 0:

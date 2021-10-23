@@ -8,7 +8,7 @@
 /* see runtime version in ECL_utils.h */
 #define ECL_VERSION_MAJOR 1
 #define ECL_VERSION_MINOR 0
-#define ECL_VERSION_PATCH 1
+#define ECL_VERSION_PATCH 2
 #define ECL_VERSION_NUMBER (ECL_VERSION_MAJOR*10000 + ECL_VERSION_MINOR*100 + ECL_VERSION_PATCH)
 
 #define ECL_VERSION_BRANCH "master"
@@ -117,4 +117,14 @@
     #define ECL_EXPORTED_API ECL_API_VISIBILITY
 #endif
 
+#endif
+
+
+/* compiler quirks */
+#ifdef __XC8 /* more like an example check actually. XC8 compiler */
+#define ECL_SCOPED_CONST /* local const isn't supported */
+#endif
+
+#ifndef ECL_SCOPED_CONST
+#define ECL_SCOPED_CONST const
 #endif

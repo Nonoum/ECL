@@ -37,15 +37,6 @@
 */
 #define ECL_NANO_LZ_GET_BOUND(src_size) ((src_size) + 2 + sizeof(ECL_usize) + (sizeof(ECL_usize) / 4))
 
-/*
-    Following macros are for manual allocations of buffers for fast1/fast2 algorithms.
-*/
-#define ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE() (257 * sizeof(ECL_usize))
-#define ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits) (((1UL << (window_size_bits)) + 1) * sizeof(ECL_usize))
-/* */
-#define ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE() (65537 * sizeof(ECL_usize))
-#define ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits) ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits)
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,6 +117,16 @@ ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme,
 */
 #define ECL_NANO_LZ_MID_GET_BOUND_OPTIMAL(src_size) (ECL_NANO_LZ_GET_BOUND(src_size) + ((src_size)/2) + 1)
 
+#ifndef ECL_EXCLUDE_HIMEM
+
+/*
+    Following macros are for manual allocations of buffers for fast1/fast2 algorithms.
+*/
+#define ECL_NANO_LZ_GET_FAST1_MAP_BUF_SIZE() (257 * sizeof(ECL_usize))
+#define ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits) (((1UL << (window_size_bits)) + 1) * sizeof(ECL_usize))
+/* */
+#define ECL_NANO_LZ_GET_FAST2_MAP_BUF_SIZE() (65537 * sizeof(ECL_usize))
+#define ECL_NANO_LZ_GET_FAST2_WINDOW_BUF_SIZE(window_size_bits) ECL_NANO_LZ_GET_FAST1_WINDOW_BUF_SIZE(window_size_bits)
 
 /*
     Struct with parameters to call fast1/fast2 compression algorithms, has to be initialized with
@@ -192,6 +193,8 @@ ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, co
 */
 ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
                                                        , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2);
+
+#endif
 
 /*
     Decompresses exactly 'dst_size' bytes to 'dst' from compressed 'src' stream containing 'src_size' bytes.

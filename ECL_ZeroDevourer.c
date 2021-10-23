@@ -123,7 +123,11 @@ static bool ECL_ZeroDevourer_IsWorth(ECL_usize cnt_x, ECL_usize cnt_0) {
         return cnt_0 >= 2;
     } else if(cnt_x <= (1U << 12)) {
         return cnt_0 >= 3;
+#ifndef ECL_USE_BITNESS_16
     } else if(cnt_x <= (1U << 18)) {
+#else
+    } else {
+#endif
         return cnt_0 >= 4;
     }
     bits_needed = 3 + ECL_Evaluate_E6E3(cnt_x - 1);
@@ -141,7 +145,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
     ECL_JH_WState state;
     const uint8_t* first_undone;
     const uint8_t* first_x;
-    const uint8_t* const src_end = src + src_size;
+    const uint8_t* ECL_SCOPED_CONST src_end = src + src_size;
 
     ECL_JH_WInit(&state, dst, dst_size, 0);
     if((! src) || (! src_size) || (! state.is_valid)) {
@@ -185,7 +189,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
     }
     for(;;) {
         ECL_usize cnt_x, cnt_0;
-        const ECL_usize left = dst_end - dst;
+        ECL_SCOPED_CONST ECL_usize left = dst_end - dst;
         if(! left) {
             break;
         }
@@ -201,7 +205,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             case 0: /* seq 1.00 */
                 cnt_x = ECL_JH_Read(&state, 2) + 1;
                 {
-                    const uint8_t* const src_block_start = state.next;
+                    const uint8_t* ECL_SCOPED_CONST src_block_start = state.next;
                     ECL_usize i = 0;
                     ECL_JH_RJump(&state, cnt_x);
                     if(state.is_valid && (cnt_x < left)) {
@@ -218,7 +222,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             case 1: /* seq 1.01 */
                 cnt_x = ECL_JH_Read(&state, 4) + 5;
                 {
-                    const uint8_t* const src_block_start = state.next;
+                    const uint8_t* ECL_SCOPED_CONST src_block_start = state.next;
                     ECL_JH_RJump(&state, cnt_x);
                     if(state.is_valid && (cnt_x < left)) {
                         dst[cnt_x] = 0;
@@ -241,7 +245,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             case 3: /* seq 1.11 */
                 cnt_x = ECL_JH_Read_E6E3(&state) + 1;
                 {
-                    const uint8_t* const src_block_start = state.next;
+                    const uint8_t* ECL_SCOPED_CONST src_block_start = state.next;
                     ECL_JH_RJump(&state, cnt_x);
                     if(state.is_valid && (cnt_x <= left)) {
                         memcpy(dst, src_block_start, cnt_x);

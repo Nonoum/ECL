@@ -1,3 +1,8 @@
+## Release 1.0.2
+- Added/used ECL_SCOPED_CONST define
+- Added handling for ECL_EXCLUDE_HIMEM define (16bit-compilers friendly)
+- Minor fix in ZeroDevourer for ECL_USE_BITNESS_16
+
 ## Release 1.0.1
 - Fixed tests compilation for clang 64 bit
 - Suppressed rare warning
