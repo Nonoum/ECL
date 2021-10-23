@@ -34,7 +34,7 @@ static void ECL_ZeroDevourer_DumpSeq100(ECL_JH_WState* state, const uint8_t* src
     /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 1) << 3) + 0x01, 5);"
         and equal to "ECL_JH_Write(state, 0x01, 3); ECL_JH_Write(state, cnt_x - 1, 2);"
     */
-    ECL_JH_Write(state, (cnt_x << 3) + 0xF9, 5);
+    ECL_JH_Write(state, (uint8_t)((cnt_x << 3) + 0xF9), 5);
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
@@ -51,7 +51,7 @@ static void ECL_ZeroDevourer_DumpSeq101(ECL_JH_WState* state, const uint8_t* src
     /* next line is equal to "ECL_JH_Write(state, ((cnt_x - 5) << 3) + 0x03, 7);"
         and equal to "ECL_JH_Write(state, 0x03, 3); ECL_JH_Write(state, cnt_x - 5, 4);"
     */
-    ECL_JH_Write(state, (cnt_x << 3) + 0xDB, 7);
+    ECL_JH_Write(state, (uint8_t)((cnt_x << 3) + 0xDB), 7);
     dst = state->next;
     ECL_JH_WJump(state, cnt_x);
     if(state->is_valid) {
@@ -65,7 +65,7 @@ static void ECL_ZeroDevourer_DumpSeq110(ECL_JH_WState* state, ECL_usize cnt_0) {
         /* next line is equal to "ECL_JH_Write(state, ((cnt_0 - 9) << 3) | 0x05, 8);"
             which is valid replacement for 'else' branch for 'cnt_0 < 25'
         */
-        ECL_JH_Write(state, (cnt_0 << 3) + 0xBD, 8);
+        ECL_JH_Write(state, (uint8_t)((cnt_0 << 3) + 0xBD), 8);
     } else {
         ECL_JH_Write(state, 0x05, 3);
         ECL_JH_Write_E4(state, cnt_0 - 9);
@@ -89,7 +89,7 @@ static void ECL_ZeroDevourer_DumpZeroGeneric(ECL_JH_WState* state, ECL_usize cnt
     if(cnt_0 >= 9) {
         ECL_ZeroDevourer_DumpSeq110(state, cnt_0);
     } else {
-        ECL_JH_Write(state, 0, cnt_0);
+        ECL_JH_Write(state, 0, (uint8_t)cnt_0);
     }
 }
 

@@ -7,7 +7,7 @@ EMBEDDED COMPRESSION LIBRARY
 ### Language: C
 ### Platforms: any
 ### Endianness: any
-### Library version: 1.0.2
+### Library version: 1.0.3
 ---
 ### Tested on
 - Windows 7: msvc2013, msvc2015, gcc 4.8, gcc 7.2

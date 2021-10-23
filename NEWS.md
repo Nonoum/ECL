@@ -1,3 +1,6 @@
+## Release 1.0.3
+- Suppressed some 'loses precision' warnings (explicit conversions are added)
+
 ## Release 1.0.2
 - Added/used ECL_SCOPED_CONST define
 - Added handling for ECL_EXCLUDE_HIMEM define (16bit-compilers friendly)

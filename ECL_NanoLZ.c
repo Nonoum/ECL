@@ -281,7 +281,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                                     ECL_SCOPED_CONST uint8_t prev_pos = (uint8_t)buf_map[src[i]];
                                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                                 }
-                                buf_map[src[i]] = pos;
+                                buf_map[src[i]] = (uint8_t)pos;
                             }
                             src += state.n_copy;
                             state.first_undone = src;
@@ -299,7 +299,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                     ECL_SCOPED_CONST uint8_t prev_pos = (uint8_t)buf_map[*src];
                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                 }
-                buf_map[*src] = pos;
+                buf_map[*src] = (uint8_t)pos;
             }
             ++src;
             ++pos;
@@ -405,7 +405,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                                     ECL_SCOPED_CONST uint8_t prev_pos = (uint8_t)buf_map[src[i]];
                                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                                 }
-                                buf_map[src[i]] = pos;
+                                buf_map[src[i]] = (uint16_t)pos;
                             }
                             src += state.n_copy;
                             state.first_undone = src;
@@ -423,7 +423,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2(ECL_NanoLZ_Scheme scheme, const uint8_t* src,
                     ECL_SCOPED_CONST uint8_t prev_pos = (uint8_t)buf_map[*src];
                     buf_window[table_index] |= (prev_pos & 0x0F) << ((pos & 1) * 4);
                 }
-                buf_map[*src] = pos;
+                buf_map[*src] = (uint16_t)pos;
             }
             ++src;
             ++pos;
@@ -484,7 +484,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
                             }
                             /* update tables for referenced sequence */
                             for(i = 0; i < state.n_copy; ++i, ++pos) {
-                                buf_map[src[i]] = pos;
+                                buf_map[src[i]] = (uint8_t)pos;
                             }
                             src += state.n_copy;
                             state.first_undone = src;
@@ -495,7 +495,7 @@ ECL_usize ECL_NanoLZ_Compress_mid1min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
                     }
                 }
             }
-            buf_map[*src] = pos;
+            buf_map[*src] = (uint8_t)pos;
             ++src;
             ++pos;
         }
@@ -540,7 +540,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
                         }
                         /* update tables for referenced sequence */
                         for(i = 0; i < state.n_copy; ++i, ++pos) {
-                            buf_map[src[i]] = pos;
+                            buf_map[src[i]] = (uint16_t)pos;
                         }
                         src += state.n_copy;
                         state.first_undone = src;
@@ -550,7 +550,7 @@ ECL_usize ECL_NanoLZ_Compress_mid2min(ECL_NanoLZ_Scheme scheme, const uint8_t* s
                     }
                 }
             }
-            buf_map[*src] = pos;
+            buf_map[*src] = (uint16_t)pos;
             ++src;
             ++pos;
         }

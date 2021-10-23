@@ -38,27 +38,27 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
             /*ECL_JH_Write(&state->stream, 0, 3); */
             /*ECL_JH_Write(&state->stream, state->n_new, 2); */
             /*ECL_JH_Write(&state->stream, state->offset - 1, 3); */
-            ECL_JH_Write(&state->stream, ((state->n_new << 3) | ((state->offset - 1) << 5)), 8);
+            ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 3) | ((state->offset - 1) << 5)), 8);
             return true;
         } else if((state->n_new <= 8) && (state->offset <= 32)) { /* opcode 1 */
             if(state->n_new) {
                 /*ECL_JH_Write(&state->stream, 1, 4); */
                 /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF1, 7);
+                ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF1), 7);
             } else {
                 ECL_JH_Write(&state->stream, 0x9, 4);
             }
-            ECL_JH_Write(&state->stream, state->offset - 1, 5);
+            ECL_JH_Write(&state->stream, (uint8_t)(state->offset - 1), 5);
             return true;
         } else if((state->n_new <= 8) && (state->offset <= (32 + 128))) { /* opcode 2 */
             if(state->n_new) {
                 /*ECL_JH_Write(&state->stream, 2, 4); */
                 /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF2, 7);
+                ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF2), 7);
             } else {
                 ECL_JH_Write(&state->stream, 0xA, 4);
             }
-            ECL_JH_Write(&state->stream, state->offset - 1 - 32, 7);
+            ECL_JH_Write(&state->stream, (uint8_t)(state->offset - 1 - 32), 7);
             return true;
         } else {
             return false;
@@ -70,47 +70,47 @@ static bool ECL_NanoLZ_Write_Scheme1_copy(ECL_NanoLZ_CompressorState* state) {
                 if(state->n_new) {
                     /*ECL_JH_Write(&state->stream, 3, 4); */
                     /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF3, 7);
+                    ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF3), 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xB, 4);
                 }
                 /*ECL_JH_Write(&state->stream, state->n_copy - 3, 3); */
                 /*ECL_JH_Write(&state->stream, state->offset - 1, 3); */
-                ECL_JH_Write(&state->stream, ((state->n_copy - 3) | ((state->offset - 1) << 3)), 6);
+                ECL_JH_Write(&state->stream, (uint8_t)((state->n_copy - 3) | ((state->offset - 1) << 3)), 6);
                 return true;
             } else if(state->offset <= (8 + 32)) { /* opcode 4 */
                 if(state->n_new) {
                     /*ECL_JH_Write(&state->stream, 4, 4); */
                     /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF4, 7);
+                    ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF4), 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xC, 4);
                 }
                 /*ECL_JH_Write(&state->stream, state->n_copy - 3, 3); */
                 /*ECL_JH_Write(&state->stream, state->offset - 1 - 8, 5); */
-                ECL_JH_Write(&state->stream, ((state->n_copy - 3) | ((state->offset - 1 - 8) << 3)), 8);
+                ECL_JH_Write(&state->stream, (uint8_t)((state->n_copy - 3) | ((state->offset - 1 - 8) << 3)), 8);
                 return true;
             } else if(state->offset <= (8 + 32 + 64)) { /* opcode 5 */
                 if(state->n_new) {
                     /*ECL_JH_Write(&state->stream, 5, 4); */
                     /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF5, 7);
+                    ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF5), 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xD, 4);
                 }
-                ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
-                ECL_JH_Write(&state->stream, state->offset - 1 - 8 - 32, 6);
+                ECL_JH_Write(&state->stream, (uint8_t)(state->n_copy - 3), 3);
+                ECL_JH_Write(&state->stream, (uint8_t)(state->offset - 1 - 8 - 32), 6);
                 return true;
             } else if(state->offset <= (8 + 32 + 64 + 256)) { /* opcode 6 */
                 if(state->n_new) {
                     /*ECL_JH_Write(&state->stream, 6, 4); */
                     /*ECL_JH_Write(&state->stream, state->n_new - 1, 3); */
-                    ECL_JH_Write(&state->stream, (state->n_new << 4) + 0xF6, 7);
+                    ECL_JH_Write(&state->stream, (uint8_t)((state->n_new << 4) + 0xF6), 7);
                 } else {
                     ECL_JH_Write(&state->stream, 0xE, 4);
                 }
-                ECL_JH_Write(&state->stream, state->n_copy - 3, 3);
-                ECL_JH_Write(&state->stream, state->offset - 1 - 8 - 32 - 64, 8);
+                ECL_JH_Write(&state->stream, (uint8_t)(state->n_copy - 3), 3);
+                ECL_JH_Write(&state->stream, (uint8_t)(state->offset - 1 - 8 - 32 - 64), 8);
                 return true;
             } else {
                 offset_sub = 1 + 8 + 32 + 64 + 256;
