@@ -9,7 +9,37 @@ EMBEDDED COMPRESSION LIBRARY
 ### Endianness: any
 ### Library version: 1.0.3
 ---
-### Tested on
+## NEWS
+
+### 11 July 2025: Announcing new functionality development, adding Patreon page for support
+- new type low-memory codec: TBA
+- new type specialized low-memory codec (2): TBA
+- new type specialized low-memory codec (3): TBA
+- Patreon page: https://www.patreon.com/Nonoum
+
+### 23 October 2021: Release 1.0.3
+- Suppressed some 'loses precision' warnings (explicit conversions are added)
+
+### 23 October 2021: Release 1.0.2
+- Added/used ECL_SCOPED_CONST define
+- Added handling for ECL_EXCLUDE_HIMEM define (16bit-compilers friendly)
+- Minor fix in ZeroDevourer for ECL_USE_BITNESS_16
+
+### 28 March 2018: Release 1.0.1
+- Fixed tests compilation for clang 64 bit
+- Suppressed rare warning
+
+### 10 March 2018: Release 1.0.0
+- NanoLZ generic codec: decompressor, 7 compression modes, 2 *auto compression functions
+- NanoLZ schemes: Scheme1, Scheme2(demo)
+- ZeroDevourer codec
+- ZeroEater codec
+- high test coverage for all above
+- sample program to compress/decompress files in NanoLZ:Scheme1 format
+
+
+---
+### Tested on (version 1.0.1; further updates were tested at least on Desktop platforms)
 - Windows 7: msvc2013, msvc2015, gcc 4.8, gcc 7.2
 - Mac OS 10.12: clang (Apple LLVM version 8.0.0)
 - Embedded ARM Cortex-M3: armcc 5.06
