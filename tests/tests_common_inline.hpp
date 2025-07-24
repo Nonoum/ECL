@@ -507,6 +507,28 @@ NTEST(test_ECL_GetAlignedPointer2) {
     }
 }
 
+NTEST(test_ECL_GetAlignedPointer4) {
+    NTEST_SUPPRESS_UNUSED;
+    typedef uint32_t Ty;
+    const int type_size = sizeof(Ty);
+    const int buf_size = 20;
+    uint8_t tmp[buf_size];
+    const int shift = sizeof(Ty) - (((uintptr_t)tmp) & (type_size - 1));
+    auto ptr = tmp + shift;
+    const auto first = (Ty*)(ptr);
+    const auto next = (Ty*)(ptr + type_size);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr), first);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 1), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 2), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 3), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 4), next);
+
+    for(int i = 0; i < (buf_size - type_size); ++i) {
+        auto p = ECL_GetAlignedPointerS(tmp + i);
+        approve((uintptr_t(p) & (type_size - 1)) == 0);
+    }
+}
+
 NTEST(test_ECL_GetAlignedPointerS) {
     NTEST_SUPPRESS_UNUSED;
     typedef ECL_usize Ty;

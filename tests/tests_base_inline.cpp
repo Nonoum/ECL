@@ -3,6 +3,7 @@
 #include "../ECL_ZeroEater.h"
 #include "../ECL_ZeroDevourer.h"
 #include "../ECL_NanoLZ.h"
+#include "../ECL_Huff8.h"
 #include "../ECL_utils.h"
 
 #ifndef ECL_BUILD_AS_C
@@ -10,17 +11,29 @@
 #include "../ECL_ZeroEater.c"
 #include "../ECL_ZeroDevourer.c"
 #include "../ECL_NanoLZ.c"
+#include "../ECL_Huff8.c"
 #endif
 
 #include <fstream>
 
-// auxiliary macro and methods for testing
-#define ECL_TEST_ASSERT(expr) approve((bool)(expr))
+// auxiliary macros and methods for testing
+#define ECL_TEST_ASSERT(expr)                                      \
+    {                                                              \
+        if(! (bool)(expr)) {                                       \
+            if(hasntFailed()) {                                    \
+                log << "fail expr:'" #expr "' at file: " << __FILE__ << ", line: " << __LINE__ << "; "; \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
 #define ECL_TEST_COMPARE(val1, val2)                               \
     {                                                              \
         if((val1) != (val2)) {                                     \
             if(hasntFailed()) {                                    \
-                log << "VAL1: " << std::hex << (val1) << " != VAL2: " << (val2) << " "; \
+                log << "fail comp: '"#val1 "' (0x" << std::hex << (val1) << ") != '" #val2 "' (0x" << (val2) << ") at file: " << __FILE__ << ", line: " << __LINE__ << "; "; \
             }                                                      \
             approve(false);                                        \
         } else {                                                   \

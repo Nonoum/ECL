@@ -14,7 +14,12 @@ ECL_EXPORTED_API const char* ECL_GetVersionBranch(void); /* returns ECL_VERSION_
 
 ECL_EXPORTED_API uint8_t ECL_LogRoundUp(ECL_usize value); /* returns [log2(value)]. for 0 returns 1 */
 ECL_EXPORTED_API uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment */
+ECL_EXPORTED_API uint32_t* ECL_GetAlignedPointer4(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint32t alignment */
 ECL_EXPORTED_API ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching ECL_usize alignment */
+
+ECL_EXPORTED_API const uint16_t* ECL_GetAlignedConstPointer2(const uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint16_t alignment */
+ECL_EXPORTED_API const uint32_t* ECL_GetAlignedConstPointer4(const uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching uint32_t alignment */
+ECL_EXPORTED_API const ECL_usize* ECL_GetAlignedConstPointerS(const uint8_t* ptr); /* returns aligned pointer (shifts ptr forward if needed) matching ECL_usize alignment */
 
 /*
     Exported helper functions for storing separate 'size' values in E7 format.

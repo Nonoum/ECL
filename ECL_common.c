@@ -73,10 +73,33 @@ uint16_t* ECL_GetAlignedPointer2(uint8_t* ptr) {
     return (uint16_t*) ( (((uintptr_t)ptr) & 1) ? (ptr + 1) : ptr);
 }
 
+uint32_t* ECL_GetAlignedPointer4(uint8_t* ptr) {
+    ECL_SCOPED_CONST int offset = ((uintptr_t)ptr) & (sizeof(uint32_t) - 1);
+    ECL_ASSERT(ptr);
+    return (uint32_t*)(offset ? (ptr + sizeof(uint32_t) - offset) : ptr);
+}
+
 ECL_usize* ECL_GetAlignedPointerS(uint8_t* ptr) {
     ECL_SCOPED_CONST int offset = ((uintptr_t)ptr) & (sizeof(ECL_usize) - 1);
     ECL_ASSERT(ptr);
     return (ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
+}
+
+const uint16_t* ECL_GetAlignedConstPointer2(const uint8_t* ptr) {
+    ECL_ASSERT(ptr);
+    return (const uint16_t*) ( (((uintptr_t)ptr) & 1) ? (ptr + 1) : ptr);
+}
+
+const uint32_t* ECL_GetAlignedConstPointer4(const uint8_t* ptr) {
+    ECL_SCOPED_CONST int offset = ((uintptr_t)ptr) & (sizeof(uint32_t) - 1);
+    ECL_ASSERT(ptr);
+    return (const uint32_t*)(offset ? (ptr + sizeof(uint32_t) - offset) : ptr);
+}
+
+const ECL_usize* ECL_GetAlignedConstPointerS(const uint8_t* ptr) {
+    ECL_SCOPED_CONST int offset = ((uintptr_t)ptr) & (sizeof(ECL_usize) - 1);
+    ECL_ASSERT(ptr);
+    return (const ECL_usize*)(offset ? (ptr + sizeof(ECL_usize) - offset) : ptr);
 }
 
 uint8_t* ECL_Helper_WriteE7(uint8_t* data_start, ECL_usize max_bytes, ECL_usize value) {
