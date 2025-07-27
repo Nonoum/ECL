@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstdint>
 
-#define NTEST_VERSION_STRING "2.3.1"
+#define NTEST_VERSION_STRING "3.0.0"
 
 // allow to override namespace to have ability of having multiple thirdparties with ntest easily launched within single project
 #ifndef NTEST_NAMESPACE_NAME
@@ -34,7 +34,7 @@ public:
 
     static const char* ResultToStr(Result result);
     static int BoundVMinMax(int v, int min, int max); // returns value 'v' bounded to [min..max]. min <= max
-    static size_t RunTests(std::ostream& log_output, int depth); // returns amount of failed tests
+    static size_t RunTests(std::ostream& log_output, int depth, int argc = 0, char* argv[] = nullptr); // returns amount of failed tests
 
 protected:
     static void PushRunner(TestBase*);
@@ -50,11 +50,63 @@ private:
     uint64_t time_mcs;
 };
 
-} //end ntest
+} // end namespace ntest
 
 #define NTEST_SUPPRESS_UNUSED (void)log; (void)depth; NTEST_NAMESPACE_NAME::ntest_noop()
 
 #define NTEST_REQUIRE_DEPTH_ABOVE(value) if(depth <= (value)) { skip(); return; } NTEST_NAMESPACE_NAME::ntest_noop()
+
+#define NTEST_ASSERT(expr)                                         \
+    {                                                              \
+        if(! (bool)(expr)) {                                       \
+            if(hasntFailed()) {                                    \
+                log << "fail expr:'" #expr "' at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+#define NTEST_ASSERT_EX(expr, commenter_func/* [](auto& log) { ... } */) \
+    {                                                              \
+        if(! (bool)(expr)) {                                       \
+            if(hasntFailed()) {                                    \
+                log << "fail expr:'" #expr "' at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; commenter_func(log); \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+#define NTEST_COMPARE(val1, val2)                                  \
+    {                                                              \
+        if((val1) != (val2)) {                                     \
+            if(hasntFailed()) {                                    \
+                log << "fail comp: '"#val1 "' (0x" << std::hex << (val1) << ") != '" #val2 "' (0x" << (val2) \
+                    << ") at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+#define NTEST_COMPARE_EX(val1, val2, commenter_func/* [](auto& log) { ... } */) \
+    {                                                              \
+        if((val1) != (val2)) {                                     \
+            if(hasntFailed()) {                                    \
+                log << "fail comp: '"#val1 "' (0x" << std::hex << (val1) << ") != '" #val2 "' (0x" << (val2) \
+                    << ") at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; commenter_func(log); \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+
 
 #define NTEST(test_name) \
     class test_name : public NTEST_NAMESPACE_NAME::TestBase { \

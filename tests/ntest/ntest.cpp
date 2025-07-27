@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <chrono>
-#include <string.h> // strcmp
+#include <string.h> // strcmp, strstr
 
 namespace NTEST_NAMESPACE_NAME {
 
@@ -80,21 +80,77 @@ int TestBase :: BoundVMinMax(int v, int min, int max) {
 #define NTEST_STRING_OF(x) NTEST_STRING_OF_HELPER(x)
 #define NTEST_NS_STRING NTEST_STRING_OF(NTEST_NAMESPACE_NAME)
 
-size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
+size_t TestBase :: RunTests(std::ostream& log_output, int depth, int argc, char* argv[]) {
     const auto comp = [](const TestBase* left, const TestBase* right) {
         return strcmp(left->getName(), right->getName()) < 0;
     };
+    std::vector<std::string> sensitive_patterns;
+    std::vector<std::string> insensitive_patterns;
+    const auto tolower_string = [](const std::string& s) {
+        auto result = s;
+        for(auto& ch : result) {
+            ch = ::tolower(ch);
+        }
+        return result;
+    };
+    const auto should_run = [&sensitive_patterns, &insensitive_patterns, &tolower_string](const char* test_name) -> bool {
+        for(auto& patt : sensitive_patterns) {
+            if(nullptr != ::strstr(test_name, patt.c_str())) {
+                return true;
+            }
+        }
+        if(insensitive_patterns.size()) {
+            const auto tmp_insens = tolower_string(std::string(test_name));
+            for(auto& patt : insensitive_patterns) {
+                if(tmp_insens.find(patt) != std::string::npos) {
+                    return true;
+                }
+            }
+        }
+        if(sensitive_patterns.size() || insensitive_patterns.size()) {
+            return false;
+        }
+        return true;
+    };
+
+    // process args (argc, argv): [-m match_test_name_substring], ..., [-mi match_test_name_substring_case_insensitive], ...
+    if(argv && argc) {
+        const std::string key_sens("-m");
+        const std::string key_insens("-mi");
+        for(int i = 1; i < (argc - 1); ++i) {
+            const std::string test_str(argv[i]);
+            if(key_sens == test_str) {
+                sensitive_patterns.emplace_back( std::string(argv[i + 1]) );
+                ++i;
+            } else if(key_insens == test_str) {
+                insensitive_patterns.emplace_back( tolower_string(std::string(argv[i + 1])) );
+                ++i;
+            }
+        }
+    }
+
     auto& tests = GetRunners();
     std::sort(tests.begin(), tests.end(), comp);
     size_t n_failed = 0;
     size_t n_succeeded = 0;
     size_t n_skipped = 0;
     size_t n_crashed = 0;
+    size_t n_filtered_out = 0;
     log_output << "ntest" << NTEST_VERSION_STRING << " (compiled with namespace '" << NTEST_NS_STRING
                << "'): Running tests with depth = " << depth << std::endl;
+    for(const auto& patt : sensitive_patterns) {
+        log_output << "  +sensitive pattern: '" << patt << "';" << std::endl;
+    }
+    for(const auto& patt : insensitive_patterns) {
+        log_output << "  +insensitive pattern: '" << patt << "';" << std::endl;
+    }
     double total_time = 0;
     for(auto runner : tests) {
         const auto name = runner->getName();
+        if(! should_run(name)) {
+            ++n_filtered_out;
+            continue; // skip even from listing
+        }
         Result result = INIT;
         try {
             result = runner->run(log_output, depth);
@@ -122,6 +178,9 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth) {
         log_output << " (crashed: " << n_crashed << ")";
     }
     log_output << std::endl;
+    if(n_filtered_out) {
+        log_output << "ntest: Filtered Out: " << n_filtered_out << std::endl;
+    }
     return n_failed;
 }
 

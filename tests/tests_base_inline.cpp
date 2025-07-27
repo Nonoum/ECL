@@ -17,29 +17,12 @@
 #include <fstream>
 
 // auxiliary macros and methods for testing
-#define ECL_TEST_ASSERT(expr)                                      \
-    {                                                              \
-        if(! (bool)(expr)) {                                       \
-            if(hasntFailed()) {                                    \
-                log << "fail expr:'" #expr "' at file: " << __FILE__ << ", line: " << __LINE__ << "; "; \
-            }                                                      \
-            approve(false);                                        \
-        } else {                                                   \
-            approve(true);                                         \
-        }                                                          \
-    }
+#define ECL_TEST_ASSERT       NTEST_ASSERT
+#define ECL_TEST_ASSERT_EX    NTEST_ASSERT_EX
 
-#define ECL_TEST_COMPARE(val1, val2)                               \
-    {                                                              \
-        if((val1) != (val2)) {                                     \
-            if(hasntFailed()) {                                    \
-                log << "fail comp: '"#val1 "' (0x" << std::hex << (val1) << ") != '" #val2 "' (0x" << (val2) << ") at file: " << __FILE__ << ", line: " << __LINE__ << "; "; \
-            }                                                      \
-            approve(false);                                        \
-        } else {                                                   \
-            approve(true);                                         \
-        }                                                          \
-    }
+#define ECL_TEST_COMPARE      NTEST_COMPARE
+#define ECL_TEST_COMPARE_EX   NTEST_COMPARE_EX
+
 
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
     vector_name.resize(capacity + 1); \
