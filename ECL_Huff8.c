@@ -28,52 +28,68 @@
 #include "ECL_utils.h"
 
 // sorts uint16_t values in order of descendance, sorts 'codes' array affecting it's order equally to 'values' array (swaps occur at same indices)
-static void ECL_Huff8_Aux_Sort16(uint8_t* codes, uint16_t* values, int size) {
-    if(size < 32) {
-        int i, j;
-        uint8_t db;
-        uint16_t dw;
-        for(i = 1; i < size; ++i) {
-            db = codes[i];
-            dw = values[i];
-            for(j = i - 1; (j >= 0) && values[j] < dw; --j) {
-                codes[j+1] = codes[j];
-                values[j+1] = values[j];
+static void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf512) {
+    uint8_t* stack_first = buf512;
+    uint8_t* stack_nth = buf512 + 256;
+    uint16_t stack_depth;
+    //
+    stack_first[0] = 0;
+    stack_nth[0] = (uint8_t)(size - 1);
+    stack_depth = 1;
+    //
+    while(stack_depth) {
+        --stack_depth;
+        int first = stack_first[stack_depth];
+        int nth = stack_nth[stack_depth];
+        int dist = (nth - first);
+        //
+        if(dist < 32) {
+            int i, j;
+            uint8_t db;
+            uint16_t dw;
+            for(i = first + 1; i <= nth; ++i) {
+                db = codes[i];
+                dw = values[i];
+                for(j = i - 1; (j >= first) && values[j] < dw; --j) {
+                    codes[j+1] = codes[j];
+                    values[j+1] = values[j];
+                }
+                values[j+1] = dw;
+                codes[j+1] = db;
             }
-            values[j+1] = dw;
-            codes[j+1] = db;
+        } else {
+            const uint16_t candidate = values[first + (dist/2)];
+            int i = first, j = nth;
+            while(i < j) {
+                while(values[i] > candidate) {
+                    ++i;
+                }
+                while(values[j] < candidate) {
+                    --j;
+                }
+                if(i >= j) {
+                    break;
+                }
+                uint8_t db = codes[i];
+                codes[i] = codes[j];
+                codes[j] = db;
+                uint16_t dw = values[i];
+                values[i] = values[j];
+                values[j] = dw;
+                ++i;
+                --j;
+            }
+            if(j > first) {
+                stack_first[stack_depth] = first;
+                stack_nth[stack_depth] = j;
+                ++stack_depth;
+            }
+            if(i < nth) {
+                stack_first[stack_depth] = i;
+                stack_nth[stack_depth] = nth;
+                ++stack_depth;
+            }
         }
-        return;
-    }
-    const uint16_t candidate = values[size >> 1];
-    int i = 0, j = size - 1;
-    while(i < j)
-    {
-        while(values[i] > candidate) {
-            ++i;
-        }
-        while(values[j] < candidate) {
-            --j;
-        }
-        if(i > j) {
-            break;
-        }
-        uint8_t db = codes[i];
-        codes[i] = codes[j];
-        codes[j] = db;
-        uint16_t dw = values[i];
-        values[i] = values[j];
-        values[j] = dw;
-        ++i;
-        --j;
-    }
-    // TODO replace recursion with array allocated on externally supplied buffer
-    // > currently this recursion can end up too deep and crash some embedded device
-    if(j > 0) {
-        ECL_Huff8_Aux_Sort16(codes, values, j + 1);
-    }
-    if(i < size) {
-        ECL_Huff8_Aux_Sort16(codes + i, values + i, size - i);
     }
 }
 
@@ -99,7 +115,7 @@ int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out
     if(n_unique < 2) {
         return n_unique;
     }
-    ECL_Huff8_Aux_Sort16(buf256, freqs, freqs_top);
+    ECL_Huff8_Aux_QSort16(buf256, freqs, freqs_top, (uint8_t*)(freqs+256));
     { // form tree
         int16_t next_leaf;
         int16_t next_branch;
