@@ -262,6 +262,69 @@ void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance) {
     }
 }
 
+ECL_JH_Peek_ResultType ECL_JH_Peek(const ECL_JH_RState* state, uint8_t* output_nbits) {
+#ifdef ECL_JH_Peek_Multibyte
+    /* wide implementation */
+    if((uintptr_t)(state->end - state->next) >= (uintptr_t)sizeof(ECL_JH_Peek_ResultType)) {
+        if(! state->n_bits) { /* peek next bytes */
+            *output_nbits = (uint8_t)(8 * sizeof(ECL_JH_Peek_ResultType));
+            return *(const ECL_JH_Peek_ResultType*)(state->next);
+            /* else - fallback to default */
+        } else { /* starts with 'byte', peek after it ignoring 'next' (if 'next' needs to be checked - this is to be handled by Peek's user) */
+            *output_nbits = (uint8_t)(8 * (sizeof(ECL_JH_Peek_ResultType) - 1) + state->n_bits);
+            return (*(const ECL_JH_Peek_ResultType*)(state->byte)) >> (8 - state->n_bits);
+        }
+    }
+#endif
+    /* default implementation */
+    if(! state->n_bits) { /* peek next (1 byte) */
+        if(state->next == state->end) {
+            *output_nbits = 0;
+            return 0;
+        }
+        *output_nbits = 8;
+        return *(state->next);
+    }
+    *output_nbits = state->n_bits;
+    return *(state->byte) >> (8 - state->n_bits);
+}
+
+uint8_t ECL_JH_Peek8(const ECL_JH_RState* state, uint8_t* output_nbits) {
+    if(! state->n_bits) {
+        if(state->next == state->end) {
+            *output_nbits = 0;
+            return 0;
+        }
+        *output_nbits = 8;
+        return *(state->next);
+    }
+    *output_nbits = state->n_bits;
+    return *(state->byte) >> (8 - state->n_bits);
+}
+
+void ECL_JH_Advance(ECL_JH_RState* state, uint8_t n_bits) {
+    if(n_bits <= state->n_bits) {
+        state->n_bits -= n_bits;
+    } else {
+        n_bits -= state->n_bits;
+        do {
+            if(state->next == state->end) {
+                state->n_bits = 0;
+                state->is_valid = 0;
+                return;
+            }
+            state->byte = state->next;
+            ++(state->next);
+            if(n_bits > 8) {
+                n_bits -= 8;
+            } else {
+                state->n_bits = 8 - n_bits;
+                break;
+            }
+        } while(1);
+    }
+}
+
 
 #ifdef ECL_USE_BRANCHLESS
     #define ECL_CALC_E(value, n_bits) \

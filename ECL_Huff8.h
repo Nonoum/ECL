@@ -34,28 +34,53 @@
 #ifndef ECL_HUFF8_RSTREAM_Type
     #define ECL_HUFF8_RSTREAM_Type ECL_JH_RState
     #define ECL_HUFF8_RSTREAM_Read1_8 ECL_JH_Read /* ECL_HUFF8_RSTREAM_Read1_8(ECL_HUFF8_RSTREAM_Type, n_bits) where n_bits is 1..8 */
-    #define ECL_HUFF8_RSTREAM_Init(rstream, src, size) ECL_JH_RInit(rstream, src, size, 0) /* standard init of ECL_JH_RState for *_Raw functions - those are disabled if macro isn't defined */
-#endif
+
+    /* optional functionality: standard init of ECL_JH_RState for *_Raw functions - those are disabled if macro isn't defined */
+    #define ECL_HUFF8_RSTREAM_Init(rstream, src, size) ECL_JH_RInit(rstream, src, size, 0)
+
+    /* optional functionality for optimizations: RSTREAM:Peek */
+    #define ECL_HUFF8_RSTREAM_Peek(rstream, out_bits_ptr) ECL_JH_Peek(rstream, out_bits_ptr) /* Peeks next data portion without reading - see ECL_JH_Peek description */
+    #define ECL_HUFF8_RSTREAM_Peek_ResultType ECL_JH_Peek_ResultType
+    #ifdef ECL_JH_Peek_Multibyte
+        #define ECL_HUFF8_RSTREAM_Peek_Multibyte
+    #endif
+    #define ECL_HUFF8_RSTREAM_Advance(rstream, nbits) ECL_JH_Advance(rstream, nbits)
+
+#endif /* ECL_HUFF8_RSTREAM_Type */
+
 
 #ifndef ECL_HUFF8_WSTREAM_Type
     #define ECL_HUFF8_WSTREAM_Type ECL_JH_WState
     #define ECL_HUFF8_WSTREAM_Write1_8 ECL_JH_Write /* ECL_HUFF8_WSTREAM_Write1_8(ECL_HUFF8_WSTREAM_Type, value, n_bits) where n_bits is 1..8 */
-    #define ECL_HUFF8_WSTREAM_Init(wstream, dst, size) ECL_JH_WInit(wstream, dst, size, 0) /* standard init of ECL_JH_WState for *_Raw functions - those are disabled if macro isn't defined */
-#endif
+
+    /* optional functionality: standard init of ECL_JH_WState for *_Raw functions - those are disabled if macro isn't defined */
+    #define ECL_HUFF8_WSTREAM_Init(wstream, dst, size) ECL_JH_WInit(wstream, dst, size, 0)
+
+#endif /* ECL_HUFF8_WSTREAM_Type */
 
 
-#define ECL_HUFF8_TREE_DEPTH_MAX_ULM 24
+/* Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size) */
+#define ECL_HUFF8_TREE_DEPTH_MAX_ULM 24 /* TODO calc, reduce */
 
-/* TODO description */
+
+/*
+    Maximum Huffman tree depth supported by ECL_Huff8_Decompress* - length of uint16_t stack-allocated array within the Decompress function.
+    Defaults to *_ULM (48 bytes buffer), you MIGHT want to reduce it for very restricted environment.
+    ECL_Huff8_Decompress*_LONG ignores it to support any possible data, as it's assumed for environment with a lot of memory.
+*/
 #ifndef ECL_HUFF8_DECOMPRESS_MAX_DEPTH
     #define ECL_HUFF8_DECOMPRESS_MAX_DEPTH ECL_HUFF8_TREE_DEPTH_MAX_ULM
 #endif
 
 
+#define ECL_HUFF8_MAX_UNIQUE_VALUES 256
+#define ECL_HUFF8_MAX_TREE_NODES (2*ECL_HUFF8_MAX_UNIQUE_VALUES - 1)
+#define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) (8*(n_unique_bytes) + 2*(n_unique_bytes) - 1)
+
 /*
     Calculates size of buffer to fit compressed version of any data of 'src_size' size.
 */
-#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + 320) // TODO make sure
+#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8)) /* TODO_BEFORE_HUFF8_RELEASE make sure */
 
 
 
@@ -92,7 +117,7 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]
 ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTree(uint16_t n_unique);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
     returns amount of bits needed for compression (or 0 in case of error).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768);
@@ -109,7 +134,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16
 
 /*
     Compresses to wstream a tree in 'ctree768' format.
-    // TODO more description
+    // TODO_BEFORE_HUFF8_RELEASE more description
     - 'depth_buf_x2' is external buffer needed to traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size: 2 * 'depth_buf_size' = 2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM; ULM covers any user data up to 64k bytes (actually more).
         - for tiny datasets depth=8 could be enough ('depth_buf_size' = 8, depth_buf_x2 is 16 bytes long);
@@ -122,13 +147,13 @@ ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint16
 ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_HUFF8_WSTREAM_Type* wstream);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
     returns amount of bits written (or 0 in case of error).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
 */
 #ifdef ECL_HUFF8_WSTREAM_Init
 ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
@@ -139,29 +164,34 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint1
 /* Decompress* user methods ------------------------------------------------------------------------------------------------------------------------ */
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
 */
 ECL_EXPORTED_API void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst_dtree1025);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
+
+    returns TODO
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
-    TODO description
+    TODO_BEFORE_HUFF8_RELEASE description
+
+    returns amount of consumed bytes (which is <= src_size), or 0 in case of any error.
 */
 #ifdef ECL_HUFF8_RSTREAM_Init
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
-#endif
+#endif /* ECL_HUFF8_RSTREAM_Init */
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* ECL_HUFF8_ */

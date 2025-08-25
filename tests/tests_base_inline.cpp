@@ -25,11 +25,14 @@
 
 
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
-    vector_name.resize(capacity + 1); \
+    vector_name.assign(capacity + 1, 0); \
     vector_name[capacity] = 0x39; NTEST_NAMESPACE_NAME::ntest_noop()
 
 #define ECL_TEST_MAGIC_VALIDATE(vector_name) \
     ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x39)
+
+#define ECL_TEST_MAGIC_LOG_TOUCHED_SIZE(vector_name, str_description) \
+    log << str_description << [&vector_name](){ return std::find_if(vector_name.rbegin() + 1, vector_name.rend(), [](auto& v){ return v != 0; }).base() - vector_name.begin(); }() << "\n";
 
 
 
@@ -55,6 +58,7 @@ static void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v
 #include "tests_random_data_inline.hpp"
 #include "tests_perf_inline.hpp"
 #include "tests_errors_inline.hpp"
+#include "tests_huff8_specific_inline.hpp"
 
 NTEST(test_version) {
     NTEST_SUPPRESS_UNUSED;

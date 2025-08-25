@@ -28,6 +28,17 @@
 
 #include "ECL_config.h"
 
+/* #define ECL_OPT_AS_LITTLE_ENDIAN */ /* TODO work it out? - technically supported but appears inefficient, as byte-wise Peek implementation is just too efficient */
+
+/* ECL_JH_Peek_ResultType is normally uint8_t and data is picked bytewise equally to reading, but little-endian define allows Peeking bigger portions when possible */
+#ifdef ECL_OPT_AS_LITTLE_ENDIAN
+    #define ECL_JH_Peek_ResultType ECL_usize /* note - must be an unsigned type */
+    #define ECL_JH_Peek_Multibyte
+#else
+    #define ECL_JH_Peek_ResultType uint8_t
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,6 +72,16 @@ void ECL_JH_Write(ECL_JH_WState* state, uint8_t value, uint8_t bits); /* writes 
 uint8_t ECL_JH_Read(ECL_JH_RState* state, uint8_t bits); /* returns value of 'bits' size read from 'state' */
 void ECL_JH_WJump(ECL_JH_WState* state, ECL_usize distance); /* moves pointer to next byte at 'distance' if possible */
 void ECL_JH_RJump(ECL_JH_RState* state, ECL_usize distance); /* -:- */
+
+/*
+    ECL_JH_Peek* functions peek SOME next data (> 0 bits) and return it normalized (lower bit of result is next bit to be read with ECL_JH_Read),
+    assigns *output_nbits to amount of bits in the result (can be 0 if there's nothing to read), other bits are uninitialized.
+    It's assumed that if user has Jumps in the middle of peek-ed bits - user needs to read, handle jump, and peek again in the correct place.
+    Intended for optimizing small reading operations (for algorithms/formats that have very short bit codes).
+*/
+ECL_JH_Peek_ResultType ECL_JH_Peek(const ECL_JH_RState* state, uint8_t* output_nbits);
+uint8_t ECL_JH_Peek8(const ECL_JH_RState* state, uint8_t* output_nbits); /* Peeks at most uint8_t (only peeks bits within a single byte) */
+void ECL_JH_Advance(ECL_JH_RState* state, uint8_t n_bits); /* Advances stream by reading arbitrary n_bits (< 256) - similar to reading them one-by-one with ECL_JH_Read */
 
 
 /* E-numbers part */

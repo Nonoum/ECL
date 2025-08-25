@@ -28,7 +28,8 @@
 #include "ECL_utils.h"
 
 // sorts uint16_t values in order of descendance, sorts 'codes' array affecting it's order equally to 'values' array (swaps occur at same indices)
-static void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf512) {
+void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf512) {
+    /* technically less buf is suffinicient, but it's hard to calculate */
     uint8_t* stack_first = buf512;
     uint8_t* stack_nth = buf512 + 256;
     uint16_t stack_depth;
@@ -43,7 +44,7 @@ static void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, ui
         int nth = stack_nth[stack_depth];
         int dist = (nth - first);
         //
-        if(dist < 32) {
+        if(dist < 16) { /* limit here affects used stack (buf512) depth */
             int i, j;
             uint8_t db;
             uint16_t dw;
@@ -58,6 +59,7 @@ static void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, ui
                 codes[j+1] = db;
             }
         } else {
+            /* nth must be >= first */
             const uint16_t candidate = values[first + (dist/2)];
             int i = first, j = nth;
             while(i < j) {
@@ -251,7 +253,7 @@ int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out
 /* Evaluate/Analyze user methods - not modifying, estimate how much space is needed for compressed output ------------------------------------------ */
 
 uint32_t ECL_Huff8_EvaluateTree(uint16_t n_unique) {
-    return (n_unique * 10) - 1;
+    return ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique);
 }
 
 uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf256, uint8_t* buf768) {
@@ -453,7 +455,7 @@ void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst
         }
     } // tree unpacked
     dtree_buf[next_node] = 0; // such thing will allow easy finding the end of dtree_buf for an algorithm accepting tree as parameter
-    // TODO return size of the dtree in appropriate form
+    // TODO_BEFORE_HUFF8_RELEASE return size of the dtree in appropriate form
 }
 
 ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
@@ -474,7 +476,49 @@ ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_
         return bytes_cnt; // ok
     }
     // else - process as regular tree
-    // TODO could be optimized with some 'peek byte' function
+#ifdef ECL_HUFF8_RSTREAM_Peek
+    {
+        uint8_t nbits, last_nbits;
+        ECL_HUFF8_RSTREAM_Peek_ResultType val;
+        val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
+        last_nbits = nbits;
+        //
+        for(ECL_usize last_ofs = (interval * bytes_cnt), ofs = 0; ofs < last_ofs; ofs += interval) {
+            uint16_t curr_node = 0; // we're sure it's not a leaf (checked that case above)
+            do {
+                if(! nbits) {
+#ifdef ECL_HUFF8_RSTREAM_Peek_Multibyte
+                    ECL_HUFF8_RSTREAM_Advance(rstream, last_nbits); /* consume processed data, advance rstream */
+                    /* peek next */
+                    val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
+                    last_nbits = nbits;
+#else /* --------------------------- */
+                    ECL_HUFF8_RSTREAM_Read1_8(rstream, last_nbits);
+                    /* peek next */
+                    val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
+                    last_nbits = nbits;
+#endif /* ECL_HUFF8_RSTREAM_Peek_Multibyte */
+                }
+                if(val & 1) { // go right
+                    curr_node = dtree_buf[curr_node];
+                } else { /* go left (always next after parent) */
+                    ++curr_node;
+                }
+                val >>= 1;
+                --nbits;
+            } while(! (dtree_buf[curr_node] & 0x8000));
+            dst[ofs] = (uint8_t)dtree_buf[curr_node];
+        }
+        /* done */
+        nbits = last_nbits - nbits;
+        /* consume processed data, advance rstream */
+#ifdef ECL_HUFF8_RSTREAM_Peek_Multibyte
+        ECL_HUFF8_RSTREAM_Advance(rstream, nbits);
+#else /* --------------------------- */
+        ECL_HUFF8_RSTREAM_Read1_8(rstream, nbits);
+#endif /* ECL_HUFF8_RSTREAM_Peek_Multibyte */
+    }
+#else
     for(ECL_usize last_ofs = (interval * bytes_cnt), ofs = 0; ofs < last_ofs; ofs += interval) {
         uint16_t curr_node = 0; // we're sure it's not a leaf (checked that case above)
         do {
@@ -486,6 +530,7 @@ ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_
         } while(! (dtree_buf[curr_node] & 0x8000));
         dst[ofs] = (uint8_t)dtree_buf[curr_node];
     }
+#endif
     return bytes_cnt; // ok if stream isn't invalidated
 }
 
@@ -500,6 +545,12 @@ ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8
     ECL_HUFF8_RSTREAM_Init(&rstream, src, src_size);
 
     ECL_Huff8_DecompressDTree1025(&rstream, dtree_buf);
-    return ECL_Huff8_DecompressWithDTree1025(dtree_buf, &rstream, dst, bytes_cnt, interval);
+    if(! ECL_Huff8_DecompressWithDTree1025(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
+        return 0;
+    }
+    if(! rstream.is_valid) {
+        return 0;
+    }
+    return rstream.next - src;
 }
 #endif
