@@ -130,9 +130,9 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
             int16_t tree_record_pos;
             if(next_leaf >= 0) {
                 if(next_branch > branches_top) { // both halves non-empty
-                    if(freqs[next_leaf] < freqs[next_branch]) {
+                    if(freqs[next_leaf] <= freqs[next_branch]) {
                         idleft = next_leaf; // this is the least value now
-                        if(next_leaf && (freqs[next_leaf - 1] < freqs[next_branch])) {
+                        if(next_leaf && (freqs[next_leaf - 1] <= freqs[next_branch])) { // prioritize picking leaf to minimize worst-case depth
                             idright = next_leaf - 1;
                             --next_leaf;
                         } else {
@@ -143,7 +143,7 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
                     } else { // next leave has greater value than next branch
                         idleft = next_branch; // this is the least value now
                         --next_branch;
-                        if((next_branch > branches_top) && (freqs[next_leaf] >= freqs[next_branch])) {
+                        if((next_branch > branches_top) && (freqs[next_leaf] > freqs[next_branch])) { // prioritize picking leaf to minimize worst-case depth
                             idright = next_branch;
                             --next_branch;
                         } else {
