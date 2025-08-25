@@ -93,12 +93,8 @@ extern "C" {
 /* Auxiliary methods (called internally, for advanced users) --------------------------------------------------------------------------------------- */
 
 /*
-    Generates tree and spec from freqs.
-    'freqs' is input array uint16_t[256] with values [i] filled with counts off appearance of codes 'i' in input data.
-    'out_tspec1024' is output spec data in tspec1024 format: 256 uint32_t values (aligned allocation), each value[i] representing info about how to encode [i]:
-        - top 8 bits is uint8_t amount of bits in the bitcode;
-        - lower 24 bits is bitcode;
-    'freqs' and 'out_tspec1024' can point to same address, in this case original freqs are being overriden.
+    Generates tree from freqs.
+    'freqs' is input array uint16_t[256] with values [i] filled with counts of appearance of codes 'i' in input data.
     'buf256' is a 256-byte buffer to be supplied by user for internal needs.
     'out_ctree768' is two arrays in series:
         [{uint8_t left, uint8_t right}, ...] : 512 bytes; left/right are equally encoded and represent either an index of child node or value(code) depending of flags;
@@ -107,7 +103,19 @@ extern "C" {
         Root code/record is top node, which has logical address of ('return value' - 2);
     returns amount of unique values (where freqs[i] are non-zero).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[256]*/, uint32_t* out_tspec1024/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
+ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
+
+/*
+    Generates spec from a tree in ctree768 format.
+    'freqs' is input array uint16_t[256] with values [i] filled with counts off appearance of codes 'i' in input data.
+    'out_tspec1024' is output spec data in tspec1024 format: 256 uint32_t values (aligned allocation), each value[i] representing info about how to encode [i]:
+        - top 8 bits is uint8_t amount of bits in the bitcode;
+        - lower 24 bits is bitcode;
+    - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
+        - for ULM 'depth_buf_x2' size is "2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM"; ULM covers any user data up to 64k bytes (actually more).
+    returns maximum code length (if > ECL_HUFF8_TREE_DEPTH_MAX_ULM : it's error - then this spec format doesn't support needed code length).
+*/
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
 
 
 
@@ -135,7 +143,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16
 /*
     Compresses to wstream a tree in 'ctree768' format.
     // TODO_BEFORE_HUFF8_RELEASE more description
-    - 'depth_buf_x2' is external buffer needed to traversing the tree - it could be smaller or bigger depending on user needs:
+    - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size: 2 * 'depth_buf_size' = 2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM; ULM covers any user data up to 64k bytes (actually more).
         - for tiny datasets depth=8 could be enough ('depth_buf_size' = 8, depth_buf_x2 is 16 bytes long);
         - for any technically possible tree (possible on absurdly enormous data size) 'depth_buf_size' = 256, depth_buf_x2 is 512 bytes;
