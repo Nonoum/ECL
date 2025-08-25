@@ -95,44 +95,42 @@ void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* 
     }
 }
 
-// returns amount of unique values (where freqs[i] are non-zero).
-int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out_tspec1024/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max) {
-    int16_t freqs_top = 0;
-    int16_t n_unique; // amount of unique values
+int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[256]*/, uint32_t* out_tspec1024/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max) {
+    int16_t n_unique = 0; // amount of unique values
     //
     ECL_ASSERT(out_tspec1024 == ECL_GetAlignedPointer4((uint8_t*)out_tspec1024));
     ECL_ASSERT(freqs == ECL_GetAlignedPointer2((uint8_t*)freqs));
     //
     for(int16_t i = 0; i < 256; ++i) {
         if(freqs[i]) {
-            buf256[freqs_top] = i;
-            freqs[freqs_top] = freqs[i];
-            ++freqs_top;
+            buf256[n_unique] = i;
+            freqs[n_unique] = freqs[i];
+            ++n_unique;
         }
     }
-    if(n_unique_max && (freqs_top > n_unique_max)) { // reserved API extension
-        freqs_top = n_unique_max;
+    if(n_unique_max && (n_unique > n_unique_max)) { // reserved API extension
+        n_unique = n_unique_max;
     }
-    n_unique = freqs_top;
     if(n_unique < 2) {
         return n_unique;
     }
-    ECL_Huff8_Aux_QSort16(buf256, freqs, freqs_top, (uint8_t*)(freqs+256));
+    ECL_Huff8_Aux_QSort16(buf256, freqs, n_unique, out_ctree768);
     { // form tree
+        ECL_SCOPED_CONST int16_t n_unique_m1 = n_unique - 1;
         int16_t next_leaf;
+        int16_t branches_top;
         int16_t next_branch;
-        int16_t unprocessed_cnt; // amount of unprocessed logical nodes
 
-        next_leaf = freqs_top - 1;
-        next_branch = freqs_top;
-        unprocessed_cnt = freqs_top;
-        // now form branch nodes and add after 'freqs_top' (in order of ascendance)
-        while(unprocessed_cnt >= 2) { // while have raw nodes - create a new parent node
+        next_leaf = n_unique_m1;
+        branches_top = n_unique_m1;
+        next_branch = branches_top;
+        // now form branch nodes and add backwards since the end overriding original freqs
+        while(branches_top) { // process nodes till branches top reaches limit
             int16_t idleft;
             int16_t idright;
             int16_t tree_record_pos;
             if(next_leaf >= 0) {
-                if(next_branch < freqs_top) { // both halves non-empty
+                if(next_branch > branches_top) { // both halves non-empty
                     if(freqs[next_leaf] < freqs[next_branch]) {
                         idleft = next_leaf; // this is the least value now
                         if(next_leaf && (freqs[next_leaf - 1] < freqs[next_branch])) {
@@ -140,15 +138,15 @@ int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out
                             --next_leaf;
                         } else {
                             idright = next_branch;
-                            ++next_branch;
+                            --next_branch;
                         }
                         --next_leaf;
                     } else { // next leave has greater value than next branch
                         idleft = next_branch; // this is the least value now
-                        ++next_branch;
-                        if((next_branch < freqs_top) && (freqs[next_leaf] >= freqs[next_branch])) {
+                        --next_branch;
+                        if((next_branch > branches_top) && (freqs[next_leaf] >= freqs[next_branch])) {
                             idright = next_branch;
-                            ++next_branch;
+                            --next_branch;
                         } else {
                             idright = next_leaf;
                             --next_leaf;
@@ -161,36 +159,35 @@ int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out
                 }
             } else { // only second half is non-empty (and has at least two nodes)
                 idleft = next_branch;
-                idright = next_branch + 1;
-                next_branch += 2;
+                idright = next_branch - 1;
+                next_branch -= 2;
             }
-            // form tree
-            tree_record_pos = freqs_top - n_unique;
-            if(idleft < n_unique) { // leaf/value
+            // form tree - recalculate virtual indices of branches according to freqs placement
+            tree_record_pos = n_unique_m1 - branches_top;
+            if(idleft <= branches_top) { // leaf/value
                 out_ctree768[tree_record_pos*2 + 0] = buf256[idleft];
                 out_ctree768[tree_record_pos + 512] = 1;
             } else {
-                out_ctree768[tree_record_pos*2 + 0] = idleft - n_unique;
+                out_ctree768[tree_record_pos*2 + 0] = n_unique_m1 - idleft;
                 out_ctree768[tree_record_pos + 512] = 0;
             }
-            if(idright < n_unique) { // leaf/value
+            if(idright <= branches_top) { // leaf/value
                 out_ctree768[tree_record_pos*2 + 1] = buf256[idright];
                 out_ctree768[tree_record_pos + 512] |= 2;
             } else {
-                out_ctree768[tree_record_pos*2 + 1] = idright - n_unique;
+                out_ctree768[tree_record_pos*2 + 1] = n_unique_m1 - idright;
             }
             //
-            freqs[freqs_top] = freqs[idleft] + freqs[idright];
-            --unprocessed_cnt;
-            ++freqs_top;
+            freqs[branches_top] = freqs[idleft] + freqs[idright];
+            --branches_top;
         }
+        ECL_ASSERT(branches_top == 0);
     }
-    ECL_ASSERT(freqs_top == (n_unique*2 - 1));
-    // root node index in tree == freqs_top - 1 - n_unique == n_unique*2 - 2;
+    // root node index in tree == freqs_top - 1 - n_unique == n_unique - 2;
     { // form spec
         uint8_t* ECL_SCOPED_CONST stack_flags = buf256; // 0: entered left; 1: entered right; allocate arrays within free buffer
         uint8_t* ECL_SCOPED_CONST stack_ptrs = buf256 + ECL_HUFF8_TREE_DEPTH_MAX_ULM; // -:- same size
-        uint16_t tree_record_pos = freqs_top - 1 - n_unique; // root
+        uint16_t tree_record_pos = n_unique - 2; // root
         uint16_t stack_depth = 0;
         uint32_t tmp_code = 0; // could be smaller for smaller datasets:
         // 16 bits to guarantee work for any dataset of < 4180 bytes

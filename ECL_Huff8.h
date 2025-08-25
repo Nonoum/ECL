@@ -94,7 +94,7 @@ extern "C" {
 
 /*
     Generates tree and spec from freqs.
-    'freqs' is input array uint16_t[512] with first 256 values [i] filled with counts off appearance of codes 'i' in input data. rest 256 values states doesn't matter.
+    'freqs' is input array uint16_t[256] with values [i] filled with counts off appearance of codes 'i' in input data.
     'out_tspec1024' is output spec data in tspec1024 format: 256 uint32_t values (aligned allocation), each value[i] representing info about how to encode [i]:
         - top 8 bits is uint8_t amount of bits in the bitcode;
         - lower 24 bits is bitcode;
@@ -107,7 +107,7 @@ extern "C" {
         Root code/record is top node, which has logical address of ('return value' - 2);
     returns amount of unique values (where freqs[i] are non-zero).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[512]*/, uint32_t* out_tspec1024/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
+ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToTSpec1024_ULM(uint16_t* freqs/*[256]*/, uint32_t* out_tspec1024/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
 
 
 
