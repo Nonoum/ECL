@@ -59,14 +59,55 @@
 #endif /* ECL_HUFF8_WSTREAM_Type */
 
 
-/* Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size) */
-#define ECL_HUFF8_TREE_DEPTH_MAX_ULM 24 /* TODO calc, reduce */
+/*
+    Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size).
+    Constant is used to allocate small buffers on stack (in decompressor - see it's documentation) or within existing supplied buffers for compressor (no extra stack arrays there).
+
+    Maximum depth is maximum path from root to a leave, where direct "root->leave" depth=1.
+    Maximum safe data size is input data size for which any data combination will result in a tree with depth not exceeding appropriate limit,
+        although this is very edge case (e.g. for depth=12, max=841 - you can expect it to work ok for several kb data size or even more).
+    Maximum safe data size per-depth is:
+        for depth = 0 max = 1 (0x1) [special case - if depth is 0 - there's only one leaf (all values are equal) and no further compressed data stream]
+        for depth = 1 max = 2 (0x2)
+        for depth = 2 max = 5 (0x5)
+        for depth = 3 max = 9 (0x9)
+        for depth = 4 max = 16 (0x10)
+        for depth = 5 max = 27 (0x1b)
+        for depth = 6 max = 45 (0x2d)
+        for depth = 7 max = 74 (0x4a)
+        for depth = 8 max = 121 (0x79)
+        for depth = 9 max = 197 (0xc5)
+        for depth = 10 max = 320 (0x140)
+        for depth = 11 max = 519 (0x207)
+        for depth = 12 max = 841 (0x349) [12 is tspec512 maximum supported depth]
+        for depth = 13 max = 1362 (0x552)
+        for depth = 14 max = 2205 (0x89d)
+        for depth = 15 max = 3569 (0xdf1)
+        for depth = 16 max = 5776 (0x1690) [16 is tspec768 maximum supported depth]
+        for depth = 17 max = 9347 (0x2483)
+        for depth = 18 max = 15125 (0x3b15)
+        for depth = 19 max = 24474 (0x5f9a)
+        for depth = 20 max = 39601 (0x9ab1)
+        for depth = 21 max = 64077 (0xfa4d)
+        for depth = 22 max = 103680 (0x19500) [22 is chosen for ULM implementation to cover 64k (uint16_t size)]
+        for depth = 23 max = 167759 (0x28f4f)
+        for depth = 24 max = 271441 (0x42451) [24 is tspec1024 maximum supported depth]
+        ...
+        for depth = 32 max = 12752041 (0xc294a9)
+        ...
+        for depth = 50 max = 73681302245 (0x1127bf72e5)
+        ...
+        for depth = 56 max = 1322157322201 (0x133d6b7afd9)
+        ...
+        for depth = 64 max = 62113250390416 (0x387dde39b190)
+*/
+#define ECL_HUFF8_TREE_DEPTH_MAX_ULM 22
 
 
 /*
     Maximum Huffman tree depth supported by ECL_Huff8_Decompress* - length of uint16_t stack-allocated array within the Decompress function.
-    Defaults to *_ULM (48 bytes buffer), you MIGHT want to reduce it for very restricted environment.
-    ECL_Huff8_Decompress*_LONG ignores it to support any possible data, as it's assumed for environment with a lot of memory.
+    Defaults to *_ULM (44 bytes buffer), you MIGHT want to reduce it for very restricted environment by providing the define earlier so it's not defaulted here
+    (to choose value - see comments to ECL_HUFF8_TREE_DEPTH_MAX_ULM).
 */
 #ifndef ECL_HUFF8_DECOMPRESS_MAX_DEPTH
     #define ECL_HUFF8_DECOMPRESS_MAX_DEPTH ECL_HUFF8_TREE_DEPTH_MAX_ULM

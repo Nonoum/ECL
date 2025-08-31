@@ -191,8 +191,8 @@ int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_uni
     uint16_t tree_record_pos = n_unique - 2; // root
     uint16_t stack_depth = 0;
     uint32_t tmp_code = 0; // could be smaller for smaller datasets:
-    // 16 bits to guarantee work for any dataset of < 4180 bytes
-    // 24 bits ~= 196k bytes
+    // 16 bits to guarantee work for any dataset of <= 5776 bytes
+    // 24 bits : <= 271441 bytes
     uint8_t code_len = 0;
     uint8_t checking_side = 0; // 0/1 (left/right)
     int16_t max_len = 0;
