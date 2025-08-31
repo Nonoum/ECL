@@ -35,9 +35,8 @@
     log << str_description << [&vector_name](){ return std::find_if(vector_name.rbegin() + 1, vector_name.rend(), [](auto& v){ return v != 0; }).base() - vector_name.begin(); }() << "\n";
 
 
-
-static void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v) {
-    const size_t max_size = 50;
+template <typename T>
+static void ECL_TEST_LogVectorData(std::ostream& log, const std::vector<T>& v, size_t max_size = size_t(-1)) {
     auto sz = std::min(max_size, v.size());
     log << '{' << v.size() << '}';
     log << '[';
@@ -50,7 +49,7 @@ static void ECL_TEST_LogRawData(std::ostream& log, const std::vector<uint8_t>& v
     if(v.size() > sz) {
         log << ", ...";
     }
-    log << ']' << std::endl;
+    log << ']';
 }
 
 #include "tests_common_inline.hpp"

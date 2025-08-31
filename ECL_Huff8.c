@@ -95,6 +95,53 @@ void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* 
     }
 }
 
+/*
+    Specialized sort implementation for huffman algorithm needs, works with limited data sets (maximum 'value' is < 256, 'size' is < 256).
+    Allows limiting worst-case complecity possible for QSort in some cases (QSort has theoretical worst case quadratic complecity).
+    Makes sense to prefer if 'size' > 20 (roughly guessed).
+*/
+void ECL_Huff8_Aux_HSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf768) {
+    int i;
+    ECL_ASSERT(size < 256); /* 255 is still fine */
+    /*
+        buf768 is used as three bufs 256 bytes each - used with explicit offsets hoping to take advantage of [base + i*S + offs] operations
+        - buf768: links to first code node (index is value of 'values')
+        - buf768+256: links to next code nodes (or self, if no next)
+        - buf768+512: temporary storage for sorted result of 'codes'
+    */
+    memset(buf768, 255, 256); /* fill with 255 (invalid as link address) */
+    for(i = 0; i < size; ++i) {
+        uint8_t table_pos = (uint8_t)(values[i]);
+        uint8_t link = (uint8_t)i;
+        if(buf768[table_pos] == 255) {
+            buf768[256 + link] = link; /* first occurance of value - link to self */
+        } else {
+            buf768[256 + link] = buf768[table_pos]; /* already occurred earlier - link to previous */
+        }
+        buf768[table_pos] = link;
+    }
+    /* Sort in order of descendance now - write codes to temporary buffer, then copy */
+    i = 0;
+    for(int table_pos = 255; table_pos > 0; --table_pos) { /* can go while table_pos>0, as value==0 can't occur here */
+        uint8_t link = buf768[table_pos];
+        if(link == 255) {
+            continue;
+        }
+        while(1) {
+            uint8_t next = buf768[256 + link];
+            /* form output */
+            buf768[512 + i] = codes[link];
+            values[i] = (uint16_t)table_pos;
+            ++i;
+            if(next == link) {
+                break;
+            }
+            link = next;
+        }
+    }
+    memcpy(codes, buf768+512, size); /* move temp result to 'codes' */
+}
+
 ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max) {
     int16_t n_unique = 0; // amount of unique values
     //
@@ -113,7 +160,28 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
     if(n_unique < 2) {
         return n_unique;
     }
+#ifndef ECL_HUFF8_DISABLE_HSORT /* HSort can be disabled to reduce binary code size */
+    {
+        uint8_t chose_hsort = 0;
+        if((n_unique < 256) && (n_unique > 20)) {
+            int16_t i = 0;
+            for(; i < n_unique; ++i) {
+                if(freqs[i] >= 256) {
+                    break; /* can't run HSort */
+                }
+            }
+            if(i == n_unique) {
+                chose_hsort = 1;
+                ECL_Huff8_Aux_HSort16(buf256, freqs, n_unique, out_ctree768);
+            }
+        }
+        if(! chose_hsort) {
+            ECL_Huff8_Aux_QSort16(buf256, freqs, n_unique, out_ctree768);
+        }
+    }
+#else
     ECL_Huff8_Aux_QSort16(buf256, freqs, n_unique, out_ctree768);
+#endif
     { // form tree
         ECL_SCOPED_CONST int16_t n_unique_m1 = n_unique - 1;
         int16_t next_leaf;
