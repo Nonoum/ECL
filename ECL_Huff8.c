@@ -253,7 +253,7 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
     return n_unique;
 }
 
-int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2) {
+void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2) {
     uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; // 0: entered left; 1: entered right; allocate arrays within free buffer
     uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + ECL_HUFF8_TREE_DEPTH_MAX_ULM; // -:- same size
     uint16_t tree_record_pos = n_unique - 2; // root
@@ -263,7 +263,6 @@ int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_uni
     // 24 bits : <= 271441 bytes
     uint8_t code_len = 0;
     uint8_t checking_side = 0; // 0/1 (left/right)
-    int16_t max_len = 0;
 
     ECL_ASSERT(out_tspec1024 == ECL_GetAlignedPointer4((uint8_t*)out_tspec1024));
     // pre-clear spec
@@ -281,9 +280,6 @@ int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_uni
             //
             ECL_ASSERT(out_tspec1024[side_value] == 0);
             out_tspec1024[side_value] = ((tmp_code >> (32 - code_len)) & 0x00FFFFFF) | (((uint32_t)code_len) << 24);
-            if(code_len > max_len) {
-                max_len = code_len;
-            }
             //
             if(checking_side) { // checked right - return back thru stack
                 uint8_t quit = 1;
@@ -317,7 +313,59 @@ int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_uni
             checking_side = 0;
         }
     } while(1);
-    return max_len;
+}
+
+uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768, int16_t n_unique, uint8_t* buf512) {
+    uint8_t* ECL_SCOPED_CONST stack_flags = buf512; // 0: entered left; 1: entered right; allocate arrays within free buffer
+    uint8_t* ECL_SCOPED_CONST stack_ptrs = buf512 + 256; // -:- same size
+    uint16_t tree_record_pos = n_unique - 2; // root
+    uint16_t stack_depth = 0;
+    uint16_t result = 0;
+    uint8_t checking_side = 0; // 0/1 (left/right)
+
+    do {
+        if(ctree768[tree_record_pos + 512] & (checking_side ? 2 : 1)) { // checked side ('left' or 'right') is leaf/value
+            if(checking_side) { // checked right - return back thru stack
+                uint8_t quit = 1;
+                while(stack_depth) {
+                    --stack_depth;
+                    tree_record_pos = stack_ptrs[stack_depth];
+                    if(stack_flags[stack_depth] == 0) { // 'left' was entered there - return to that record
+                        // checking_side = 1; // already 1 in this codepath
+                        quit = 0;
+                        break;
+                    } // else - 'right' was entered there - keep returning deeper
+                }
+                if(quit) {
+                    break;
+                }
+            } else { // else - go to checking 'right'
+                checking_side = 1;
+            }
+        } else {
+            ECL_ASSERT(stack_depth < 256);
+            stack_flags[stack_depth] = checking_side;
+            stack_ptrs[stack_depth] = tree_record_pos;
+            ++stack_depth;
+            tree_record_pos = ctree768[tree_record_pos*2 + checking_side];
+            checking_side = 0;
+            if(stack_depth > result) {
+                result = stack_depth;
+            }
+        }
+    } while(1);
+    return result + 1;
+}
+
+uint16_t ECL_Huff8_GetMaxDepthTSpec1024(const uint32_t* tspec1024) {
+    uint16_t result = 0;
+    for(int i = 0; i < 256; ++i) {
+        ECL_SCOPED_CONST uint16_t n_bits = (uint16_t)((tspec1024[i] >> 24) & 0x0FF);
+        if(n_bits > result) {
+            result = n_bits;
+        }
+    }
+    return result;
 }
 
 

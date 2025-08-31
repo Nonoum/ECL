@@ -154,9 +154,18 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
         - lower 24 bits is bitcode;
     - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size is "2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM"; ULM covers any user data up to 64k bytes (actually more).
-    returns maximum code length (if > ECL_HUFF8_TREE_DEPTH_MAX_ULM : it's error - then this spec format doesn't support needed code length).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768, int16_t n_unique, uint8_t* buf512);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec1024(const uint32_t* tspec1024/*[256]*/);
 
 
 
