@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstdint>
 
-#define NTEST_VERSION_STRING "3.0.0"
+#define NTEST_VERSION_STRING "3.1.0"
 
 // allow to override namespace to have ability of having multiple thirdparties with ntest easily launched within single project
 #ifndef NTEST_NAMESPACE_NAME
@@ -80,6 +80,7 @@ private:
         }                                                          \
     }
 
+// integer and pointer type values (being logged in std::hex and std::dec)
 #define NTEST_COMPARE(val1, val2)                                  \
     {                                                              \
         if((val1) != (val2)) {                                     \
@@ -99,6 +100,33 @@ private:
             if(hasntFailed()) {                                    \
                 log << "fail comp: '"#val1 "' (0x" << std::hex << (val1) << ") != '" #val2 "' (0x" << (val2) \
                     << ") at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; commenter_func(log); \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+// non-integer non-pointer type values
+#define NTEST_COMPARE_CUSTOM(val1, val2)                           \
+    {                                                              \
+        if((val1) != (val2)) {                                     \
+            if(hasntFailed()) {                                    \
+                log << "fail comp: '"#val1 "' != '" #val2 "'"      \
+                    << " at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; \
+            }                                                      \
+            approve(false);                                        \
+        } else {                                                   \
+            approve(true);                                         \
+        }                                                          \
+    }
+
+#define NTEST_COMPARE_CUSTOM_EX(val1, val2, commenter_func/* [](auto& log) { ... } */) \
+    {                                                              \
+        if((val1) != (val2)) {                                     \
+            if(hasntFailed()) {                                    \
+                log << "fail comp: '"#val1 "' != '" #val2 "'"      \
+                    << " at file: " << __FILE__ << ", line: " << std::dec << __LINE__ << "; "; commenter_func(log); \
             }                                                      \
             approve(false);                                        \
         } else {                                                   \

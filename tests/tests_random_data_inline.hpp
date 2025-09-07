@@ -304,20 +304,36 @@ NTEST(test_NanoLZ_auto_random_data) {
 NTEST(test_Huff8_ULM_random_data) {
     NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
-    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_compressed, tmp_compressed_alternative;
     std::vector<uint8_t> tmp_output;
     const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 1010) + 1);
     const int max_size = 2000;
     const int min_size = 1;
     const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
 
-    // analyze/compress buffers
-    uint16_t buf512[256];
-    uint32_t buf1024[256];
-    uint8_t buf256[256];
-    uint8_t buf768[768];
+    // analyze/compress buffers - declared, set magic outside of loops to minimize reallocations. magic should be checked after each non-const access
+    std::vector<uint16_t> buf512_u16;
+    std::vector<uint32_t> buf1024_u32;
+    std::vector<uint8_t> buf256_u8;
+    std::vector<uint8_t> buf768_u8;
+    ECL_TEST_MAGIC_U16_RESIZE(buf512_u16, 256);
+    ECL_TEST_MAGIC_U32_RESIZE(buf1024_u32, 256);
+    ECL_TEST_MAGIC_RESIZE(buf256_u8, 256);
+    ECL_TEST_MAGIC_RESIZE(buf768_u8, 768);
+    // extra compress* API
+    std::vector<uint8_t> buf512_u8;
+    std::vector<uint16_t> buf768_u16;
+    std::vector<uint8_t> buf32_u8;
+    std::vector<uint16_t> buf800_u16;
+    std::vector<uint16_t> buf536_u16;
+    ECL_TEST_MAGIC_RESIZE(buf512_u8, 512);
+    ECL_TEST_MAGIC_U16_RESIZE(buf768_u16, (768/2));
+    ECL_TEST_MAGIC_RESIZE(buf32_u8, 32);
+    ECL_TEST_MAGIC_U16_RESIZE(buf800_u16, (800/2));
+    ECL_TEST_MAGIC_U16_RESIZE(buf536_u16, (536/2));
     // decompress buffer
-    uint8_t buf1025[1025];
+    std::vector<uint8_t> buf1025_u8;
+    ECL_TEST_MAGIC_RESIZE(buf1025_u8, 1025);
 
     src.reserve(max_size);
     for(int i = 0; i < n_sets; ++i) {
@@ -327,26 +343,116 @@ NTEST(test_Huff8_ULM_random_data) {
         for(ECL_usize j = 0; j < src_size; ++j) {
             src[j] = rand();
         }
+        const auto src_data = (const uint8_t*)src.data();
 
-        auto src_data = (const uint8_t*)src.data();
+        //// copypasted part for huff8 tests >>>
         ECL_TEST_ASSERT(src_data);
         ECL_TEST_ASSERT(src_size);
 
         const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
-        ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
+        ECL_TEST_MAGIC_RESIZE(tmp_compressed, enough_size);
 
-        const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
-        const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
-        const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024, buf256, buf768, buf512);
+        const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data(), tmp_compressed.data(), enough_size);
+        ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
+        ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+        ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+        ECL_TEST_MAGIC_VALIDATE(tmp_compressed);
         const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
 
-        ECL_TEST_COMPARE(csize, a2k_size);
-        ECL_TEST_COMPARE(csize, a2k5_size);
+        { // extra API tests
+            const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data());
+            ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
+            ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+            ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+
+            const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data(), buf512_u16.data());
+            ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
+            ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+            ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+
+            ECL_TEST_COMPARE(csize, a2k_size);
+            ECL_TEST_COMPARE(csize, a2k5_size);
+
+            ECL_Huff8_FillFreqs16(src_data, src_size, 1, buf512_u16.data());
+            ECL_TEST_MAGIC_U16_VALIDATE(buf512_u16);
+
+            const auto n_unique = ECL_Huff8_Freqs16ToCTree768(buf512_u16.data(), buf256_u8.data(), buf768_u8.data(), 0);
+            ECL_TEST_MAGIC_U16_VALIDATE(buf512_u16);
+            ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+            ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+
+            const auto csize_tree = ECL_Huff8_EvaluateTree(n_unique);
+
+            if(n_unique >= 2) { // have meaningful tree (ctree is formed into buf768)
+                // test max depth API, AnalyzeFor API
+                const auto max_depth_ctree = ECL_Huff8_GetMaxDepthCTree768(buf768_u8.data(), n_unique, buf512_u8.data());
+                ECL_TEST_MAGIC_VALIDATE(buf512_u8);
+                ECL_TEST_ASSERT(max_depth_ctree >= 1);
+
+                ECL_Huff8_CTree768ToTSpec1024_ULM(buf768_u8.data(), n_unique, buf1024_u32.data(), buf256_u8.data());
+                ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
+                ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+
+                const auto max_depth_tspec1024 = ECL_Huff8_GetMaxDepthTSpec1024(buf1024_u32.data());
+                ECL_TEST_COMPARE(max_depth_ctree, max_depth_tspec1024);
+
+                const auto csize_tspec1024 = ECL_Huff8_Evaluate16_ForTSpec1024(src_data, src_size, 1, buf1024_u32.data());
+                ECL_TEST_COMPARE(csize, (csize_tree + csize_tspec1024));
+
+                if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768) {
+                    ECL_Huff8_CTree768ToTSpec768(buf768_u8.data(), n_unique, buf768_u16.data(), buf32_u8.data());
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf768_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf32_u8);
+
+                    const auto max_depth_tspec768 = ECL_Huff8_GetMaxDepthTSpec768(buf768_u16.data());
+                    ECL_TEST_COMPARE(max_depth_ctree, max_depth_tspec768);
+
+                    const auto csize_tspec768 = ECL_Huff8_Evaluate16_ForTSpec768(src_data, src_size, 1, buf768_u16.data());
+                    ECL_TEST_COMPARE(csize, (csize_tree + csize_tspec768));
+                }
+
+                if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512) {
+                    ECL_Huff8_CTree768ToTSpec512(buf768_u8.data(), n_unique, buf512_u16.data(), buf32_u8.data());
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf512_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf32_u8);
+
+                    const auto max_depth_tspec512 = ECL_Huff8_GetMaxDepthTSpec512(buf512_u16.data());
+                    ECL_TEST_COMPARE(max_depth_ctree, max_depth_tspec512);
+
+                    const auto csize_tspec512 = ECL_Huff8_Evaluate16_ForTSpec512(src_data, src_size, 1, buf512_u16.data());
+                    ECL_TEST_COMPARE(csize, (csize_tree + csize_tspec512));
+                }
+
+                // test other compress* API - compare with ethalon
+                if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768) {
+                    ECL_TEST_MAGIC_RESIZE(tmp_compressed_alternative, enough_size);
+                    const auto csize_tspec768 = ECL_Huff8_TryCompress16_TSpec768_Raw(src_data, src_size, 1, buf800_u16.data(), buf768_u8.data(), tmp_compressed_alternative.data(), comp_size);
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf800_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+                    ECL_TEST_MAGIC_VALIDATE(tmp_compressed_alternative);
+
+                    ECL_TEST_COMPARE(csize, csize_tspec768);
+                    ECL_TEST_COMPARE_CUSTOM(tmp_compressed, tmp_compressed_alternative);
+                }
+
+                if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512) {
+                    ECL_TEST_MAGIC_RESIZE(tmp_compressed_alternative, enough_size);
+                    const auto csize_tspec512 = ECL_Huff8_TryCompress16_TSpec512_Raw(src_data, src_size, 1, buf536_u16.data(), buf256_u8.data(), buf768_u8.data(), tmp_compressed_alternative.data(), comp_size);
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf536_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+                    ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+                    ECL_TEST_MAGIC_VALIDATE(tmp_compressed_alternative);
+
+                    ECL_TEST_COMPARE(csize, csize_tspec512);
+                    ECL_TEST_COMPARE_CUSTOM(tmp_compressed, tmp_compressed_alternative);
+                }
+            }
+        }
 
         tmp_output.resize(src_size);
-        auto consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1025, tmp_output.data(), src_size, 1);
+        auto consumed_size = ECL_Huff8_Decompress_Raw(tmp_compressed.data(), comp_size, buf1025_u8.data(), tmp_output.data(), src_size, 1);
         ECL_TEST_COMPARE(consumed_size, comp_size);
         ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
-        ECL_TEST_MAGIC_VALIDATE(tmp);
+        //// copypasted part for huff8 tests <<<
     }
 }

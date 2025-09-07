@@ -20,19 +20,49 @@
 #define ECL_TEST_ASSERT       NTEST_ASSERT
 #define ECL_TEST_ASSERT_EX    NTEST_ASSERT_EX
 
+// integer and pointer type values (being logged in std::hex and std::dec)
 #define ECL_TEST_COMPARE      NTEST_COMPARE
 #define ECL_TEST_COMPARE_EX   NTEST_COMPARE_EX
 
+// non-integer non-pointer type values
+#define ECL_TEST_COMPARE_CUSTOM      NTEST_COMPARE_CUSTOM
+#define ECL_TEST_COMPARE_CUSTOM_EX   NTEST_COMPARE_CUSTOM_EX
 
+
+// ECL_TEST_MAGIC_* work with uint8_t arrays - helps check 'out of bounds' access
 #define ECL_TEST_MAGIC_RESIZE(vector_name, capacity) \
+    static_assert(sizeof(vector_name[0]) == 1); \
     vector_name.assign(capacity + 1, 0); \
     vector_name[capacity] = 0x39; NTEST_NAMESPACE_NAME::ntest_noop()
 
 #define ECL_TEST_MAGIC_VALIDATE(vector_name) \
+    static_assert(sizeof(vector_name[0]) == 1); \
     ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x39)
 
 #define ECL_TEST_MAGIC_LOG_TOUCHED_SIZE(vector_name, str_description) \
     log << str_description << [&vector_name](){ return std::find_if(vector_name.rbegin() + 1, vector_name.rend(), [](auto& v){ return v != 0; }).base() - vector_name.begin(); }() << "\n";
+
+
+// similar for uint16_t arrays
+#define ECL_TEST_MAGIC_U16_RESIZE(vector_name, capacity_items) \
+    static_assert(sizeof(vector_name[0]) == 2); \
+    vector_name.assign(capacity_items + 1, 0); \
+    vector_name[capacity_items] = 0x3939; NTEST_NAMESPACE_NAME::ntest_noop()
+
+#define ECL_TEST_MAGIC_U16_VALIDATE(vector_name) \
+    static_assert(sizeof(vector_name[0]) == 2); \
+    ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x3939)
+
+
+// similar for uint32_t arrays
+#define ECL_TEST_MAGIC_U32_RESIZE(vector_name, capacity_items) \
+    static_assert(sizeof(vector_name[0]) == 4); \
+    vector_name.assign(capacity_items + 1, 0); \
+    vector_name[capacity_items] = 0x39393939; NTEST_NAMESPACE_NAME::ntest_noop()
+
+#define ECL_TEST_MAGIC_U32_VALIDATE(vector_name) \
+    static_assert(sizeof(vector_name[0]) == 4); \
+    ECL_TEST_ASSERT(vector_name[vector_name.size() - 1] == 0x39393939)
 
 
 template <typename T>

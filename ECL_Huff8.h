@@ -103,6 +103,11 @@
 */
 #define ECL_HUFF8_TREE_DEPTH_MAX_ULM 22
 
+/* Maximum supported depths of tspec1024, tspec768, tspec512 formats respectively */
+#define ECL_HUFF8_TREE_DEPTH_MAX_TSPEC1024 24
+#define ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768 16
+#define ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512 12
+
 
 /*
     Maximum Huffman tree depth supported by ECL_Huff8_Decompress* - length of uint16_t stack-allocated array within the Decompress function.
@@ -123,6 +128,30 @@
 */
 #define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8)) /* TODO_BEFORE_HUFF8_RELEASE make sure */
 
+/*
+    Buffers, formats and naming:
+    - there are pointer parameters to arrays of various formats that have numbers in naming:
+        - fooNNN where NNN is a number that represents amount of bytes, which is not necessary amount of elements in the array (if it's not uint8_t);
+            - type of foo implies it's correct alignment (e.g. tspec1024==uint32_t[256] pointer implies it's aligned as uint32_t);
+        - tspecNNN is a specification data used to compress user data stream (calculated for particular user data):
+            - tspec1024 == uint32_t[256]  (1024/sizeof(uint32_t) == 256)
+            - tspec768 == uint16_t[384]  (768/sizeof(uint16_t) == 384)
+            - tspec512 == uint16_t[256]  (512/sizeof(uint16_t) == 256)
+        - ctree768 is a huffman tree representation that is used along with 'n_unique' value returned by same function that forms the ctree768;
+            - ctree768 == uint8_t[768];
+        - dtree1025 is huffman decompressor tree representation (differs from ctree768);
+            - dtree1025 == uint8_t[1025];
+        - bufNNN is some buffer needed for internal work (mostly used on high level / trivial use functions);
+
+    Overall there's a lot of raw pointers work and splitting arrays to subarrays.
+    There's intentionally no structs for related formats to minimize potential risks with alignment and allow simpler casting when advanced API is used.
+
+    Many functions have several input buffers (in spite they could receive a single big one and split it internally) which results into a bit more cumbersome API
+    - this is intentional as well, to allow more possibilities of buffers accomodation when RAM budget is very tight (e.g. to reuse whatever available space in particular point).
+
+    Consider ECL_GetAlignedPointer* functions to ensure needed alignment if you're trying to reuse random RAM area (being used for other project purposes) as some Huff8 buffers.
+    * [this can be redundant if your MCU is fine with unaligned memory access, but some Huff8 code can trigger ECL_ASSERTions for incorrect alignment].
+*/
 
 
 
@@ -132,6 +161,11 @@ extern "C" {
 #endif
 
 /* Auxiliary methods (called internally, for advanced users) --------------------------------------------------------------------------------------- */
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
+ECL_EXPORTED_API void ECL_Huff8_FillFreqs16(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* freqs/*[256]*/);
 
 /*
     Generates tree from freqs.
@@ -146,6 +180,8 @@ extern "C" {
 */
 ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
 
+
+
 /*
     Generates spec from a tree in ctree768 format.
     'freqs' is input array uint16_t[256] with values [i] filled with counts off appearance of codes 'i' in input data.
@@ -154,8 +190,28 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
         - lower 24 bits is bitcode;
     - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size is "2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM"; ULM covers any user data up to 64k bytes (actually more).
+
+    The function can't fail if 'ctree768' and 'n_unique' are results of ECL_Huff8_Freqs16ToCTree768.
 */
 ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+
+    Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec768 can't fit all needed codes due to depth limitation.
+    returns 0 if failed, > 0 otherwise (TODO TBD).
+*/
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, int16_t n_unique, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf_x2);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+
+    Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec512 can't fit all needed codes due to depth limitation.
+    returns 0 if failed, > 0 otherwise (TODO TBD).
+*/
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, int16_t n_unique, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf_x2);
+
+
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -167,12 +223,42 @@ ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768,
 */
 ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec1024(const uint32_t* tspec1024/*[256]*/);
 
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec768(const uint16_t* tspec768/*[768/2 == 384]*/);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec512(const uint16_t* tspec512/*[512/2 == 256]*/);
+
+
+
 
 
 /* Evaluate/Analyze user methods - not modifying, estimate how much space is needed for compressed output ------------------------------------------ */
 
 /* returns amount of bits needed to encode a tree for 'n_unique' unique elements (or 0 in case of error) */
 ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTree(uint16_t n_unique);
+
+/*
+    Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec1024.
+    returns amount of bits needed for compression of data stream (without tree), or 0 if can't compress it with given tspec1024.
+*/
+ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/);
+
+/*
+    Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec768.
+    returns amount of bits needed for compression of data stream (without tree), or 0 if can't compress it with given tspec768.
+*/
+ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec768/*[768/2 == 384]*/);
+
+/*
+    Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec512.
+    returns amount of bits needed for compression of data stream (without tree), or 0 if can't compress it with given tspec512.
+*/
+ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec512/*[512/2 == 256]*/);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -185,6 +271,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t b
     returns amount of bits needed for compression (or 0 in case of error).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint16_t* buf512);
+
 
 
 
@@ -204,6 +291,12 @@ ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint16
 /* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
 ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_HUFF8_WSTREAM_Type* wstream);
 
+/* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
+ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec768/*[768/2 == 384]*/, ECL_HUFF8_WSTREAM_Type* wstream);
+
+/* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
+ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec512/*[512/2 == 256]*/, ECL_HUFF8_WSTREAM_Type* wstream);
+
 /*
     TODO_BEFORE_HUFF8_RELEASE description
     returns amount of bits written (or 0 in case of error).
@@ -212,10 +305,29 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t 
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
+    returns amount of bits written (or 0 in case of error).
 */
-#ifdef ECL_HUFF8_WSTREAM_Init
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream);
+
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+    returns amount of bits written (or 0 in case of error).
+*/
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream);
+
+
+#ifdef ECL_HUFF8_WSTREAM_Init /* *Raw functions require ECL_HUFF8_WSTREAM_Init, which is present by default, but needs to be defined if custom ECL_HUFF8_WSTREAM_Type is chosen */
+/*
+    TODO_BEFORE_HUFF8_RELEASE description
+*/
 ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 #endif
+
+
 
 
 
