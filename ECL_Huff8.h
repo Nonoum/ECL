@@ -121,7 +121,7 @@
 
 #define ECL_HUFF8_MAX_UNIQUE_VALUES 256
 #define ECL_HUFF8_MAX_TREE_NODES (2*ECL_HUFF8_MAX_UNIQUE_VALUES - 1)
-#define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) (8*(n_unique_bytes) + 2*(n_unique_bytes) - 1)
+#define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) ((8+2)*(n_unique_bytes) - 1)
 
 /*
     Calculates size of buffer to fit compressed version of any data of 'src_size' size.
@@ -137,7 +137,7 @@
             - tspec1024 == uint32_t[256]  (1024/sizeof(uint32_t) == 256)
             - tspec768 == uint16_t[384]  (768/sizeof(uint16_t) == 384)
             - tspec512 == uint16_t[256]  (512/sizeof(uint16_t) == 256)
-        - ctree768 is a huffman tree representation that is used along with 'n_unique' value returned by same function that forms the ctree768;
+        - ctree768 is a huffman tree representation used for compress methods;
             - ctree768 == uint8_t[768];
         - dtree1024 is huffman decompressor tree representation (differs from ctree768);
             - dtree1024 == uint16_t[512]  (1024/sizeof(uint16_t) == 512)
@@ -191,9 +191,9 @@ ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, u
     - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size is "2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM"; ULM covers any user data up to 64k bytes (actually more).
 
-    The function can't fail if 'ctree768' and 'n_unique' are results of ECL_Huff8_Freqs16ToCTree768.
+    The function can't fail if 'ctree768' is result of ECL_Huff8_Freqs16ToCTree768 and 'n_unique' >= 2.
 */
-ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, int16_t n_unique, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -201,7 +201,7 @@ ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768,
     Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec768 can't fit all needed codes due to depth limitation.
     returns 0 if failed, > 0 otherwise (TODO TBD).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, int16_t n_unique, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf_x2);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -209,14 +209,14 @@ ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, i
     Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec512 can't fit all needed codes due to depth limitation.
     returns 0 if failed, > 0 otherwise (TODO TBD).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, int16_t n_unique, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf_x2);
 
 
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 */
-ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768, int16_t n_unique, uint8_t* buf512);
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768, uint8_t* buf512);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -240,7 +240,10 @@ ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec512(const uint16_t* tspec512
 /* Evaluate/Analyze user methods - not modifying, estimate how much space is needed for compressed output ------------------------------------------ */
 
 /* returns amount of bits needed to encode a tree for 'n_unique' unique elements (or 0 in case of error) */
-ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTree(uint16_t n_unique);
+ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTreeByN(uint16_t n_unique);
+
+/* Same as ECL_Huff8_EvaluateTreeByN but retrieves 'n_unique' from the ctree768 */
+ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTree(const uint8_t* ctree768);
 
 /*
     Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec1024.
@@ -286,7 +289,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16
         - for any technically possible tree (possible on absurdly enormous data size) 'depth_buf_size' = 256, depth_buf_x2 is 512 bytes;
         - ! 'depth_buf_x2' buffer overflow isn't protected (with if/return), only checked with ECL_ASSERT;
 */
-ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint16_t n_unique, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_HUFF8_WSTREAM_Type* wstream);
+ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_HUFF8_WSTREAM_Type* wstream);
 
 /* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
 ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_HUFF8_WSTREAM_Type* wstream);

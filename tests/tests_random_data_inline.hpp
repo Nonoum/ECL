@@ -381,15 +381,16 @@ NTEST(test_Huff8_ULM_random_data) {
             ECL_TEST_MAGIC_VALIDATE(buf256_u8);
             ECL_TEST_MAGIC_VALIDATE(buf768_u8);
 
-            const auto csize_tree = ECL_Huff8_EvaluateTree(n_unique);
+            const auto csize_tree = ECL_Huff8_EvaluateTreeByN(n_unique);
+            ECL_TEST_COMPARE(csize_tree, ECL_Huff8_EvaluateTree(buf768_u8.data()));
 
             if(n_unique >= 2) { // have meaningful tree (ctree is formed into buf768)
                 // test max depth API, AnalyzeFor API
-                const auto max_depth_ctree = ECL_Huff8_GetMaxDepthCTree768(buf768_u8.data(), n_unique, buf512_u8.data());
+                const auto max_depth_ctree = ECL_Huff8_GetMaxDepthCTree768(buf768_u8.data(), buf512_u8.data());
                 ECL_TEST_MAGIC_VALIDATE(buf512_u8);
                 ECL_TEST_ASSERT(max_depth_ctree >= 1);
 
-                ECL_Huff8_CTree768ToTSpec1024_ULM(buf768_u8.data(), n_unique, buf1024_u32.data(), buf256_u8.data());
+                ECL_Huff8_CTree768ToTSpec1024_ULM(buf768_u8.data(), buf1024_u32.data(), buf256_u8.data());
                 ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
                 ECL_TEST_MAGIC_VALIDATE(buf256_u8);
 
@@ -400,7 +401,7 @@ NTEST(test_Huff8_ULM_random_data) {
                 ECL_TEST_COMPARE(csize, (csize_tree + csize_tspec1024));
 
                 if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768) {
-                    ECL_Huff8_CTree768ToTSpec768(buf768_u8.data(), n_unique, buf768_u16.data(), buf32_u8.data());
+                    ECL_Huff8_CTree768ToTSpec768(buf768_u8.data(), buf768_u16.data(), buf32_u8.data());
                     ECL_TEST_MAGIC_U16_VALIDATE(buf768_u16);
                     ECL_TEST_MAGIC_VALIDATE(buf32_u8);
 
@@ -412,7 +413,7 @@ NTEST(test_Huff8_ULM_random_data) {
                 }
 
                 if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512) {
-                    ECL_Huff8_CTree768ToTSpec512(buf768_u8.data(), n_unique, buf512_u16.data(), buf32_u8.data());
+                    ECL_Huff8_CTree768ToTSpec512(buf768_u8.data(), buf512_u16.data(), buf32_u8.data());
                     ECL_TEST_MAGIC_U16_VALIDATE(buf512_u16);
                     ECL_TEST_MAGIC_VALIDATE(buf32_u8);
 
