@@ -156,7 +156,7 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     const auto comp_end = src.data() + src.size();
     Raw recovered;
     Raw tmp_output;
-    uint8_t buf1025[1025];
+    uint16_t buf1024_u16[512];
     recovered.reserve(original_size);
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
     for(auto start_ptr = comp_start; start_ptr != comp_end; ) {
@@ -174,7 +174,7 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
 
         tmp_output.resize(portion_size);
         auto left_size = comp_end - start_ptr;
-        auto consumed_size = ECL_Huff8_Decompress_Raw(start_ptr, left_size, buf1025, tmp_output.data(), portion_size, 1);
+        auto consumed_size = ECL_Huff8_Decompress_Raw(start_ptr, left_size, buf1024_u16, tmp_output.data(), portion_size, 1);
         assert(consumed_size);
         if(consumed_size > left_size) {
             assert(false);

@@ -107,7 +107,7 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     uint8_t buf256[256];
     uint8_t buf768[768];
     // decompress buffer
-    uint8_t buf1025[1025];
+    uint16_t buf1024_u16[512];
     //
     auto src_data = (const uint8_t*)src.data();
     ECL_TEST_ASSERT(src_data);
@@ -128,7 +128,7 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     ECL_TEST_COMPARE(csize, a2k5_size);
 
     tmp_output.resize(src_size);
-    auto consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1025, tmp_output.data(), src_size, 1);
+    auto consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1024_u16, tmp_output.data(), src_size, 1);
     ECL_TEST_COMPARE(consumed_size, comp_size);
     ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
     ECL_TEST_MAGIC_VALIDATE(tmp);
@@ -150,7 +150,7 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     uint8_t buf256[256];
     uint8_t buf768[768];
     // decompress buffer
-    uint8_t buf1025[1025];
+    uint16_t buf1024_u16[512];
     //
     auto src_data = (const uint8_t*)src.data();
     ECL_TEST_ASSERT(src_data);
@@ -170,7 +170,7 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     tmp_output.resize(src_size);
     ECL_usize consumed_size = 0;
     for(int i = 0; i < ECL_test_perf_data_repeats; ++i) {
-        consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1025, tmp_output.data(), src_size, 1);
+        consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1024_u16, tmp_output.data(), src_size, 1);
     }
     ECL_TEST_COMPARE(consumed_size, comp_size);
     ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));

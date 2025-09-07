@@ -504,8 +504,8 @@ NTEST(test_Huff8_ULM_datasets) {
     ECL_TEST_MAGIC_U16_RESIZE(buf800_u16, (800/2));
     ECL_TEST_MAGIC_U16_RESIZE(buf536_u16, (536/2));
     // decompress buffer
-    std::vector<uint8_t> buf1025_u8;
-    ECL_TEST_MAGIC_RESIZE(buf1025_u8, 1025);
+    std::vector<uint16_t> buf1024_u16;
+    ECL_TEST_MAGIC_U16_RESIZE(buf1024_u16, 512);
 
     for(auto& rec : GetDatasetRecords()) {
         const auto src_data = (const uint8_t*)rec.ptr;
@@ -615,7 +615,7 @@ NTEST(test_Huff8_ULM_datasets) {
         }
 
         tmp_output.resize(src_size);
-        auto consumed_size = ECL_Huff8_Decompress_Raw(tmp_compressed.data(), comp_size, buf1025_u8.data(), tmp_output.data(), src_size, 1);
+        auto consumed_size = ECL_Huff8_Decompress_Raw(tmp_compressed.data(), comp_size, buf1024_u16.data(), tmp_output.data(), src_size, 1);
         ECL_TEST_COMPARE(consumed_size, comp_size);
         ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
         //// copypasted part for huff8 tests <<<

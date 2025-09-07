@@ -846,13 +846,19 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes
 
 /* Decompress* user methods ------------------------------------------------------------------------------------------------------------------------ */
 
-void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst_dtree1025) {
+int16_t ECL_Huff8_DecompressDTree1024(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dtree_buf, uint16_t max_nodes/* <= 512*/) {
     /* dtree node is 16 bit. either 0x80_value_code or 0x0_right_node_index (0x0_right_node_index takes 9 bits) */
-    uint16_t* dtree_buf = ECL_GetAlignedPointer2(dst_dtree1025);
     uint16_t unp_stack[ECL_HUFF8_DECOMPRESS_MAX_DEPTH];
     uint16_t next_node = 1;
     uint16_t stack_depth = 0;
     uint16_t curr_node = 0;
+    if(max_nodes < 2) {
+        return -1;
+    }
+    if(max_nodes > 512) {
+        max_nodes = 512;
+    }
+    --max_nodes; /* 0 will be written in the end as a marker */
     /**/
     while(1) {
         if(ECL_HUFF8_RSTREAM_Read1_8(rstream, 1)) { /* leaf */
@@ -863,8 +869,8 @@ void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst
                 curr_node = unp_stack[stack_depth];
                 if(! dtree_buf[curr_node]) { /* left side done, go right */
                     ++stack_depth;
-                    if(next_node >= 511) {
-                        return; /* ERROR: invalid data (tree branches more than for 256 codes) */
+                    if(next_node >= max_nodes) {
+                        return -4; /* ERROR: invalid data (tree branches more than for 256 codes) */
                     }
                     dtree_buf[curr_node] = next_node; /* ref right node */
                     curr_node = next_node; /* allocate right node */
@@ -877,10 +883,10 @@ void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst
             }
         } else { /* branching */
             if(stack_depth >= ECL_HUFF8_DECOMPRESS_MAX_DEPTH) {
-                return; /* ERROR, either invalid data or not supported tree depth */
+                return -2; /* ERROR, either invalid data or not supported tree depth */
             }
-            if(next_node >= 511) {
-                return; /* ERROR: invalid data (tree branches more than for 256 codes) */
+            if(next_node >= max_nodes) {
+                return -3; /* ERROR: invalid data (tree branches more than for 256 codes) */
             }
             unp_stack[stack_depth] = curr_node;
             ++stack_depth;
@@ -891,15 +897,14 @@ void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst
         }
     } /* tree unpacked */
     dtree_buf[next_node] = 0; /* such thing will allow easy finding the end of dtree_buf for an algorithm accepting tree as parameter */
-    /* TODO_BEFORE_HUFF8_RELEASE return size of the dtree in appropriate form */
+    return next_node;
 }
 
-ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     if(! bytes_cnt) {
         ECL_ASSERT(false && "Compressed Huffman block can't be zero-length!");
         return 0;
     }
-    const uint16_t* dtree_buf = ECL_GetAlignedConstPointer2(dtree1025);
     if(! dtree_buf[0]) {
         return 0; /* error: no tree */
     }
@@ -970,18 +975,18 @@ ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_
     return bytes_cnt; /* ok if stream isn't invalidated */
 }
 
-ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
-    ECL_Huff8_DecompressDTree1025(rstream, dtree_buf);
-    return ECL_Huff8_DecompressWithDTree1025(dtree_buf, rstream, dst, bytes_cnt, interval);
+ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+    ECL_Huff8_DecompressDTree1024(rstream, dtree_buf, 512);
+    return ECL_Huff8_DecompressWithDTree1024(dtree_buf, rstream, dst, bytes_cnt, interval);
 }
 
 #ifdef ECL_HUFF8_RSTREAM_Init
-ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     ECL_HUFF8_RSTREAM_Type rstream;
     ECL_HUFF8_RSTREAM_Init(&rstream, src, src_size);
 
-    ECL_Huff8_DecompressDTree1025(&rstream, dtree_buf);
-    if(! ECL_Huff8_DecompressWithDTree1025(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
+    ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512);
+    if(! ECL_Huff8_DecompressWithDTree1024(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
         return 0;
     }
     if(! rstream.is_valid) {

@@ -139,8 +139,8 @@
             - tspec512 == uint16_t[256]  (512/sizeof(uint16_t) == 256)
         - ctree768 is a huffman tree representation that is used along with 'n_unique' value returned by same function that forms the ctree768;
             - ctree768 == uint8_t[768];
-        - dtree1025 is huffman decompressor tree representation (differs from ctree768);
-            - dtree1025 == uint8_t[1025];
+        - dtree1024 is huffman decompressor tree representation (differs from ctree768);
+            - dtree1024 == uint16_t[512]  (1024/sizeof(uint16_t) == 512)
         - bufNNN is some buffer needed for internal work (mostly used on high level / trivial use functions);
 
     Overall there's a lot of raw pointers work and splitting arrays to subarrays.
@@ -336,19 +336,19 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* sr
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 */
-ECL_EXPORTED_API void ECL_Huff8_DecompressDTree1025(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst_dtree1025);
+ECL_EXPORTED_API int16_t ECL_Huff8_DecompressDTree1024(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dst_dtree1024/*[512]*/, uint16_t max_nodes/* <= 512*/);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 */
-ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1025(const uint8_t* dtree1025, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree1024/*[512]*/, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 
     returns TODO
 */
-ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -356,7 +356,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream,
     returns amount of consumed bytes (which is <= src_size), or 0 in case of any error.
 */
 #ifdef ECL_HUFF8_RSTREAM_Init
-ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dtree_buf/*1025*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 #endif /* ECL_HUFF8_RSTREAM_Init */
 
 
