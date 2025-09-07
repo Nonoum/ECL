@@ -517,14 +517,14 @@ NTEST(test_ECL_GetAlignedPointer4) {
     auto ptr = tmp + shift;
     const auto first = (Ty*)(ptr);
     const auto next = (Ty*)(ptr + type_size);
-    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr), first);
-    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 1), next);
-    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 2), next);
-    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 3), next);
-    ECL_TEST_COMPARE(ECL_GetAlignedPointerS(ptr + 4), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer4(ptr), first);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer4(ptr + 1), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer4(ptr + 2), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer4(ptr + 3), next);
+    ECL_TEST_COMPARE(ECL_GetAlignedPointer4(ptr + 4), next);
 
     for(int i = 0; i < (buf_size - type_size); ++i) {
-        auto p = ECL_GetAlignedPointerS(tmp + i);
+        auto p = ECL_GetAlignedPointer4(tmp + i);
         approve((uintptr_t(p) & (type_size - 1)) == 0);
     }
 }
