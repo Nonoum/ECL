@@ -30,34 +30,15 @@
 
 #include <stdbool.h>
 
-/* input(R*) and output(W*) streams and functions are used thru defines so they can be overridden if different work with memory is needed */
-#ifndef ECL_HUFF8_RSTREAM_Type
-    #define ECL_HUFF8_RSTREAM_Type ECL_JH_RState
-    #define ECL_HUFF8_RSTREAM_Read1_8 ECL_JH_Read /* ECL_HUFF8_RSTREAM_Read1_8(ECL_HUFF8_RSTREAM_Type, n_bits) where n_bits is 1..8 */
+/******************************* CORE DEFINES *******************************/
+#define ECL_HUFF8_MAX_UNIQUE_VALUES 256
+#define ECL_HUFF8_MAX_TREE_NODES (2*ECL_HUFF8_MAX_UNIQUE_VALUES - 1)
+#define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) ((8+2)*(n_unique_bytes) - 1)
 
-    /* optional functionality: standard init of ECL_JH_RState for *_Raw functions - those are disabled if macro isn't defined */
-    #define ECL_HUFF8_RSTREAM_Init(rstream, src, size) ECL_JH_RInit(rstream, src, size, 0)
-
-    /* optional functionality for optimizations: RSTREAM:Peek */
-    #define ECL_HUFF8_RSTREAM_Peek(rstream, out_bits_ptr) ECL_JH_Peek(rstream, out_bits_ptr) /* Peeks next data portion without reading - see ECL_JH_Peek description */
-    #define ECL_HUFF8_RSTREAM_Peek_ResultType ECL_JH_Peek_ResultType
-    #ifdef ECL_JH_Peek_Multibyte
-        #define ECL_HUFF8_RSTREAM_Peek_Multibyte
-    #endif
-    #define ECL_HUFF8_RSTREAM_Advance(rstream, nbits) ECL_JH_Advance(rstream, nbits)
-
-#endif /* ECL_HUFF8_RSTREAM_Type */
-
-
-#ifndef ECL_HUFF8_WSTREAM_Type
-    #define ECL_HUFF8_WSTREAM_Type ECL_JH_WState
-    #define ECL_HUFF8_WSTREAM_Write1_8 ECL_JH_Write /* ECL_HUFF8_WSTREAM_Write1_8(ECL_HUFF8_WSTREAM_Type, value, n_bits) where n_bits is 1..8 */
-
-    /* optional functionality: standard init of ECL_JH_WState for *_Raw functions - those are disabled if macro isn't defined */
-    #define ECL_HUFF8_WSTREAM_Init(wstream, dst, size) ECL_JH_WInit(wstream, dst, size, 0)
-
-#endif /* ECL_HUFF8_WSTREAM_Type */
-
+/*
+    Calculates size of buffer to fit compressed version of any data of 'src_size' size.
+*/
+#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8)) /* TODO_BEFORE_HUFF8_RELEASE make sure */
 
 /*
     Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size).
@@ -109,6 +90,37 @@
 #define ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512 12
 
 
+
+/******************************* REDEFINABLE *******************************/
+
+/* input(R*) and output(W*) streams and functions are used thru defines so they can be overridden if different work with memory is needed */
+#ifndef ECL_HUFF8_RSTREAM_Type
+    #define ECL_HUFF8_RSTREAM_Type ECL_JH_RState
+    #define ECL_HUFF8_RSTREAM_Read1_8 ECL_JH_Read /* ECL_HUFF8_RSTREAM_Read1_8(ECL_HUFF8_RSTREAM_Type, n_bits) where n_bits is 1..8 */
+
+    /* optional functionality: standard init of ECL_JH_RState for *_Raw functions - those are disabled if macro isn't defined */
+    #define ECL_HUFF8_RSTREAM_Init(rstream, src, size) ECL_JH_RInit(rstream, src, size, 0)
+
+    /* optional functionality for optimizations: RSTREAM:Peek */
+    #define ECL_HUFF8_RSTREAM_Peek(rstream, out_bits_ptr) ECL_JH_Peek(rstream, out_bits_ptr) /* Peeks next data portion without reading - see ECL_JH_Peek description */
+    #define ECL_HUFF8_RSTREAM_Peek_ResultType ECL_JH_Peek_ResultType
+    #ifdef ECL_JH_Peek_Multibyte
+        #define ECL_HUFF8_RSTREAM_Peek_Multibyte
+    #endif
+    #define ECL_HUFF8_RSTREAM_Advance(rstream, nbits) ECL_JH_Advance(rstream, nbits)
+
+#endif /* ECL_HUFF8_RSTREAM_Type */
+
+
+#ifndef ECL_HUFF8_WSTREAM_Type
+    #define ECL_HUFF8_WSTREAM_Type ECL_JH_WState
+    #define ECL_HUFF8_WSTREAM_Write1_8 ECL_JH_Write /* ECL_HUFF8_WSTREAM_Write1_8(ECL_HUFF8_WSTREAM_Type, value, n_bits) where n_bits is 1..8 */
+
+    /* optional functionality: standard init of ECL_JH_WState for *_Raw functions - those are disabled if macro isn't defined */
+    #define ECL_HUFF8_WSTREAM_Init(wstream, dst, size) ECL_JH_WInit(wstream, dst, size, 0)
+
+#endif /* ECL_HUFF8_WSTREAM_Type */
+
 /*
     Maximum Huffman tree depth supported by ECL_Huff8_Decompress* - length of uint16_t stack-allocated array within the Decompress function.
     Defaults to *_ULM (44 bytes buffer), you MIGHT want to reduce it for very restricted environment by providing the define earlier so it's not defaulted here
@@ -118,15 +130,13 @@
     #define ECL_HUFF8_DECOMPRESS_MAX_DEPTH ECL_HUFF8_TREE_DEPTH_MAX_ULM
 #endif
 
+/* #define ECL_HUFF8_DISABLE_NULL_CHECKS */ /* can be defined to omit a lot of NULL checks, checks for zero size input and zero interval */
 
-#define ECL_HUFF8_MAX_UNIQUE_VALUES 256
-#define ECL_HUFF8_MAX_TREE_NODES (2*ECL_HUFF8_MAX_UNIQUE_VALUES - 1)
-#define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) ((8+2)*(n_unique_bytes) - 1)
+/* #define ECL_HUFF8_DISABLE_HSORT */ /* can be defined to reduce binary code size */
 
-/*
-    Calculates size of buffer to fit compressed version of any data of 'src_size' size.
-*/
-#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8)) /* TODO_BEFORE_HUFF8_RELEASE make sure */
+
+/***************************************************************************/
+
 
 /*
     Buffers, formats and naming:
@@ -152,9 +162,6 @@
     Consider ECL_GetAlignedPointer* functions to ensure needed alignment if you're trying to reuse random RAM area (being used for other project purposes) as some Huff8 buffers.
     * [this can be redundant if your MCU is fine with unaligned memory access, but some Huff8 code can trigger ECL_ASSERTions for incorrect alignment].
 */
-
-
-
 
 #ifdef __cplusplus
 extern "C" {
