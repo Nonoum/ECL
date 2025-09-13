@@ -745,7 +745,7 @@ uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16_t bytes_cnt, uin
 
 /* Compress* user methods -------------------------------------------------------------------------------------------------------------------------- */
 
-void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_HUFF8_WSTREAM_Type* wstream) {
+void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream) {
     uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; /* 0: entered left; 1: entered right; allocate arrays within free buffer */
     uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + depth_buf_size; /* -:- same size */
     uint16_t tree_record_pos = 0; /* root */
@@ -760,18 +760,18 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
 #endif
 
     if(! ctree768[767]) { /* n_unique == 1 */
-        ECL_HUFF8_WSTREAM_Write1_8(wstream, 1, 1);
-        ECL_HUFF8_WSTREAM_Write1_8(wstream, ctree768[766], 8);
+        ECL_WSTREAM_Write1_8(wstream, 1, 1);
+        ECL_WSTREAM_Write1_8(wstream, ctree768[766], 8);
         return;
     }
-    ECL_HUFF8_WSTREAM_Write1_8(wstream, 0, 1);
+    ECL_WSTREAM_Write1_8(wstream, 0, 1);
     do {
         ECL_SCOPED_CONST uint8_t side_value = ctree768[tree_record_pos*2 + checking_side];
         /**/
         if(ctree768[tree_record_pos + 512] & (checking_side ? 2 : 1)) { /* checked side ('left' or 'right') is leaf/value */
             /**/
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, 1, 1);
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, side_value, 8);
+            ECL_WSTREAM_Write1_8(wstream, 1, 1);
+            ECL_WSTREAM_Write1_8(wstream, side_value, 8);
             /**/
             if(checking_side) { /* checked right - return back thru stack */
                 uint8_t quit = 1;
@@ -791,7 +791,7 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
                 checking_side = 1;
             }
         } else {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, 0, 1);
+            ECL_WSTREAM_Write1_8(wstream, 0, 1);
             /**/
             ECL_ASSERT(stack_depth < depth_buf_size);
             stack_flags[stack_depth] = checking_side;
@@ -804,7 +804,7 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
 }
 
 /* compresses only data itself, returns amount of bits written (or 0 in case of error) */
-uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_WSTREAM_Type* wstream) {
     uint32_t result_bits = 0;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
@@ -820,16 +820,16 @@ uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_
         uint8_t n_bits = (uint8_t)(info >> 24);
         result_bits += n_bits;
         while(n_bits > 8) {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
             n_bits -= 8;
             info >>= 8;
         }
-        ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
+        ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
     }
     return result_bits;
 }
 
-uint32_t ECL_Huff8_CompressDataWithTSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec768, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_CompressDataWithTSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec768, ECL_WSTREAM_Type* wstream) {
     const uint8_t* ECL_SCOPED_CONST nbits_table = (const uint8_t*)(tspec768 + 256);
     uint32_t result_bits = 0;
 
@@ -847,16 +847,16 @@ uint32_t ECL_Huff8_CompressDataWithTSpec768(const uint8_t* src, uint16_t bytes_c
         ECL_SCOPED_CONST uint8_t n_bits = nbits_table[index];
         result_bits += n_bits;
         if(n_bits > 8) {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)(info >> 8), (n_bits - 8));
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)(info >> 8), (n_bits - 8));
         } else {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
         }
     }
     return result_bits;
 }
 
-uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec512, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec512, ECL_WSTREAM_Type* wstream) {
     uint32_t result_bits = 0;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
@@ -872,10 +872,10 @@ uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_c
         ECL_SCOPED_CONST uint8_t n_bits = (uint8_t)(info >> 12);
         result_bits += n_bits;
         if(n_bits > 8) {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)(info >> 8), (n_bits - 8));
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, 8);
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)(info >> 8), (n_bits - 8));
         } else {
-            ECL_HUFF8_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
+            ECL_WSTREAM_Write1_8(wstream, (uint8_t)info, n_bits);
         }
     }
     return result_bits;
@@ -883,7 +883,7 @@ uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_c
 
 
 
-uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t* ECL_SCOPED_CONST freqs_buf = (uint16_t*)buf1024;
     int16_t n_unique;
     uint32_t result_bits;
@@ -911,7 +911,7 @@ uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16
     return result_bits;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t* ECL_SCOPED_CONST freqs_buf = buf800;
     uint8_t* ECL_SCOPED_CONST buf256 = ((uint8_t*)buf800) + 512;
     int16_t n_unique;
@@ -941,7 +941,7 @@ uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt
     return result_bits;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, ECL_HUFF8_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t* ECL_SCOPED_CONST freqs_buf = buf536;
     int16_t n_unique;
     uint32_t result_bits;
@@ -972,25 +972,25 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 
 
-#ifdef ECL_HUFF8_WSTREAM_Init
+#ifdef ECL_WSTREAM_Init
 
 uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
-    ECL_HUFF8_WSTREAM_Type wstream;
-    ECL_HUFF8_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_Type wstream;
+    ECL_WSTREAM_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
     return ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf256, buf768, &wstream);
 }
 
 uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
-    ECL_HUFF8_WSTREAM_Type wstream;
-    ECL_HUFF8_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_Type wstream;
+    ECL_WSTREAM_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
     return ECL_Huff8_TryCompress16_TSpec768(src, bytes_cnt, interval, buf800, buf768, &wstream);
 }
 
 uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
-    ECL_HUFF8_WSTREAM_Type wstream;
-    ECL_HUFF8_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_Type wstream;
+    ECL_WSTREAM_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
     return ECL_Huff8_TryCompress16_TSpec512(src, bytes_cnt, interval, buf536, buf256, buf768, &wstream);
 }
@@ -1001,7 +1001,7 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes
 
 /* Decompress* user methods ------------------------------------------------------------------------------------------------------------------------ */
 
-int16_t ECL_Huff8_DecompressDTree1024(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dtree_buf, uint16_t max_nodes/* <= 512*/) {
+int16_t ECL_Huff8_DecompressDTree1024(ECL_RSTREAM_Type* rstream, uint16_t* dtree_buf, uint16_t max_nodes/* <= 512*/) {
     /* dtree node is 16 bit. either 0x80_value_code or 0x0_right_node_index (0x0_right_node_index takes 9 bits) */
     uint16_t unp_stack[ECL_HUFF8_DECOMPRESS_MAX_DEPTH];
     uint16_t next_node = 1;
@@ -1023,8 +1023,8 @@ int16_t ECL_Huff8_DecompressDTree1024(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t*
     --max_nodes; /* 0 will be written in the end as a marker */
     /**/
     while(1) {
-        if(ECL_HUFF8_RSTREAM_Read1_8(rstream, 1)) { /* leaf */
-            uint16_t code = (uint16_t)ECL_HUFF8_RSTREAM_Read1_8(rstream, 8);
+        if(ECL_RSTREAM_Read1_8(rstream, 1)) { /* leaf */
+            uint16_t code = (uint16_t)ECL_RSTREAM_Read1_8(rstream, 8);
             dtree_buf[curr_node] = 0x8000 | code;
             while(stack_depth) { /* return to parent and check it's state */
                 --stack_depth;
@@ -1062,7 +1062,7 @@ int16_t ECL_Huff8_DecompressDTree1024(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t*
     return next_node;
 }
 
-ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
     if((dtree_buf == NULL) || (rstream == NULL) || (dst == NULL) || (! bytes_cnt) || (! interval)) {
         ECL_ASSERT(0);
@@ -1095,18 +1095,18 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
         /**/
         if(bytes_cnt > 8) { /* leave last 8 values for separate loop - they will take AT LEAST 8 bits which we pre-read */
             ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 8));
-#ifdef ECL_HUFF8_RSTREAM_PeekWithinByte
-            ECL_HUFF8_RSTREAM_PeekWithinByte(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
+#ifdef ECL_RSTREAM_PeekWithinByte
+            ECL_RSTREAM_PeekWithinByte(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
 #else /* --------------------------- */
             nbits = 8;
-#endif /* ECL_HUFF8_RSTREAM_PeekWithinByte */
-            val = ECL_HUFF8_RSTREAM_Read1_8(rstream, nbits);
+#endif /* ECL_RSTREAM_PeekWithinByte */
+            val = ECL_RSTREAM_Read1_8(rstream, nbits);
             /**/
             for(; ofs < bound_ofs; ofs += interval) {
                 uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
                 do {
                     if(! nbits) {
-                        val = ECL_HUFF8_RSTREAM_Read1_8(rstream, 8);
+                        val = ECL_RSTREAM_Read1_8(rstream, 8);
                         nbits = 8;
                     }
                     if(val & 1) { /* go right */
@@ -1125,7 +1125,7 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
             uint16_t curr_node = 0;
             do {
                 if(! nbits) {
-                    val = ECL_HUFF8_RSTREAM_Read1_8(rstream, 1);
+                    val = ECL_RSTREAM_Read1_8(rstream, 1);
                     nbits = 1;
                 }
                 if(val & 1) { /* go right */
@@ -1143,7 +1143,7 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
     for(ECL_usize last_ofs = (interval * bytes_cnt), ofs = 0; ofs < last_ofs; ofs += interval) {
         uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
         do {
-            if(ECL_HUFF8_RSTREAM_Read1_8(rstream, 1)) { /* go right */
+            if(ECL_RSTREAM_Read1_8(rstream, 1)) { /* go right */
                 curr_node = dtree_buf[curr_node];
             } else { /* go left (always next after parent) */
                 ++curr_node;
@@ -1155,16 +1155,16 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
     return bytes_cnt; /* ok if stream isn't invalidated */
 }
 
-ECL_usize ECL_Huff8_Decompress(ECL_HUFF8_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     ECL_ASSERT(bytes_cnt && interval);
     ECL_Huff8_DecompressDTree1024(rstream, dtree_buf, 512);
     return ECL_Huff8_DecompressWithDTree1024(dtree_buf, rstream, dst, bytes_cnt, interval);
 }
 
-#ifdef ECL_HUFF8_RSTREAM_Init
+#ifdef ECL_RSTREAM_Init
 ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
-    ECL_HUFF8_RSTREAM_Type rstream;
-    ECL_HUFF8_RSTREAM_Init(&rstream, src, src_size);
+    ECL_RSTREAM_Type rstream;
+    ECL_RSTREAM_Init(&rstream, src, src_size);
     ECL_ASSERT(bytes_cnt && interval);
 
     ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512);
