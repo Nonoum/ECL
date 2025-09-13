@@ -134,6 +134,8 @@
 
 /* #define ECL_HUFF8_DISABLE_HSORT */ /* can be defined to reduce binary code size */
 
+/* #define ECL_HUFF8_DECOMPRESS_CACHE_BITS_READING */ /* such define speeds up 'Decompress' if bits-reading functions are slow (e.g. for custom ECL_HUFF8_RSTREAM_Type) */
+
 
 /***************************************************************************/
 

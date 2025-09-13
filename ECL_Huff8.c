@@ -1085,28 +1085,48 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
         return bytes_cnt; /* ok */
     }
     /* else - process as regular tree */
-#ifdef ECL_HUFF8_RSTREAM_Peek
+#ifdef ECL_HUFF8_DECOMPRESS_CACHE_BITS_READING
     {
-        uint8_t nbits, last_nbits;
-        ECL_HUFF8_RSTREAM_Peek_ResultType val;
-        val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
-        last_nbits = nbits;
+        uint8_t nbits, val;
+        ECL_usize ofs;
+        ECL_SCOPED_CONST ECL_usize last_ofs = (interval * bytes_cnt);
+        ofs = 0;
+        nbits = 0;
         /**/
-        for(ECL_usize last_ofs = (interval * bytes_cnt), ofs = 0; ofs < last_ofs; ofs += interval) {
-            uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
+        if(bytes_cnt > 8) { /* leave last 8 values for separate loop - they will take AT LEAST 8 bits which we pre-read */
+            ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 8));
+#ifdef ECL_HUFF8_RSTREAM_Peek
+            ECL_HUFF8_RSTREAM_Peek(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
+#else /* --------------------------- */
+            nbits = 8;
+#endif /* ECL_HUFF8_RSTREAM_Peek */
+            val = ECL_HUFF8_RSTREAM_Read1_8(rstream, nbits);
+            /**/
+            for(; ofs < bound_ofs; ofs += interval) {
+                uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
+                do {
+                    if(! nbits) {
+                        val = ECL_HUFF8_RSTREAM_Read1_8(rstream, 8);
+                        nbits = 8;
+                    }
+                    if(val & 1) { /* go right */
+                        curr_node = dtree_buf[curr_node];
+                    } else { /* go left (always next after parent) */
+                        ++curr_node;
+                    }
+                    val >>= 1;
+                    --nbits;
+                } while(! (dtree_buf[curr_node] & 0x8000));
+                dst[ofs] = (uint8_t)dtree_buf[curr_node];
+            }
+        }
+        /* complete last part with per-bit reading */
+        for(; ofs < last_ofs; ofs += interval) {
+            uint16_t curr_node = 0;
             do {
                 if(! nbits) {
-#ifdef ECL_HUFF8_RSTREAM_Peek_Multibyte
-                    ECL_HUFF8_RSTREAM_Advance(rstream, last_nbits); /* consume processed data, advance rstream */
-                    /* peek next */
-                    val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
-                    last_nbits = nbits;
-#else /* --------------------------- */
-                    ECL_HUFF8_RSTREAM_Read1_8(rstream, last_nbits);
-                    /* peek next */
-                    val = ECL_HUFF8_RSTREAM_Peek(rstream, &nbits);
-                    last_nbits = nbits;
-#endif /* ECL_HUFF8_RSTREAM_Peek_Multibyte */
+                    val = ECL_HUFF8_RSTREAM_Read1_8(rstream, 1);
+                    nbits = 1;
                 }
                 if(val & 1) { /* go right */
                     curr_node = dtree_buf[curr_node];
@@ -1118,16 +1138,8 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
             } while(! (dtree_buf[curr_node] & 0x8000));
             dst[ofs] = (uint8_t)dtree_buf[curr_node];
         }
-        /* done */
-        nbits = last_nbits - nbits;
-        /* consume processed data, advance rstream */
-#ifdef ECL_HUFF8_RSTREAM_Peek_Multibyte
-        ECL_HUFF8_RSTREAM_Advance(rstream, nbits);
-#else /* --------------------------- */
-        ECL_HUFF8_RSTREAM_Read1_8(rstream, nbits);
-#endif /* ECL_HUFF8_RSTREAM_Peek_Multibyte */
     }
-#else
+#else /* non-cached */
     for(ECL_usize last_ofs = (interval * bytes_cnt), ofs = 0; ofs < last_ofs; ofs += interval) {
         uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
         do {
