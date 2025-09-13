@@ -102,12 +102,7 @@
     #define ECL_HUFF8_RSTREAM_Init(rstream, src, size) ECL_JH_RInit(rstream, src, size, 0)
 
     /* optional functionality for optimizations: RSTREAM:Peek */
-    #define ECL_HUFF8_RSTREAM_Peek(rstream, out_bits_ptr) ECL_JH_Peek(rstream, out_bits_ptr) /* Peeks next data portion without reading - see ECL_JH_Peek description */
-    #define ECL_HUFF8_RSTREAM_Peek_ResultType ECL_JH_Peek_ResultType
-    #ifdef ECL_JH_Peek_Multibyte
-        #define ECL_HUFF8_RSTREAM_Peek_Multibyte
-    #endif
-    #define ECL_HUFF8_RSTREAM_Advance(rstream, nbits) ECL_JH_Advance(rstream, nbits)
+    #define ECL_HUFF8_RSTREAM_PeekWithinByte(rstream, out_bits_ptr) ECL_JH_PeekWithinByte(rstream, out_bits_ptr) /* Peeks next data portion without reading - see ECL_JH_PeekWithinByte description */
 
 #endif /* ECL_HUFF8_RSTREAM_Type */
 

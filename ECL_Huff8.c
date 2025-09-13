@@ -1095,11 +1095,11 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_HUFF8
         /**/
         if(bytes_cnt > 8) { /* leave last 8 values for separate loop - they will take AT LEAST 8 bits which we pre-read */
             ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 8));
-#ifdef ECL_HUFF8_RSTREAM_Peek
-            ECL_HUFF8_RSTREAM_Peek(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
+#ifdef ECL_HUFF8_RSTREAM_PeekWithinByte
+            ECL_HUFF8_RSTREAM_PeekWithinByte(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
 #else /* --------------------------- */
             nbits = 8;
-#endif /* ECL_HUFF8_RSTREAM_Peek */
+#endif /* ECL_HUFF8_RSTREAM_PeekWithinByte */
             val = ECL_HUFF8_RSTREAM_Read1_8(rstream, nbits);
             /**/
             for(; ofs < bound_ofs; ofs += interval) {
