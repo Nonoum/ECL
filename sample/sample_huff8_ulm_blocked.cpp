@@ -7,6 +7,12 @@
 #include <vector>
 #include <string.h>
 #include <cassert>
+#include <chrono>
+
+uint64_t GetTimeMicroseconds() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 void s_show_usage() {
     std::cout << "-- Usage compress: sample c 32768 my-src-file my-output-compressed-file" << std::endl;
@@ -88,6 +94,7 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
     const auto enough_size = ECL_HUFF8_GET_BOUND(src.size()); // ~roughly enough size, we do block-wise compression and add extra markers
     output.reserve(enough_size); // by fact it's just a little optimization as we'll append data block-by-block, ensure we won't crash on allocation in the end for large file
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
+    const auto time_us_before = GetTimeMicroseconds();
     {
         const uint16_t size = uint16_t(block_size);
         Raw tmp_comp_block;
@@ -121,6 +128,8 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
             start += portion_size;
         }
     }
+    const auto time_us_after = GetTimeMicroseconds();
+    const auto seconds_spent = (double(time_us_after - time_us_before) / 1000000.);
     /// SAMPLE SPECIFIC PART END   ///
     const auto comp_size = output.size();
     // encode original file size in header - encode as E7 number
@@ -133,7 +142,7 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
     const auto hdr_size = hdr_end - hdr;
     const auto total_size = comp_size + hdr_size;
     // write file data
-    std::cout << "- successfully compressed: original size = " << src.size() << std::endl;
+    std::cout << "- successfully compressed in " << seconds_spent << "  seconds; original size = " << src.size() << std::endl;
     std::cout << "compressed stream size = " << comp_size
               << " (with " << hdr_size << " byte header = " << total_size << ")" << std::endl;
     std::cout << "ratio = " << std::fixed << (double(comp_size) / double(src.size())) << std::endl;
@@ -159,6 +168,7 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     uint16_t buf1024_u16[512];
     recovered.reserve(original_size);
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
+    const auto time_us_before = GetTimeMicroseconds();
     for(auto start_ptr = comp_start; start_ptr != comp_end; ) {
         const size_t prefix_size = 2; // uint16_t 'current block size' aka number of bytes in current block
         if((comp_end - start_ptr) < prefix_size) {
@@ -188,12 +198,14 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
 
         start_ptr += consumed_size;
     }
+    const auto time_us_after = GetTimeMicroseconds();
+    const auto seconds_spent = (double(time_us_after - time_us_before) / 1000000.);
     /// SAMPLE SPECIFIC PART END   ///
     if(recovered.size() != original_size) {
         std::cout << "- error: decompression failed - invalid file content" << std::endl;
         return false;
     }
-    std::cout << "- successfully decompressed: size = " << original_size << std::endl;
+    std::cout << "- successfully decompressed in " << seconds_spent << " seconds; size = " << original_size << std::endl;
     return s_write_file(dst_fname, nullptr, 0, recovered);
 }
 
