@@ -114,6 +114,8 @@ struct ECLTestDatasetsInitializer {
         ECL_TEST_APPEND_DATASET("\x1\x2\x3\x4\x5\x6\x7\x8\x9\xA\xB\xC\x1\x1\x4\x5\x6\x7\x1\x1");
         ECL_TEST_APPEND_DATASET("\x1\x2\x3\x4\x5\x6\x7\x8\x9\xA\xB\xC\x1\x1\x1\x4\x5\x6\x7\x1");
         ECL_TEST_APPEND_DATASET("\x1\x2\x3\x4\x5\x6\x7\x8\x9\xA\xB\xC\x1\x1\x1\x1\x4\x5\x6\x7");
+        //
+        ECL_TEST_APPEND_DATASET("\x1\x2\x3\x4\x5\x6\x7\x8\x9\xA\xB\xC\x1\x1\x1\x1\x4\x5\x6\x7\x4\x5\x6\x7\x8\x1\x1\x1\x1\x4\x5");
     }
 };
 ECLTestDatasetsInitializer ECLTestDatasetsInitializer_instance;
@@ -614,10 +616,19 @@ NTEST(test_Huff8_ULM_datasets) {
                 }
             }
         }
+        auto corrupt_vec_data = [](std::vector<uint8_t>& v) { for(auto& byte : v) ++byte; };
 
         tmp_output.resize(src_size);
         auto consumed_size = ECL_Huff8_Decompress_Raw(tmp_compressed.data(), comp_size, buf1024_u16.data(), tmp_output.data(), src_size, 1);
+        ECL_TEST_MAGIC_U16_VALIDATE(buf1024_u16);
         ECL_TEST_COMPARE(consumed_size, comp_size);
+        ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
+
+        corrupt_vec_data(tmp_output);
+        auto alt_consumed_size = ECL_Huff8_DecompressWithDTable768_Raw(tmp_compressed.data(), comp_size, buf1024_u16.data(), buf768_u16.data(), tmp_output.data(), src_size, 1);
+        ECL_TEST_MAGIC_U16_VALIDATE(buf1024_u16);
+        ECL_TEST_MAGIC_U16_VALIDATE(buf768_u16);
+        ECL_TEST_COMPARE(alt_consumed_size, comp_size);
         ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
         //// copypasted part for huff8 tests <<<
     }

@@ -9,6 +9,10 @@ static const uint8_t ECL_test_perf_data_byte_mask = 0x0F;
 static const int ECL_test_perf_data_block_size = 50000;
 static const int ECL_test_perf_data_repeats = 2000;
 
+static const int ECL_huff8_test_perf_data_byte_mod = 222;
+static const int ECL_huff8_test_perf_data_block_size = 2000;
+static const int ECL_huff8_test_perf_data_repeats = 20000;
+
 NTEST(test_perf_ZeroDevourer_compressor) {
     NTEST_SUPPRESS_UNUSED;
     std::vector<uint8_t> src;
@@ -96,10 +100,10 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const auto src_size = ECL_test_perf_data_block_size;
+    const auto src_size = ECL_huff8_test_perf_data_block_size;
     src.resize(src_size);
     for(int j = 0; j < src_size; ++j) {
-        src[j] = rand() & ECL_test_perf_data_byte_mask;
+        src[j] = rand() % ECL_huff8_test_perf_data_byte_mod;
     }
     // analyze/compress buffers
     uint16_t buf512[256];
@@ -117,7 +121,7 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
     uint32_t csize = 0;
-    for(int i = 0; i < ECL_test_perf_data_repeats; ++i) {
+    for(int i = 0; i < ECL_huff8_test_perf_data_repeats; ++i) {
         csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
     }
     const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
@@ -139,10 +143,10 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     std::vector<uint8_t> src;
     std::vector<uint8_t> tmp;
     std::vector<uint8_t> tmp_output;
-    const auto src_size = ECL_test_perf_data_block_size;
+    const auto src_size = ECL_huff8_test_perf_data_block_size;
     src.resize(src_size);
     for(int j = 0; j < src_size; ++j) {
-        src[j] = rand() & ECL_test_perf_data_byte_mask;
+        src[j] = rand() % ECL_huff8_test_perf_data_byte_mod;
     }
     // analyze/compress buffers
     uint16_t buf512[256];
@@ -169,8 +173,52 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
 
     tmp_output.resize(src_size);
     ECL_usize consumed_size = 0;
-    for(int i = 0; i < ECL_test_perf_data_repeats; ++i) {
+    for(int i = 0; i < ECL_huff8_test_perf_data_repeats; ++i) {
         consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1024_u16, tmp_output.data(), src_size, 1);
+    }
+    ECL_TEST_COMPARE(consumed_size, comp_size);
+    ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
+    ECL_TEST_MAGIC_VALIDATE(tmp);
+}
+
+NTEST(test_perf_Huff8_ULM_decompressor_dtable) {
+    NTEST_SUPPRESS_UNUSED;
+    std::vector<uint8_t> src;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    const auto src_size = ECL_huff8_test_perf_data_block_size;
+    src.resize(src_size);
+    for(int j = 0; j < src_size; ++j) {
+        src[j] = rand() % ECL_huff8_test_perf_data_byte_mod;
+    }
+    // analyze/compress buffers
+    uint16_t buf512[256];
+    uint32_t buf1024[256];
+    uint8_t buf256[256];
+    uint8_t buf768[768];
+    // decompress buffer
+    uint16_t buf1024_u16[512];
+    uint16_t buf768_u16[768/2];
+    //
+    auto src_data = (const uint8_t*)src.data();
+    ECL_TEST_ASSERT(src_data);
+    ECL_TEST_ASSERT(src_size);
+
+    const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
+    ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
+
+    const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
+    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
+    const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024, buf256, buf768, buf512);
+    const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
+
+    ECL_TEST_COMPARE(csize, a2k_size);
+    ECL_TEST_COMPARE(csize, a2k5_size);
+
+    tmp_output.resize(src_size);
+    ECL_usize consumed_size = 0;
+    for(int i = 0; i < ECL_huff8_test_perf_data_repeats; ++i) {
+        consumed_size = ECL_Huff8_DecompressWithDTable768_Raw(tmp.data(), comp_size, buf1024_u16, buf768_u16, tmp_output.data(), src_size, 1);
     }
     ECL_TEST_COMPARE(consumed_size, comp_size);
     ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));

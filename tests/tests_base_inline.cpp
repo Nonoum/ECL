@@ -68,6 +68,7 @@
 template <typename T>
 static void ECL_TEST_LogVectorData(std::ostream& log, const std::vector<T>& v, size_t max_size = size_t(-1)) {
     auto sz = std::min(max_size, v.size());
+    log << std::dec;
     log << '{' << v.size() << '}';
     log << '[';
     for(size_t i = 0; i < sz; ++i) {

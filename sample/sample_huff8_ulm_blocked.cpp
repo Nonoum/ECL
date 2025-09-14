@@ -166,6 +166,7 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     Raw recovered;
     Raw tmp_output;
     uint16_t buf1024_u16[512];
+    uint16_t buf768_u16[768/2];
     recovered.reserve(original_size);
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
     const auto time_us_before = GetTimeMicroseconds();
@@ -184,7 +185,11 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
 
         tmp_output.resize(portion_size);
         auto left_size = comp_end - start_ptr;
+#if 0 // decompress default
         auto consumed_size = ECL_Huff8_Decompress_Raw(start_ptr, left_size, buf1024_u16, tmp_output.data(), portion_size, 1);
+#else // decompress FAST (>3x faster on 'silesia.tar' 206mb file)
+        auto consumed_size = ECL_Huff8_DecompressWithDTable768_Raw(start_ptr, left_size, buf1024_u16, buf768_u16, tmp_output.data(), portion_size, 1);
+#endif
         assert(consumed_size);
         if(consumed_size > left_size) {
             assert(false);

@@ -1062,9 +1062,9 @@ int16_t ECL_Huff8_DecompressDTree1024(ECL_RSTREAM_Type* rstream, uint16_t* dtree
     return next_node;
 }
 
-ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree1024, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((dtree_buf == NULL) || (rstream == NULL) || (dst == NULL) || (! bytes_cnt) || (! interval)) {
+    if((dtree1024 == NULL) || (rstream == NULL) || (dst == NULL) || (! bytes_cnt) || (! interval)) {
         ECL_ASSERT(0);
         return 0;
     }
@@ -1073,11 +1073,11 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTRE
         ECL_ASSERT(false && "Compressed Huffman block can't be zero-length!");
         return 0;
     }
-    if(! dtree_buf[0]) {
+    if(! dtree1024[0]) {
         return 0; /* error: no tree */
     }
-    if(! dtree_buf[1]) {
-        uint8_t code = (uint8_t)dtree_buf[0];
+    if(! dtree1024[1]) {
+        uint8_t code = (uint8_t)dtree1024[0];
         /* only single code in tree - fill data with it */
         for(ECL_usize i = 0, ofs = 0; i < bytes_cnt; ++i, ofs += interval) {
             dst[ofs] = code;
@@ -1110,14 +1110,14 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTRE
                         nbits = 8;
                     }
                     if(val & 1) { /* go right */
-                        curr_node = dtree_buf[curr_node];
+                        curr_node = dtree1024[curr_node];
                     } else { /* go left (always next after parent) */
                         ++curr_node;
                     }
                     val >>= 1;
                     --nbits;
-                } while(! (dtree_buf[curr_node] & 0x8000));
-                dst[ofs] = (uint8_t)dtree_buf[curr_node];
+                } while(! (dtree1024[curr_node] & 0x8000));
+                dst[ofs] = (uint8_t)dtree1024[curr_node];
             }
         }
         /* complete last part with per-bit reading */
@@ -1129,14 +1129,14 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTRE
                     nbits = 1;
                 }
                 if(val & 1) { /* go right */
-                    curr_node = dtree_buf[curr_node];
+                    curr_node = dtree1024[curr_node];
                 } else { /* go left (always next after parent) */
                     ++curr_node;
                 }
                 val >>= 1;
                 --nbits;
-            } while(! (dtree_buf[curr_node] & 0x8000));
-            dst[ofs] = (uint8_t)dtree_buf[curr_node];
+            } while(! (dtree1024[curr_node] & 0x8000));
+            dst[ofs] = (uint8_t)dtree1024[curr_node];
         }
     }
 #else /* non-cached */
@@ -1144,12 +1144,12 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTRE
         uint16_t curr_node = 0; /* we're sure it's not a leaf (checked that case above) */
         do {
             if(ECL_RSTREAM_Read1_8(rstream, 1)) { /* go right */
-                curr_node = dtree_buf[curr_node];
+                curr_node = dtree1024[curr_node];
             } else { /* go left (always next after parent) */
                 ++curr_node;
             }
-        } while(! (dtree_buf[curr_node] & 0x8000));
-        dst[ofs] = (uint8_t)dtree_buf[curr_node];
+        } while(! (dtree1024[curr_node] & 0x8000));
+        dst[ofs] = (uint8_t)dtree1024[curr_node];
     }
 #endif
     return bytes_cnt; /* ok if stream isn't invalidated */
@@ -1157,17 +1157,155 @@ ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree_buf, ECL_RSTRE
 
 ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     ECL_ASSERT(bytes_cnt && interval);
-    ECL_Huff8_DecompressDTree1024(rstream, dtree_buf, 512);
+    if(ECL_Huff8_DecompressDTree1024(rstream, dtree_buf, 512) <= 0) {
+        return 0;
+    }
     return ECL_Huff8_DecompressWithDTree1024(dtree_buf, rstream, dst, bytes_cnt, interval);
 }
 
+int16_t ECL_Huff8_DTree1024ToDTable768(const uint16_t* dtree1024, uint16_t* dtable768/*[768/2 == 384]*/) {
+    uint16_t unp_stack[8];
+    uint16_t* ECL_SCOPED_CONST out_codes_table = dtable768;
+    uint8_t* ECL_SCOPED_CONST out_nbits_table = (uint8_t*)(dtable768 + 256);
+    uint8_t tmp_code = 0; /* lower bit is entering bit in the code */
+    uint16_t curr_node = 1;
+    uint16_t stack_depth = 1; /* root entered left */
+    unp_stack[0] = 0;
+
+    if(! dtree1024[0]) {
+        return 0; /* error: no tree */
+    }
+    if(! dtree1024[1]) {
+        return -1; /* single-element - not reasonable and not supported by algorithm */
+    }
+
+    while(stack_depth) {
+        if(dtree1024[curr_node] & 0x8000) { /* leaf */
+            /* form table */
+            const uint8_t increment = (uint8_t)(1 << stack_depth); /* can be 0 */
+            const uint8_t orig_code = tmp_code;
+            const uint8_t value = (uint8_t)(dtree1024[curr_node]);
+            do {
+                out_codes_table[tmp_code] = value;
+                out_nbits_table[tmp_code] = stack_depth;
+                tmp_code += increment;
+            } while(tmp_code != orig_code);
+        } else if(stack_depth == 8) { /* stack_depth(==code length in bits) is 8, not a leaf */
+            /* form table */
+            out_codes_table[tmp_code] = curr_node; /* ref in dtree1024 to continue traversing from */
+            out_nbits_table[tmp_code] = 9; /* or more */
+        } else { /* go deeper */
+            tmp_code &= ~(uint8_t)(1 << stack_depth); /* enter 'left' -> add '0' as higher bit */
+            unp_stack[stack_depth] = curr_node;
+            ++stack_depth;
+            ++curr_node; /* enter 'left' */
+            continue;
+        }
+        /* move level up after forming table */
+        while(stack_depth) {
+            --stack_depth;
+            curr_node = unp_stack[stack_depth];
+            if(! (tmp_code & (uint8_t)(1 << stack_depth))) { /* entered left at that level */
+                tmp_code |= (uint8_t)(1 << stack_depth); /* enter 'right' -> add '1' as higher bit */
+                /* unp_stack[stack_depth] = curr_node; */ /* already there */
+                curr_node = dtree1024[curr_node];
+                ++stack_depth;
+                break;
+            }
+        }
+    }
+    return 1;
+}
+
+ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uint16_t* dtable768/*[768/2 == 384]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+    uint8_t nbits;
+    uint16_t val;
+    ECL_usize ofs;
+    ECL_SCOPED_CONST ECL_usize last_ofs = (interval * bytes_cnt);
+#ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
+    if((dtree1024 == NULL) || (dtable768 == NULL) || (rstream == NULL) || (dst == NULL) || (! bytes_cnt) || (! interval)) {
+        ECL_ASSERT(0);
+        return 0;
+    }
+#endif
+    ofs = 0;
+    nbits = 0;
+    /**/
+    if(bytes_cnt > 16) {
+        const uint16_t* ECL_SCOPED_CONST codes_table = dtable768;
+        const uint8_t* ECL_SCOPED_CONST nbits_table = (uint8_t*)(dtable768 + 256);
+        ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 16)); /* leave last 16 values for separate loop - they will take AT LEAST 16 bits which we pre-read */
+
+#ifdef ECL_RSTREAM_PeekWithinByte
+        ECL_RSTREAM_PeekWithinByte(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
+#else /* --------------------------- */
+        nbits = 8;
+#endif /* ECL_RSTREAM_PeekWithinByte */
+        val = ECL_RSTREAM_Read1_8(rstream, nbits);
+        /**/
+        for(; ofs < bound_ofs; ofs += interval) {
+            uint8_t code_size;
+            if(nbits < 8) { /* make sure we have >= 8 bits to use as index */
+                val |= ((uint16_t)ECL_RSTREAM_Read1_8(rstream, 8)) << nbits;
+                nbits += 8;
+            }
+            code_size = nbits_table[(uint8_t)val]; /* can't be 0 */
+            if(code_size <= 8) {
+                dst[ofs] = (uint8_t)codes_table[(uint8_t)val];
+                val >>= code_size;
+                nbits -= code_size;
+            } else {
+                uint16_t curr_node = codes_table[(uint8_t)val]; /* start search from that node */
+                val >>= 8;
+                nbits -= 8;
+                do {
+                    if(nbits < 8) {
+                        val |= ((uint16_t)ECL_RSTREAM_Read1_8(rstream, 8)) << nbits;
+                        nbits += 8;
+                    }
+                    if(val & 1) { /* go right */
+                        curr_node = dtree1024[curr_node];
+                    } else { /* go left (always next after parent) */
+                        ++curr_node;
+                    }
+                    val >>= 1;
+                    --nbits;
+                } while(! (dtree1024[curr_node] & 0x8000));
+                dst[ofs] = (uint8_t)dtree1024[curr_node];
+            }
+        }
+    }
+    /* complete last part with per-bit reading */
+    for(; ofs < last_ofs; ofs += interval) {
+        uint16_t curr_node = 0;
+        do {
+            if(! nbits) {
+                val = ECL_RSTREAM_Read1_8(rstream, 1);
+                nbits = 1;
+            }
+            if(val & 1) { /* go right */
+                curr_node = dtree1024[curr_node];
+            } else { /* go left (always next after parent) */
+                ++curr_node;
+            }
+            val >>= 1;
+            --nbits;
+        } while(! (dtree1024[curr_node] & 0x8000));
+        dst[ofs] = (uint8_t)dtree1024[curr_node];
+    }
+    return bytes_cnt;
+}
+
 #ifdef ECL_RSTREAM_Init
+
 ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     ECL_RSTREAM_Type rstream;
     ECL_RSTREAM_Init(&rstream, src, src_size);
     ECL_ASSERT(bytes_cnt && interval);
 
-    ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512);
+    if(ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512) <= 0) {
+        return 0;
+    }
     if(! ECL_Huff8_DecompressWithDTree1024(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
         return 0;
     }
@@ -1176,4 +1314,33 @@ ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint1
     }
     return rstream.next - src;
 }
+
+ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint16_t* dtable_buf/*[768/2 == 384]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
+    int16_t dtree_result;
+    ECL_RSTREAM_Type rstream;
+    ECL_RSTREAM_Init(&rstream, src, src_size);
+    ECL_ASSERT(bytes_cnt && interval);
+
+    dtree_result = ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512);
+    if(dtree_result <= 0) {
+        return 0;
+    }
+    if((dtree_result < 30) || (bytes_cnt < 200)) { /* not worth to use dtable - use default decompress */
+        if(! ECL_Huff8_DecompressWithDTree1024(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
+            return 0;
+        }
+    } else { /* use dtable */
+        if(ECL_Huff8_DTree1024ToDTable768(dtree_buf, dtable_buf) <= 0) {
+            return 0;
+        }
+        if(! ECL_Huff8_DecompressWithDTable768(dtree_buf, dtable_buf, &rstream, dst, bytes_cnt, interval)) {
+            return 0;
+        }
+    }
+    if(! rstream.is_valid) {
+        return 0;
+    }
+    return rstream.next - src;
+}
+
 #endif

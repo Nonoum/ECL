@@ -333,13 +333,40 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtr
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
+
+/*
+    Generates 'dtable768' special decompression cache (to be used along with dtree1024 in dedicated Decompress function).
+
+    returns 1 in case of success;
+    returns 0 if dtree1024 is empty;
+    return -1 if dtree1024 consists of single element.
+*/
+ECL_EXPORTED_API int16_t ECL_Huff8_DTree1024ToDTable768(const uint16_t* dtree1024, uint16_t* dtable768/*[768/2 == 384]*/);
+
+/*
+    Runs decompression on 'rstream' source with prepared 'dtree1024' tree and 'dtable768' cache.
+
+    Returns 0 in case of failure and 'bytes_cnt' in case of success.
+*/
+ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uint16_t* dtable768/*[768/2 == 384]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+
+
+#ifdef ECL_RSTREAM_Init
+
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 
-    returns amount of consumed bytes (which is <= src_size), or 0 in case of any error.
+    returns amount of bytes consumed from src (which is <= src_size), or 0 in case of any error.
 */
-#ifdef ECL_RSTREAM_Init
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+
+/*
+    Similar to ECL_Huff8_Decompress_Raw but uses extra buffer for faster decompression.
+
+    returns amount of bytes consumed from src (which is <= src_size), or 0 in case of any error.
+*/
+ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint16_t* dtable_buf/*[768/2 == 384]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
+
 #endif /* ECL_RSTREAM_Init */
 
 
