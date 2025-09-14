@@ -972,27 +972,42 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 
 
-#ifdef ECL_WSTREAM_Init
+#ifdef ECL_WSTREAM_JHx_Init
 
 uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+    uint32_t result;
     ECL_WSTREAM_Type wstream;
-    ECL_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    return ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf256, buf768, &wstream);
+    result = ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf256, buf768, &wstream);
+    if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
+        return 0;
+    }
+    return result;
 }
 
 uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+    uint32_t result;
     ECL_WSTREAM_Type wstream;
-    ECL_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    return ECL_Huff8_TryCompress16_TSpec768(src, bytes_cnt, interval, buf800, buf768, &wstream);
+    result = ECL_Huff8_TryCompress16_TSpec768(src, bytes_cnt, interval, buf800, buf768, &wstream);
+    if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
+        return 0;
+    }
+    return result;
 }
 
 uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+    uint32_t result;
     ECL_WSTREAM_Type wstream;
-    ECL_WSTREAM_Init(&wstream, dst, dst_size);
+    ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    return ECL_Huff8_TryCompress16_TSpec512(src, bytes_cnt, interval, buf536, buf256, buf768, &wstream);
+    result = ECL_Huff8_TryCompress16_TSpec512(src, bytes_cnt, interval, buf536, buf256, buf768, &wstream);
+    if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
+        return 0;
+    }
+    return result;
 }
 
 #endif
@@ -1296,11 +1311,11 @@ ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uin
     return bytes_cnt;
 }
 
-#ifdef ECL_RSTREAM_Init
+#ifdef ECL_RSTREAM_JHx_Init
 
 ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     ECL_RSTREAM_Type rstream;
-    ECL_RSTREAM_Init(&rstream, src, src_size);
+    ECL_RSTREAM_JHx_Init(&rstream, src, src_size);
     ECL_ASSERT(bytes_cnt && interval);
 
     if(ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512) <= 0) {
@@ -1309,6 +1324,7 @@ ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint1
     if(! ECL_Huff8_DecompressWithDTree1024(dtree_buf, &rstream, dst, bytes_cnt, interval)) {
         return 0;
     }
+    /* hardcoded JH-relations guaranteed by ECL_RSTREAM_JHx_Init presence */
     if(! rstream.is_valid) {
         return 0;
     }
@@ -1318,7 +1334,7 @@ ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint1
 ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint16_t* dtable_buf/*[768/2 == 384]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
     int16_t dtree_result;
     ECL_RSTREAM_Type rstream;
-    ECL_RSTREAM_Init(&rstream, src, src_size);
+    ECL_RSTREAM_JHx_Init(&rstream, src, src_size);
     ECL_ASSERT(bytes_cnt && interval);
 
     dtree_result = ECL_Huff8_DecompressDTree1024(&rstream, dtree_buf, 512);
@@ -1337,6 +1353,7 @@ ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize sr
             return 0;
         }
     }
+    /* hardcoded JH-relations guaranteed by ECL_RSTREAM_JHx_Init presence */
     if(! rstream.is_valid) {
         return 0;
     }

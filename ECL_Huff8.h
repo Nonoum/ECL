@@ -299,7 +299,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, u
 ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
 
-#ifdef ECL_WSTREAM_Init /* *Raw functions require ECL_WSTREAM_Init, which is present by default, but needs to be defined if custom ECL_WSTREAM_Type is chosen */
+#ifdef ECL_WSTREAM_JHx_Init /* *Raw functions require ECL_WSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_WSTREAM_Type is chosen */
 /*
     TODO_BEFORE_HUFF8_RELEASE description
 */
@@ -351,7 +351,7 @@ ECL_EXPORTED_API int16_t ECL_Huff8_DTree1024ToDTable768(const uint16_t* dtree102
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uint16_t* dtable768/*[768/2 == 384]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 
-#ifdef ECL_RSTREAM_Init
+#ifdef ECL_RSTREAM_JHx_Init
 
 /*
     TODO_BEFORE_HUFF8_RELEASE description
@@ -367,7 +367,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usiz
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint16_t* dtable_buf/*[768/2 == 384]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
-#endif /* ECL_RSTREAM_Init */
+#endif /* ECL_RSTREAM_JHx_Init */
 
 
 #ifdef __cplusplus
