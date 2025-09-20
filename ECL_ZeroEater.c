@@ -84,7 +84,7 @@ static void ECL_ZeroEater_DumpSeq3(ECL_ZeroEaterComprssorState* state, ECL_usize
     ECL_SCOPED_CONST ECL_usize length = count_x + 1;
     state->result_size += length;
     if((state->dst + length) <= state->dst_end) {
-        *(state->dst) = ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3); /* subtract extra 0x40 to get 11 in higher bits */
+        *(state->dst) = (uint8_t)( ((uint8_t)count_0 - (uint8_t)0x41) | (((uint8_t)count_x - (uint8_t)1) << 3) ); /* subtract extra 0x40 to get 11 in higher bits */
         memcpy(state->dst + 1, state->src, count_x);
         state->src += count_x;
         state->dst += 1 + count_x;
@@ -132,7 +132,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
     while(state.src < src_end) {
         for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); /* search for zero from where last search ended */
 
-        cnt_x = first_0 - state.src; /* count of non-zeroes in beginning */
+        cnt_x = (uintptr_t)(first_0 - state.src); /* count of non-zeroes in beginning */
         if(first_0 == src_end) { /* complete it (1) */
             ECL_ZeroEater_DumpSeq1(&state, cnt_x);
             break;
@@ -140,7 +140,7 @@ ECL_usize ECL_ZeroEater_Compress(const uint8_t* src, ECL_usize src_size, uint8_t
         /* we found zero, find next non-zero */
         for(first_x = first_0; (first_x < src_end) && (! *first_x); ++first_x);
 
-        cnt_0 = first_x - first_0; /* count of zeroes afterwards */
+        cnt_0 = (uintptr_t)(first_x - first_0); /* count of zeroes afterwards */
         /* stream looks like {state.src: [xx..x] first_0: [00..0] first_x: ...} */
         if(cnt_x) { /* has non-zero stream too (3) */
             if((cnt_0 == 1) && (cnt_x > 8)) { /* bad deal */
@@ -205,5 +205,5 @@ ECL_usize ECL_ZeroEater_Decompress(const uint8_t* src, ECL_usize src_size, uint8
             src += cnt_x;
         }
     }
-    return (src == src_end) ? (dst - dst_start) : 0; /* ensure all source is consumed */
+    return (src == src_end) ? (uintptr_t)(dst - dst_start) : 0; /* ensure all source is consumed */
 }

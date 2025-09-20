@@ -7,12 +7,12 @@
 #ifdef ECL_BUILD_AS_C
 extern "C"
 #endif
-void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf512);
+void ECL_Huff8_Aux_QSort16(uint8_t* codes, uint16_t* values, unsigned size, uint8_t* buf512);
 
 #ifdef ECL_BUILD_AS_C
 extern "C"
 #endif
-void ECL_Huff8_Aux_HSort16(uint8_t* codes, uint16_t* values, int size, uint8_t* buf768);
+void ECL_Huff8_Aux_HSort16(uint8_t* codes, uint16_t* values, unsigned size, uint8_t* buf768);
 
 NTEST(test_Huff8_Aux_QSort16) {
     NTEST_SUPPRESS_UNUSED;
@@ -62,7 +62,7 @@ NTEST(test_Huff8_Aux_QSort16) {
     const auto backup_and_sort = [&codes, &values, &backup_codes, &backup_values, &working_buf]() {
         backup_codes = codes;
         backup_values = values;
-        ECL_Huff8_Aux_QSort16(codes.data(), values.data(), codes.size(), working_buf.data());
+        ECL_Huff8_Aux_QSort16(codes.data(), values.data(), (unsigned)codes.size(), working_buf.data());
     };
     const auto compare = [&codes, &values, &backup_codes, &backup_values]() -> bool {
         for(size_t i = 1; i < values.size(); ++i) {
@@ -70,7 +70,7 @@ NTEST(test_Huff8_Aux_QSort16) {
                 return false;
             }
         }
-        huff_bubble_sort(backup_codes.data(), backup_values.data(), backup_codes.size());
+        huff_bubble_sort(backup_codes.data(), backup_values.data(), (int)backup_codes.size());
         //
         if(0 != memcmp(codes.data(), backup_codes.data(), codes.size())) {
             // simple check can fail - do deep check considering permutations for equal values
@@ -113,7 +113,7 @@ NTEST(test_Huff8_Aux_QSort16) {
         values.clear();
         for(size_t i = 0; i < n; ++i) {
             codes.push_back(uint8_t(i));
-            values.push_back(n - i);
+            values.push_back(uint16_t(n - i));
         }
         if(shift > 0) {
             std::rotate(values.begin(), values.begin() + shift, values.end());
@@ -250,7 +250,7 @@ NTEST(test_Huff8_Aux_HSort16) {
     const auto backup_and_sort = [&codes, &values, &backup_codes, &backup_values, &working_buf]() {
         backup_codes = codes;
         backup_values = values;
-        ECL_Huff8_Aux_HSort16(codes.data(), values.data(), codes.size(), working_buf.data());
+        ECL_Huff8_Aux_HSort16(codes.data(), values.data(), (unsigned)codes.size(), working_buf.data());
     };
     const auto compare = [&codes, &values, &backup_codes, &backup_values]() -> bool {
         for(size_t i = 1; i < values.size(); ++i) {
@@ -258,7 +258,7 @@ NTEST(test_Huff8_Aux_HSort16) {
                 return false;
             }
         }
-        huff_bubble_sort(backup_codes.data(), backup_values.data(), backup_codes.size());
+        huff_bubble_sort(backup_codes.data(), backup_values.data(), (int)backup_codes.size());
         //
         if(0 != memcmp(codes.data(), backup_codes.data(), codes.size())) {
             // simple check can fail - do deep check considering permutations for equal values

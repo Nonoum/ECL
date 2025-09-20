@@ -309,7 +309,6 @@ NTEST(test_Huff8_ULM_random_data) {
     const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 1010) + 1);
     const int max_size = 2000;
     const int min_size = 1;
-    const uint8_t masks[] = {0x3F, 0x07, 0x03, 0x01};
 
     // analyze/compress buffers - declared, set magic outside of loops to minimize reallocations. magic should be checked after each non-const access
     std::vector<uint16_t> buf512_u16;

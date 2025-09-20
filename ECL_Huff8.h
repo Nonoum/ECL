@@ -177,7 +177,7 @@ ECL_EXPORTED_API void ECL_Huff8_FillFreqs16(const uint8_t* src, uint16_t bytes_c
         Root code/record is top node, which has logical address of ('return value' - 2);
     returns amount of unique values (where freqs[i] are non-zero).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
+ECL_EXPORTED_API uint16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, uint8_t* out_ctree768, uint16_t n_unique_max);
 
 
 

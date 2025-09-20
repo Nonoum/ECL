@@ -158,7 +158,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
         const uint8_t* first_0;
         for(first_0 = first_x; (first_0 < src_end) && *first_0; ++first_0); /* search for zero from where last search ended */
 
-        cnt_x = first_0 - first_undone; /* count of non-zeroes in beginning */
+        cnt_x = (uintptr_t)(first_0 - first_undone); /* count of non-zeroes in beginning */
         if(first_0 == src_end) { /* complete it (1) */
             ECL_ZeroDevourer_DumpSeq111(&state, first_undone, cnt_x);
             break;
@@ -166,7 +166,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
         /* we found zero, find next non-zero */
         for(first_x = first_0; (first_x < src_end) && (! *first_x); ++first_x);
 
-        cnt_0 = first_x - first_0; /* count of zeroes afterwards */
+        cnt_0 = (uintptr_t)(first_x - first_0); /* count of zeroes afterwards */
         /* stream looks like {first_undone: [xx..x] first_0: [00..0] first_x: ...} */
         if(ECL_ZeroDevourer_IsWorth(cnt_x, cnt_0)) {
             ECL_ZeroDevourer_DumpGeneric(&state, first_undone, cnt_x, cnt_0);
@@ -176,7 +176,7 @@ ECL_usize ECL_ZeroDevourer_Compress(const uint8_t* src, ECL_usize src_size, uint
     if(! state.is_valid) {
         return 0;
     }
-    return state.next - dst;
+    return (uintptr_t)(state.next - dst);
 }
 
 ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size) {
@@ -189,7 +189,7 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
     }
     for(;;) {
         ECL_usize cnt_x, cnt_0;
-        ECL_SCOPED_CONST ECL_usize left = dst_end - dst;
+        ECL_SCOPED_CONST ECL_usize left = (uintptr_t)(dst_end - dst);
         if(! left) {
             break;
         }
@@ -258,5 +258,5 @@ ECL_usize ECL_ZeroDevourer_Decompress(const uint8_t* src, ECL_usize src_size, ui
             }
         }
     }
-    return ((state.next == state.end) && state.is_valid) ? (dst - dst_start) : 0;
+    return ((state.next == state.end) && state.is_valid) ? (uintptr_t)(dst - dst_start) : 0;
 }
