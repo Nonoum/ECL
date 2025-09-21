@@ -349,6 +349,7 @@ NTEST(test_Huff8_ULM_random_data) {
         ECL_TEST_ASSERT(src_size);
 
         const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
+        ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
         ECL_TEST_MAGIC_RESIZE(tmp_compressed, enough_size);
 
         const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data(), tmp_compressed.data(), enough_size);

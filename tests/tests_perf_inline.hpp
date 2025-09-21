@@ -118,6 +118,7 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     ECL_TEST_ASSERT(src_size);
 
     const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
+    ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
     uint32_t csize = 0;
@@ -161,6 +162,7 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     ECL_TEST_ASSERT(src_size);
 
     const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
+    ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
     const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
@@ -205,6 +207,7 @@ NTEST(test_perf_Huff8_ULM_decompressor_dtable) {
     ECL_TEST_ASSERT(src_size);
 
     const auto enough_size = ECL_HUFF8_GET_BOUND(src_size);
+    ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
     const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
