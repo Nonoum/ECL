@@ -344,7 +344,7 @@ void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_ts
                 --code_len;
             }
         } else {
-            ECL_ASSERT(stack_depth < ECL_HUFF8_TREE_DEPTH_MAX_ULM);
+            ECL_ASSERT(stack_depth < (ECL_HUFF8_TREE_DEPTH_MAX_ULM - 1)); /* 1 last bit for a leaf - verify spec capacity */
             stack_flags[stack_depth] = checking_side;
             stack_ptrs[stack_depth] = (uint8_t)tree_record_pos;
             ++stack_depth;
@@ -413,8 +413,7 @@ int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspe
                 --code_len;
             }
         } else {
-            if(stack_depth >= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768) {
-                ECL_ASSERT(0);
+            if(stack_depth >= (ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768 - 1)) { /* 1 last bit for a leaf - verify spec capacity */
                 return 0;
             }
             stack_flags[stack_depth] = checking_side;
@@ -484,8 +483,7 @@ int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspe
                 --code_len;
             }
         } else {
-            if(stack_depth >= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512) {
-                ECL_ASSERT(0);
+            if(stack_depth >= (ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512 - 1)) { /* 1 last bit for a leaf - verify spec capacity */
                 return 0;
             }
             stack_flags[stack_depth] = checking_side;

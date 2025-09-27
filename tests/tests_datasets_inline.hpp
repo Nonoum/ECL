@@ -602,6 +602,14 @@ NTEST(test_Huff8_ULM_datasets) {
 
                     ECL_TEST_COMPARE(csize, csize_tspec768);
                     ECL_TEST_COMPARE_CUSTOM(tmp_compressed, tmp_compressed_alternative);
+                } else {
+                    // spec can't be used with that dataset - verify we fail on the attempt
+                    ECL_TEST_MAGIC_RESIZE(tmp_compressed_alternative, enough_size);
+                    const auto csize_tspec768 = ECL_Huff8_TryCompress16_TSpec768_Raw(src_data, src_size, 1, buf800_u16.data(), buf768_u8.data(), tmp_compressed_alternative.data(), comp_size);
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf800_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+                    ECL_TEST_MAGIC_VALIDATE(tmp_compressed_alternative);
+                    ECL_TEST_COMPARE(0, csize_tspec768);
                 }
 
                 if(max_depth_ctree <= ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512) {
@@ -614,6 +622,15 @@ NTEST(test_Huff8_ULM_datasets) {
 
                     ECL_TEST_COMPARE(csize, csize_tspec512);
                     ECL_TEST_COMPARE_CUSTOM(tmp_compressed, tmp_compressed_alternative);
+                } else {
+                    // spec can't be used with that dataset - verify we fail on the attempt
+                    ECL_TEST_MAGIC_RESIZE(tmp_compressed_alternative, enough_size);
+                    const auto csize_tspec512 = ECL_Huff8_TryCompress16_TSpec512_Raw(src_data, src_size, 1, buf536_u16.data(), buf256_u8.data(), buf768_u8.data(), tmp_compressed_alternative.data(), comp_size);
+                    ECL_TEST_MAGIC_U16_VALIDATE(buf536_u16);
+                    ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+                    ECL_TEST_MAGIC_VALIDATE(buf768_u8);
+                    ECL_TEST_MAGIC_VALIDATE(tmp_compressed_alternative);
+                    ECL_TEST_COMPARE(0, csize_tspec512);
                 }
             }
         }
