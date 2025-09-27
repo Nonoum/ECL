@@ -194,6 +194,14 @@ ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, co
 ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
                                                        , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2);
 
+/*
+    Similar to ECL_NanoLZ_Compress_auto_ex but with limit for window size.
+    ECL_NanoLZ_Compress_auto_ex uses 'max_window_size_bits' == 0.
+    Limiting 'max_window_size_bits' is reasonable if data is too big and auto calculated window size requires too much memory to be allocated.
+*/
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto_ex2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
+                                                       , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2, uint8_t max_window_size_bits);
+
 #endif
 
 /*

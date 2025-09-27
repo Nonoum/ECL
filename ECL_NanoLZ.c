@@ -783,11 +783,17 @@ ECL_usize ECL_NanoLZ_Compress_fast2(ECL_NanoLZ_Scheme scheme, const uint8_t* src
 /* ----------------------------------------------------------------------- */
 
 ECL_usize ECL_NanoLZ_Compress_auto(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit) {
-    return ECL_NanoLZ_Compress_auto_ex(scheme, src, src_size, dst, dst_size, search_limit, 0, 0);
+    return ECL_NanoLZ_Compress_auto_ex2(scheme, src, src_size, dst, dst_size, search_limit, NULL, NULL, 0);
 }
 
 ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
                                       , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2)
+{
+    return ECL_NanoLZ_Compress_auto_ex2(scheme, src, src_size, dst, dst_size, search_limit, prealloc1, prealloc2, 0);
+}
+
+ECL_EXPORTED_API ECL_usize ECL_NanoLZ_Compress_auto_ex2(ECL_NanoLZ_Scheme scheme, const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize dst_size, ECL_usize search_limit
+                                                      , ECL_NanoLZ_FastParams* prealloc1, ECL_NanoLZ_FastParams* prealloc2, uint8_t max_window_size_bits)
 {
     ECL_usize result = 0;
     if((search_limit < 2) && ECL_NanoLZ_ValidateU16size(src_size)) { /* for minimal limit mid2min is fastest choice */
@@ -801,7 +807,7 @@ ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* s
             memcpy(dst, tmp, result);
         }
     } else if(src_size < 1500) { /* prefer fast1 */
-        if(prealloc1) {
+        if(prealloc1 != NULL) {
             result = ECL_NanoLZ_Compress_fast1(scheme, src, src_size, dst, dst_size, search_limit, prealloc1);
         } else {
             ECL_NanoLZ_FastParams fp;
@@ -811,11 +817,16 @@ ECL_usize ECL_NanoLZ_Compress_auto_ex(ECL_NanoLZ_Scheme scheme, const uint8_t* s
             }
         }
     } else { /* prefer fast2 */
-        if(prealloc2) {
+        if(prealloc2 != NULL) {
             result = ECL_NanoLZ_Compress_fast2(scheme, src, src_size, dst, dst_size, search_limit, prealloc2);
         } else {
+            uint8_t win_size_bits;
             ECL_NanoLZ_FastParams fp;
-            if(ECL_NanoLZ_FastParams_Alloc2(&fp, ECL_LogRoundUp(src_size))) {
+            win_size_bits = ECL_LogRoundUp(src_size);
+            if(max_window_size_bits && (win_size_bits > max_window_size_bits)) {
+                win_size_bits = max_window_size_bits;
+            }
+            if(ECL_NanoLZ_FastParams_Alloc2(&fp, win_size_bits)) {
                 result = ECL_NanoLZ_Compress_fast2(scheme, src, src_size, dst, dst_size, search_limit, &fp);
                 ECL_NanoLZ_FastParams_Destroy(&fp);
             }
