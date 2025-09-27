@@ -6,6 +6,12 @@
 #include <fstream>
 #include <vector>
 #include <string.h>
+#include <chrono>
+
+uint64_t GetTimeMicroseconds() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 static const auto c_scheme = ECL_NANOLZ_SCHEME1;
 
@@ -87,7 +93,15 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int limit) {
     Raw output;
     const auto enough_size = ECL_NANO_LZ_GET_BOUND(src.size());
     output.resize(enough_size);
-    const auto comp_size = ECL_NanoLZ_Compress_auto(c_scheme, src.data(), src.size(), output.data(), output.size(), limit);
+    /// SAMPLE SPECIFIC PART START ///
+    const auto time_us_before = GetTimeMicroseconds();
+
+    const auto comp_size = ECL_NanoLZ_Compress_auto_ex2(c_scheme, src.data(), src.size(), output.data(), output.size(), limit, nullptr, nullptr, 20);
+
+    const auto time_us_after = GetTimeMicroseconds();
+    const auto seconds_spent = double(time_us_after - time_us_before) / 1000000.;
+    const auto mbytes_per_sec = double(src.size()) / (double(1024*1024) * seconds_spent);
+    /// SAMPLE SPECIFIC PART END   ///
     if((! comp_size) || (comp_size > output.size())) {
         std::cout << "- error: an unknown error has occurred, maybe file is too big" << std::endl;
         return false;
@@ -103,7 +117,7 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int limit) {
     const auto hdr_size = hdr_end - hdr;
     const auto total_size = comp_size + hdr_size;
     // write file data
-    std::cout << "- successfully compressed: original size = " << src.size() << std::endl;
+    std::cout << "- successfully compressed " << seconds_spent << " seconds (" << mbytes_per_sec << " mb/s); original size = " << src.size() << std::endl;
     std::cout << "compressed stream size = " << comp_size
               << " (with " << hdr_size << " byte header = " << total_size << ")" << std::endl;
     std::cout << "ratio = " << std::fixed << (double(comp_size) / double(src.size())) << std::endl;
@@ -126,12 +140,21 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     const auto comp_size = src.data() + src.size() - comp_start;
     Raw recovered;
     recovered.resize(original_size);
+    /// SAMPLE SPECIFIC PART START ///
+    const auto time_us_before = GetTimeMicroseconds();
+
     const auto decomp_size = ECL_NanoLZ_Decompress(c_scheme, comp_start, comp_size, recovered.data(), recovered.size());
+
+    const auto time_us_after = GetTimeMicroseconds();
+    const auto seconds_spent = double(time_us_after - time_us_before) / 1000000.;
+    const auto mbytes_per_sec = double(src.size()) / (double(1024*1024) * seconds_spent);
+    /// SAMPLE SPECIFIC PART END   ///
+
     if(decomp_size != original_size) {
         std::cout << "- error: decompression failed - invalid file content" << std::endl;
         return false;
     }
-    std::cout << "- successfully decompressed: size = " << decomp_size << std::endl;
+    std::cout << "- successfully decompressed in " << seconds_spent << " seconds (" << mbytes_per_sec << " mb/s); size = " << decomp_size << std::endl;
     return s_write_file(dst_fname, nullptr, 0, recovered);
 }
 

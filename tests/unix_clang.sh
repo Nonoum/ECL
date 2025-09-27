@@ -3,9 +3,9 @@ depth=$1
 
 main_src="../ecl-all-c-included/ECL_all_c_included.c"
 test_src="tests.cpp"
-arch="-m32"
+arch="-m64"
 opts="$arch -Wall -Wextra -pedantic -O3 -DECL_BUILD_AS_C -DECL_USE_ASSERT"
-cpp_opts="-std=c++11"
+cpp_opts="-std=c++17"
 linker_opts="$arch -lstdc++"
 cc="clang"
 cxx="clang++"

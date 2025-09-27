@@ -35,9 +35,9 @@
 #define ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(n_unique_bytes) ((8+2)*(n_unique_bytes) - 1)
 
 /*
-    Calculates size of buffer to fit compressed version of any data of 'src_size' size.
+    Calculates size of buffer to fit compressed version of any data (along with tree) of 'src_size' size.
 */
-#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8)) /* TODO_BEFORE_HUFF8_RELEASE make sure */
+#define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8))
 
 /*
     Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size).
@@ -316,7 +316,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t 
             - buf800 is uint16_t[400]; - uint16_t aligned
             - buf768 is uint8_t[768];
         - additionally can fail if:
-            - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (the bigger 'bytes_cnt' - the bigger is such a chance).
+            - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
@@ -327,7 +327,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, u
             - buf256 is uint8_t[256];
             - buf768 is uint8_t[768];
         - additionally can fail if:
-            - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (the bigger 'bytes_cnt' - the bigger is such a chance).
+            - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
@@ -352,7 +352,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint1
             - buf800 is uint16_t[400]; - uint16_t aligned
             - buf768 is uint8_t[768];
         - additionally can fail if:
-            - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (the bigger 'bytes_cnt' - the bigger is such a chance).
+            - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 
@@ -363,7 +363,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* sr
             - buf256 is uint8_t[256];
             - buf768 is uint8_t[768];
         - additionally can fail if:
-            - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (the bigger 'bytes_cnt' - the bigger is such a chance).
+            - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
 ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 

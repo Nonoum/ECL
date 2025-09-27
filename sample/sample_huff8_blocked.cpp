@@ -83,6 +83,8 @@ bool s_write_file(const char* fname, const uint8_t* hdr, size_t hdr_size, const 
         && s_write_file_part(ofs, data.data(), data.size());
 }
 
+//#define SAMPLE_USE_MEMCPY_REPLACEMENT // as CPU/MEMORY performance reference
+
 bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size) {
     assert(block_size > 0);
     std::cout << "compressing '" << src_fname << "' to '" << dst_fname << "' with block_size=" << block_size << std::endl;
@@ -96,12 +98,7 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
     const auto time_us_before = GetTimeMicroseconds();
     {
-        const uint16_t size = uint16_t(block_size);
         Raw tmp_comp_block;
-        // analyze/compress buffers
-        uint32_t buf1024[256];
-        uint8_t buf256[256];
-        uint8_t buf768[768];
 
         for(size_t start = 0; start < src.size(); ) {
             auto portion_size = std::min<size_t>((src.size() - start), size_t(block_size));
@@ -114,7 +111,29 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
             tmp_comp_block[1] = uint8_t((portion_size >> 8) & 0xFF);
 
             auto comp_dst = tmp_comp_block.data() + prefix_size;
-            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1024, buf256, buf768, comp_dst, comp_alloc_size);
+
+#ifdef SAMPLE_USE_MEMCPY_REPLACEMENT
+            memcpy(comp_dst, src.data() + start, portion_size);
+            const auto csize = ECL_usize(portion_size) * 8;
+#elif 0 // try ECL_Huff8_TryCompress16_TSpec512_Raw (less memory usage, restricted block size - depends on actual data)
+            // *compress extra buffers for work
+            uint16_t buf536_u16[536/2];
+            uint8_t buf256_u8[256/1];
+            uint8_t buf768[768/1];
+            const auto csize = ECL_Huff8_TryCompress16_TSpec512_Raw(src.data() + start, uint16_t(portion_size), 1, buf536_u16, buf256_u8, buf768, comp_dst, comp_alloc_size);
+#elif 1 // try ECL_Huff8_TryCompress16_TSpec768_Raw (less memory usage, restricted block size - depends on actual data)
+            // *compress extra buffers for work
+            uint16_t buf800[800/2];
+            uint8_t buf768[768/1];
+            const auto csize = ECL_Huff8_TryCompress16_TSpec768_Raw(src.data() + start, uint16_t(portion_size), 1, buf800, buf768, comp_dst, comp_alloc_size);
+#else // default - ECL_Huff8_Compress16_ULM_Raw (more memory usage, not restricted)
+            // *compress extra buffers for work
+            uint32_t buf1024[1024/4];
+            uint8_t buf256_u8[256/1];
+            uint8_t buf768[768/1];
+            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1024, buf256_u8, buf768, comp_dst, comp_alloc_size);
+#endif
+
             if(! csize) {
                 std::cout << "- error: unexpected compression error :|" << std::endl;
                 return false;
@@ -129,7 +148,8 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
         }
     }
     const auto time_us_after = GetTimeMicroseconds();
-    const auto seconds_spent = (double(time_us_after - time_us_before) / 1000000.);
+    const auto seconds_spent = double(time_us_after - time_us_before) / 1000000.;
+    const auto mbytes_per_sec = double(src.size()) / (double(1024*1024) * seconds_spent);
     /// SAMPLE SPECIFIC PART END   ///
     const auto comp_size = output.size();
     // encode original file size in header - encode as E7 number
@@ -142,7 +162,7 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
     const auto hdr_size = hdr_end - hdr;
     const auto total_size = comp_size + hdr_size;
     // write file data
-    std::cout << "- successfully compressed in " << seconds_spent << "  seconds; original size = " << src.size() << std::endl;
+    std::cout << "- successfully compressed in " << seconds_spent << " seconds (" << mbytes_per_sec << " mb/s); original size = " << src.size() << std::endl;
     std::cout << "compressed stream size = " << comp_size
               << " (with " << hdr_size << " byte header = " << total_size << ")" << std::endl;
     std::cout << "ratio = " << std::fixed << (double(comp_size) / double(src.size())) << std::endl;
@@ -165,14 +185,12 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
     const auto comp_end = src.data() + src.size();
     Raw recovered;
     Raw tmp_output;
-    uint16_t buf1024_u16[512];
-    uint16_t buf768_u16[768/2];
     recovered.reserve(original_size);
     /// SAMPLE SPECIFIC PART START /// fill output block-by-block
     const auto time_us_before = GetTimeMicroseconds();
     for(auto start_ptr = comp_start; start_ptr != comp_end; ) {
         const size_t prefix_size = 2; // uint16_t 'current block size' aka number of bytes in current block
-        if((comp_end - start_ptr) < prefix_size) {
+        if(uintptr_t(comp_end - start_ptr) < prefix_size) {
             std::cout << "- file error: can't read block size" << std::endl;
             break; // error
         }
@@ -185,12 +203,23 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
 
         tmp_output.resize(portion_size);
         auto left_size = comp_end - start_ptr;
-#if 0 // decompress default
+
+#ifdef SAMPLE_USE_MEMCPY_REPLACEMENT
+        if(left_size < ECL_usize(portion_size)) {
+            break;
+        }
+        memcpy(tmp_output.data(), start_ptr, portion_size);
+        auto consumed_size = ECL_usize(portion_size);
+#elif 0 // decompress default
+        uint16_t buf1024_u16[1024/2];
         auto consumed_size = ECL_Huff8_Decompress_Raw(start_ptr, left_size, buf1024_u16, tmp_output.data(), portion_size, 1);
-#else // decompress FAST (>3x faster on 'silesia.tar' 206mb file)
-        auto consumed_size = ECL_Huff8_DecompressWithDTable768_Raw(start_ptr, left_size, buf1024_u16, buf768_u16, tmp_output.data(), portion_size, 1);
-#endif
         assert(consumed_size);
+#else // decompress FAST (>3x faster on 'silesia.tar' 202mb file)
+        uint16_t buf1024_u16[1024/2];
+        uint16_t buf768_u16[768/2];
+        auto consumed_size = ECL_Huff8_DecompressWithDTable768_Raw(start_ptr, left_size, buf1024_u16, buf768_u16, tmp_output.data(), portion_size, 1);
+        assert(consumed_size);
+#endif
         if(consumed_size > left_size) {
             assert(false);
             break; // hard error, supposed to be handled inside ECL_Huff8_Decompress_Raw
@@ -204,13 +233,14 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
         start_ptr += consumed_size;
     }
     const auto time_us_after = GetTimeMicroseconds();
-    const auto seconds_spent = (double(time_us_after - time_us_before) / 1000000.);
+    const auto seconds_spent = double(time_us_after - time_us_before) / 1000000.;
+    const auto mbytes_per_sec = double(original_size) / (double(1024*1024) * seconds_spent);
     /// SAMPLE SPECIFIC PART END   ///
     if(recovered.size() != original_size) {
         std::cout << "- error: decompression failed - invalid file content" << std::endl;
         return false;
     }
-    std::cout << "- successfully decompressed in " << seconds_spent << " seconds; size = " << original_size << std::endl;
+    std::cout << "- successfully decompressed in " << seconds_spent << " seconds (" << mbytes_per_sec << " mb/s); size = " << original_size << std::endl;
     return s_write_file(dst_fname, nullptr, 0, recovered);
 }
 
