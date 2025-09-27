@@ -168,7 +168,10 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth, int argc, char*
         }
         const auto seconds = (double(runner->getDurationMicroseconds()) / 1000000.);
         total_time += seconds;
-        log_output << '[' << std::setw(7) << std::left << ResultToStr(result) << "] " << std::fixed << seconds << " : " << name << std::endl;
+        log_output << '[' << std::setw(7) << std::left << ResultToStr(result) << "] "
+                   << std::setw(9) << std::right << std::fixed << seconds << " : "
+                   << name
+                   << std::endl;
     }
     log_output << "ntest: Total tests run : " << (n_failed + n_succeeded) << " in " << std::fixed << total_time << " seconds" << std::endl;
     log_output << "ntest: Succeeded : " << n_succeeded << std::endl;
