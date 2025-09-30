@@ -7,15 +7,27 @@ EMBEDDED COMPRESSION LIBRARY
 ### Language: C
 ### Platforms: any
 ### Endianness: any
-### Library version: 1.0.3
+### Library version: 1.1.0
 ---
 ## NEWS
 
-### 11 July 2025: Announcing new functionality development, adding Patreon page for support
-- new type low-memory codec: TBA
+### [PINNED] 11 July 2025: Announcing new functionality development, adding Patreon page for support
+- new type low-memory codec: TBA **[released Huff8 @ 30 September 2025]**
 - new type specialized low-memory codec (2): TBA
 - new type specialized low-memory codec (3): TBA
 - Patreon page: https://www.patreon.com/Nonoum
+
+### 30 September 2025: Releasing Huff8 (Huffman 8-bit) Ultra Low Memory codec. ECL 1.1.0
+- See description and benchmarks in sections with "ECL:Huff8" below
+- Fully Recursion-Free and predictable memory use
+- Compression with just 1.8kb extra RAM (or 1.5kb options)
+- Decompression with just 1kb extra RAM (or less for some cases, if needed)
+- Fast algorithms, for typical small data case even sorting is optimized to O(n)
+- Customizable read/write contexts for compressed data (for advanced use - e.g. embedding compressed data into Flash memory, unpacking into RAM)
+- Rich API
+- Fixed various warnings throughout library for XC8 compiler
+- Improved sample_nanolz (added *_auto_ex2 compressor function) file size handling capabilities
+- TBD next: *Extreme Low Memory* options (< 100 bytes extra RAM) with more advanced technique
 
 ### 23 October 2021: Release 1.0.3
 - Suppressed some 'loses precision' warnings (explicit conversions are added)
@@ -39,16 +51,38 @@ EMBEDDED COMPRESSION LIBRARY
 
 
 ---
-### Tested on (version 1.0.1; further updates were tested at least on Desktop platforms)
+### Version 1.0.1 Tested on:
 - Windows 7: msvc2013, msvc2015, gcc 4.8, gcc 7.2
 - Mac OS 10.12: clang (Apple LLVM version 8.0.0)
 - Embedded ARM Cortex-M3: armcc 5.06
+
+### Version 1.1.0 Tested on:
+- Windows 10: msvc2022, gcc 15.2.0, XC8 2.32 (compile only), arduino IDE (compile only)
 ---
 
 
 ## COMPRESSORS
 Some of modes of some compressors use intermediate buffers for compression, they don't use any implicit allocation (unless otherwise specified) - user can easily choose how to allocate buffers.
 Every compression method that uses temporary buffer (say, more than 10 bytes) - has it specified in documentation near method declaration.
+
+### ECL:Huff8 - a Huffman codec implementation highly optimized for restricted memory environments. Works per-byte (at most 256 different codes).
+- use cases - various, useful for non-equal distribution of bytes in user data;
+- all code is recursion-free, no large stack arrays allocation, fully predictable and documented memory use;
+- provides API for advanced use, medium use, trivial use;
+- works with data blocks up to 65535 bytes (uint16 size), for larger datasets data should be split in smaller blocks (see sample); larger blocks make little sense as they harm statictics;
+- can be beneficial for very small amounts of data if data set has not many unique bytes;
+- compression ratio - small..middle;
+- compression ratio limit - 8, or infinite for edge case (if all bytes are equal);
+- compressors complexity for hypothetical worst case: O(n) + O(256^2)
+- compressors complexity for average case: O(n) + O(log2(256) * 256)
+- compressors complexity for normal small data case: O(n) + O(256)
+- compressors performance - middle..high, provides different modes (used-memory/performance trade off);
+- decompressor complexity - O(n);
+- decompressor performance - middle..high;
+- compressors buffer memory consumption - from 1.5kb to 1.8kb;
+- decompressors buffer memory consumption - from 1kb to 1.75kb (can be less than 1kb for some cases, if needed);
+- static const memory consumption - low;
+- stack consumption - normal;
 
 ### ECL:NanoLZ - meticulously formatted version of traditional LZ77 algorithm.
 - use cases - various, same with other pure LZ algorithms;
@@ -117,7 +151,7 @@ See **ECL_config.h** for details on configuring, mostly controlled by ECL_USE* m
 - in case you don't have uint*_t types defined in `stdint.h` - define those types there near "user setup part";
 
 
-## PERFORMANCE BENCHMARKS
+## PERFORMANCE BENCHMARKS for version 1.0.0 (NanoLZ, ZeroEater, ZeroDevourer)
 PC benchmarks are performed for *Intel core i5-3570k @ 3.4 GHz / Windows 7 64 bit / 16gb RAM 1600 MHz*.
 All benchmarks are performed for ECL version 1.0.0.
 Compiled with GCC 7.2.0, options: `-m32 -Wall -Wextra -pedantic -O3`.
@@ -226,20 +260,69 @@ Note that prodigious decompression speed of `ZeroEater` and `ZeroDevourer` is ac
 [Silesia Corpus]: http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
 
 
+## PERFORMANCE BENCHMARKS for ECL:Huff8 / version 1.1.0
+### Windows environment - all measurements are done within 'sample/sample_huff8_blocked.cpp', 'memcpy' variant has overhead of auxiliary code in sample.
+- hardware: AMD Ryzen 5600x, 32gb 3600mhz RAM
+- compiler: gcc version 15.2.0
+- optimization options: -O3
+- Param is 'block size' parameter of the sample, which is 1..65535 (~32000 is optimal **here**)
+- **ECL_Huff8_Compress16_ULM_Raw** (* **Compress ULM** in table) uses 1.8kb extra memory (fully self-sufficient compresor)
+- **ECL_Huff8_TryCompress16_TSpec768_Raw** (* **Compress 768** in table) uses 1.5kb extra memory (fully self-sufficient compresor)
+- **ECL_Huff8_TryCompress16_TSpec512_Raw** (* **Compress 512** in table) uses 1.5kb extra memory (fully self-sufficient compresor)
+- **ECL_Huff8_Decompress_Raw** (* **Decompress** in table) uses 1kb extra memory (fully self-sufficient decompresor)
+- **ECL_Huff8_DecompressWithDTable768_Raw** (* **Decompress Fast** in table) uses 1.75kb extra memory (fully self-sufficient decompresor)
+- 'error' mark means that **a restricted compressor function** couldn't process some block (too big size)
+
+#### System performance reference for *Silesia*.tar
+
+| Param | Ratio | "Compression" replaced with memcpy | "Decompression" replaced with memcpy |
+| ----- | ----- | ---------------------------------- | ------------------------------------ |
+|  1000 | >1.00 |                         ~3300 mb/s |                           ~5800 mb/s |
+| 65535 | >1.00 |                         ~3700 mb/s |                           ~6300 mb/s |
+
+
+#### Huff8 performance for *Silesia*.tar
+| Param | Ratio | Compress ULM | Compress 768 | Compress 512 | Decompress | Decompress Fast |
+| ----- | ----- | ------------ | ------------ | ------------ | ---------- | --------------- |
+|       |       |   1816 bytes |   1552 bytes |   1536 bytes | 1024 bytes |      1792 bytes |
+|       |       |              |              |              |            |                 |
+|   100 | 0.934 |    73.5 mb/s |    70.3 mb/s |    70.1 mb/s |  54.1 mb/s |       54.3 mb/s |
+|   500 | 0.734 |   130.3 mb/s |   119.2 mb/s |   118.8 mb/s |  53.0 mb/s |      179.0 mb/s |
+|  1000 | 0.686 |   158.1 mb/s |   142.0 mb/s |   141.3 mb/s |  54.9 mb/s |      210.9 mb/s |
+|  2000 | 0.654 |**179.8 mb/s**|   159.5 mb/s |   159.0 mb/s |  57.0 mb/s |   **234.7 mb/s**|
+|  4000 | 0.634 |   200.7 mb/s |   175.8 mb/s |        error |  60.0 mb/s |      251.2 mb/s |
+|  8000 | 0.622 |   223.2 mb/s |   192.6 mb/s |        error |  63.1 mb/s |      263.4 mb/s |
+| 16000 | 0.617 |   240.6 mb/s |   205.5 mb/s |        error |  66.4 mb/s |      271.6 mb/s |
+| 32000 | 0.616 |   250.5 mb/s |   212.5 mb/s |        error |  69.8 mb/s |      276.5 mb/s |
+| 65535 | 0.619 |**258.5 mb/s**|        error |        error |  73.1 mb/s |   **280.0 mb/s**|
+
+
+#### Huff8 results for "nci" file from *Silesia*.tar
+| Param | Ratio | Compress ULM | Decompress Fast |
+| ----- | ----- | ------------ | --------------- |
+| 32000 | 0.306 |   338.3 mb/s |      391.9 mb/s |
+
+#### Huff8 results for "osdb" file from *Silesia*.tar
+| Param | Ratio | Compress ULM | Decompress Fast |
+| ----- | ----- | ------------ | --------------- |
+| 32000 | 0.836 |   224.2 mb/s |      232.2 mb/s |
+
 ## MULTITHREADING
 Codecs don't share any non-const data, so API is thread safe.
 
 
 ## SAMPLE TESTING PROGRAM
-There's sample program to compress/decompress in `NanoLZ`:Scheme1 format via command line: see **"sample/"** dir.
-It's enough to compile single **"sample/sample.cpp"** file, some building scripts are provided in same dir.
-Program is unable to compress too large files.
+There are sample programs to compress/decompress in via command line (see **"sample/"** dir):
+- `NanoLZ`:Scheme1 format (**"sample/sample_nanolz.cpp"**);
+- `Huff8` blocked variant (**"sample/sample_huff8_blocked.cpp"**);
+It's enough to compile single **"sample/<foo>.cpp"** file, some building scripts are provided in same dir.
+Samples are unable to compress too large files as they're simplified (pre-read whole file) and used for benchmarks.
 
 
 ## USAGE
 In general usage is pretty straightforward - you call \*Compress method, you call \*Decompress method - that's it.
 - usage samples present in headers of each codec;
-- see **"sample/sample.cpp"** example program to encode/decode files;
+- see **"sample/sample_nanolz.cpp"**, **"sample/sample_huff8_blocked.cpp"** example programs to encode/decode files;
 - you can find examples in tests located in **"tests/"** dir.
 
 
