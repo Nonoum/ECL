@@ -129,9 +129,9 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
 #else // default - ECL_Huff8_Compress16_ULM_Raw (more memory usage, not restricted)
             // *compress extra buffers for work
             uint32_t buf1024[1024/4];
-            uint8_t buf256_u8[256/1];
+            uint8_t buf44_u8[44/1];
             uint8_t buf768[768/1];
-            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1024, buf256_u8, buf768, comp_dst, comp_alloc_size);
+            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1024, buf44_u8, buf768, comp_dst, comp_alloc_size);
 #endif
 
             if(! csize) {

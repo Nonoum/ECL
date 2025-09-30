@@ -369,10 +369,12 @@ NTEST(test_Huff8_depth_edges) {
     // analyze/compress buffers - declared, set magic outside of loops to minimize reallocations. magic should be checked after each non-const access
     std::vector<uint16_t> buf512_u16;
     std::vector<uint32_t> buf1024_u32;
+    std::vector<uint8_t> buf44_u8;
     std::vector<uint8_t> buf256_u8;
     std::vector<uint8_t> buf768_u8;
     ECL_TEST_MAGIC_U16_RESIZE(buf512_u16, 256);
     ECL_TEST_MAGIC_U32_RESIZE(buf1024_u32, 256);
+    ECL_TEST_MAGIC_RESIZE(buf44_u8, 44);
     ECL_TEST_MAGIC_RESIZE(buf256_u8, 256);
     ECL_TEST_MAGIC_RESIZE(buf768_u8, 768);
     // extra compress* API
@@ -436,26 +438,26 @@ NTEST(test_Huff8_depth_edges) {
             }
             ECL_TEST_MAGIC_RESIZE(tmp_compressed, enough_size);
 
-            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data(), tmp_compressed.data(), enough_size);
+            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024_u32.data(), buf44_u8.data(), buf768_u8.data(), tmp_compressed.data(), enough_size);
             ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
-            ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+            ECL_TEST_MAGIC_VALIDATE(buf44_u8);
             ECL_TEST_MAGIC_VALIDATE(buf768_u8);
             ECL_TEST_MAGIC_VALIDATE(tmp_compressed);
             const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
 
             { // extra API tests
-                const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data());
+                const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024_u32.data(), buf44_u8.data(), buf768_u8.data());
                 ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
-                ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+                ECL_TEST_MAGIC_VALIDATE(buf44_u8);
                 ECL_TEST_MAGIC_VALIDATE(buf768_u8);
 
-                const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024_u32.data(), buf256_u8.data(), buf768_u8.data(), buf512_u16.data());
+                const auto a2k3_size = ECL_Huff8_Analyze16_ULM_2k3(src_data, src_size, 1, buf1024_u32.data(), buf44_u8.data(), buf768_u8.data(), buf512_u16.data());
                 ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
-                ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+                ECL_TEST_MAGIC_VALIDATE(buf44_u8);
                 ECL_TEST_MAGIC_VALIDATE(buf768_u8);
 
                 ECL_TEST_COMPARE(csize, a2k_size);
-                ECL_TEST_COMPARE(csize, a2k5_size);
+                ECL_TEST_COMPARE(csize, a2k3_size);
 
                 ECL_Huff8_FillFreqs16(src_data, src_size, 1, buf512_u16.data());
                 ECL_TEST_MAGIC_U16_VALIDATE(buf512_u16);
@@ -478,9 +480,9 @@ NTEST(test_Huff8_depth_edges) {
                         ECL_TEST_COMPARE(max_depth_ctree, tree_depth); // validate depth expectations
                     }
 
-                    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768_u8.data(), buf1024_u32.data(), buf256_u8.data());
+                    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768_u8.data(), buf1024_u32.data(), buf44_u8.data());
                     ECL_TEST_MAGIC_U32_VALIDATE(buf1024_u32);
-                    ECL_TEST_MAGIC_VALIDATE(buf256_u8);
+                    ECL_TEST_MAGIC_VALIDATE(buf44_u8);
 
                     const auto max_depth_tspec1024 = ECL_Huff8_GetMaxDepthTSpec1024(buf1024_u32.data());
                     ECL_TEST_COMPARE(max_depth_ctree, max_depth_tspec1024);

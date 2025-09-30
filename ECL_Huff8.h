@@ -266,12 +266,12 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec512(const uint8_t* src, u
     Similar to ECL_Huff8_Compress16_ULM but doesn't write any encoded output, can be used to calculate required output buffer size.
     returns amount of bits needed for compression (or 0 in case of error).
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768);
 
 /*
     Similar to ECL_Huff8_Analyze16_ULM but requires an extra buffer: buf512 is uint16_t[256] and works a bit faster.
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint16_t* buf512);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint16_t* buf512);
 
 
 
@@ -305,10 +305,10 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src,
     The function can only fail if parameters are incorrect (e.g. NULL pointers) or dst_size is insufficient.
     Requires extra buffers for work:
         - buf1024 is uint32_t[256]; - uint32_t aligned
-        - buf256 is uint8_t[256];
+        - buf44 is uint8_t[44];
         - buf768 is uint8_t[768];
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM but:
@@ -341,10 +341,10 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, u
     The function can only fail if parameters are incorrect (e.g. NULL pointers) or dst_size is insufficient.
     Requires extra buffers for work:
         - buf1024 is uint32_t[256]; - uint32_t aligned
-        - buf256 is uint8_t[256];
+        - buf44 is uint8_t[44];
         - buf768 is uint8_t[768];
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM_Raw but:

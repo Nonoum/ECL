@@ -680,25 +680,24 @@ uint32_t ECL_Huff8_Evaluate16_ForTSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 
 
-uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf256, uint8_t* buf768) {
-    uint16_t* ECL_SCOPED_CONST freqs_buf = (uint16_t*)buf1024;
+uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf44, uint8_t* buf768) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf256 == NULL) || (buf768 == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, freqs_buf);
-    n_unique = ECL_Huff8_Freqs16ToCTree768(freqs_buf, buf256, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     if(n_unique < 2) {
         return 9; /* 9 bits */
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf256);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
 
     result_bits = (n_unique * 10) - 1;
     for(uint32_t i = 0, ofs = 0; i < bytes_cnt; ++i, ofs += interval) {
@@ -708,26 +707,25 @@ uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_
     return result_bits;
 }
 
-uint32_t ECL_Huff8_Analyze16_ULM_2k5(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf256, uint8_t* buf768, uint16_t* buf512) {
-    uint16_t* ECL_SCOPED_CONST freqs_buf = (uint16_t*)buf1024;
+uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf44, uint8_t* buf768, uint16_t* buf512) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf256 == NULL) || (buf768 == NULL) || (buf512 == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL) || (buf512 == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, freqs_buf);
-    memcpy(buf512, freqs_buf, 512);
-    n_unique = ECL_Huff8_Freqs16ToCTree768(freqs_buf, buf256, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
+    memcpy(buf512, buf1024, 512);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     if(n_unique < 2) {
         return 9; /* 9 bits */
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf256);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
 
     result_bits = (n_unique * 10) - 1;
     for(uint16_t i = 0; i < 256; ++i) {
@@ -881,13 +879,12 @@ uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_c
 
 
 
-uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
-    uint16_t* ECL_SCOPED_CONST freqs_buf = (uint16_t*)buf1024;
+uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf256 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
@@ -895,16 +892,16 @@ uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16
 
     ECL_ASSERT(buf1024 == ECL_GetAlignedPointer4((uint8_t*)buf1024));
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, freqs_buf);
-    n_unique = ECL_Huff8_Freqs16ToCTree768(freqs_buf, buf256, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     result_bits = ECL_Huff8_EvaluateTreeByN(n_unique);
-    ECL_Huff8_CompressCTree768(buf768, buf256, 128, wstream);
+    ECL_Huff8_CompressCTree768(buf768, (uint8_t*)buf1024, ECL_HUFF8_TREE_DEPTH_MAX_ULM, wstream);
 
     if(n_unique < 2) {
         return result_bits;
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf256);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
     result_bits += ECL_Huff8_CompressDataWithTSpec1024(src, bytes_cnt, interval, buf1024, wstream);
     return result_bits;
 }
@@ -972,12 +969,12 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 #ifdef ECL_WSTREAM_JHx_Init
 
-uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
     uint32_t result;
     ECL_WSTREAM_Type wstream;
     ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    result = ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf256, buf768, &wstream);
+    result = ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf44, buf768, &wstream);
     if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
         return 0;
     }

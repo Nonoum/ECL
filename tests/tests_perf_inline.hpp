@@ -108,7 +108,7 @@ NTEST(test_perf_Huff8_ULM_compressor) {
     // analyze/compress buffers
     uint16_t buf512[256];
     uint32_t buf1024[256];
-    uint8_t buf256[256];
+    uint8_t buf44[44];
     uint8_t buf768[768];
     // decompress buffer
     uint16_t buf1024_u16[512];
@@ -123,14 +123,14 @@ NTEST(test_perf_Huff8_ULM_compressor) {
 
     uint32_t csize = 0;
     for(int i = 0; i < ECL_huff8_test_perf_data_repeats; ++i) {
-        csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
+        csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf44, buf768, tmp.data(), enough_size);
     }
-    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
-    const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024, buf256, buf768, buf512);
+    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf44, buf768);
+    const auto a2k3_size = ECL_Huff8_Analyze16_ULM_2k3(src_data, src_size, 1, buf1024, buf44, buf768, buf512);
     const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
 
     ECL_TEST_COMPARE(csize, a2k_size);
-    ECL_TEST_COMPARE(csize, a2k5_size);
+    ECL_TEST_COMPARE(csize, a2k3_size);
 
     tmp_output.resize(src_size);
     auto consumed_size = ECL_Huff8_Decompress_Raw(tmp.data(), comp_size, buf1024_u16, tmp_output.data(), src_size, 1);
@@ -152,7 +152,7 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     // analyze/compress buffers
     uint16_t buf512[256];
     uint32_t buf1024[256];
-    uint8_t buf256[256];
+    uint8_t buf44[44];
     uint8_t buf768[768];
     // decompress buffer
     uint16_t buf1024_u16[512];
@@ -165,13 +165,13 @@ NTEST(test_perf_Huff8_ULM_decompressor) {
     ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
-    const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
-    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
-    const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024, buf256, buf768, buf512);
+    const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf44, buf768, tmp.data(), enough_size);
+    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf44, buf768);
+    const auto a2k3_size = ECL_Huff8_Analyze16_ULM_2k3(src_data, src_size, 1, buf1024, buf44, buf768, buf512);
     const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
 
     ECL_TEST_COMPARE(csize, a2k_size);
-    ECL_TEST_COMPARE(csize, a2k5_size);
+    ECL_TEST_COMPARE(csize, a2k3_size);
 
     tmp_output.resize(src_size);
     ECL_usize consumed_size = 0;
@@ -196,7 +196,7 @@ NTEST(test_perf_Huff8_ULM_decompressor_dtable) {
     // analyze/compress buffers
     uint16_t buf512[256];
     uint32_t buf1024[256];
-    uint8_t buf256[256];
+    uint8_t buf44[44];
     uint8_t buf768[768];
     // decompress buffer
     uint16_t buf1024_u16[512];
@@ -210,13 +210,13 @@ NTEST(test_perf_Huff8_ULM_decompressor_dtable) {
     ECL_TEST_ASSERT(enough_size <= 0xFFFF); // actually needed only for 'ECL_usize == uint16_t' (#define ECL_USE_BITNESS_16) version - make sure it doesn't truncate
     ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
 
-    const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf256, buf768, tmp.data(), enough_size);
-    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf256, buf768);
-    const auto a2k5_size = ECL_Huff8_Analyze16_ULM_2k5(src_data, src_size, 1, buf1024, buf256, buf768, buf512);
+    const auto csize = ECL_Huff8_Compress16_ULM_Raw(src_data, src_size, 1, buf1024, buf44, buf768, tmp.data(), enough_size);
+    const auto a2k_size = ECL_Huff8_Analyze16_ULM(src_data, src_size, 1, buf1024, buf44, buf768);
+    const auto a2k3_size = ECL_Huff8_Analyze16_ULM_2k3(src_data, src_size, 1, buf1024, buf44, buf768, buf512);
     const auto comp_size = (csize + 7) / 8; // compressed size in bytes rounded up
 
     ECL_TEST_COMPARE(csize, a2k_size);
-    ECL_TEST_COMPARE(csize, a2k5_size);
+    ECL_TEST_COMPARE(csize, a2k3_size);
 
     tmp_output.resize(src_size);
     ECL_usize consumed_size = 0;
