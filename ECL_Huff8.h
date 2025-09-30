@@ -187,28 +187,26 @@ ECL_EXPORTED_API uint16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, 
     'out_tspec1024' is output spec data in tspec1024 format: 256 uint32_t values (aligned allocation), each value[i] representing info about how to encode [i]:
         - top 8 bits is uint8_t amount of bits in the bitcode;
         - lower 24 bits is bitcode;
-    - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
-        - for ULM 'depth_buf_x2' size is "2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM"; ULM covers any user data up to 64k bytes (actually more).
+    - 'depth_buf' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
+        - for ULM 'depth_buf' size is ECL_HUFF8_TREE_DEPTH_MAX_ULM; ULM covers any user data up to 64k bytes (uint16_t size).
 
     The function can't fail if 'ctree768' is result of ECL_Huff8_Freqs16ToCTree768 and 'n_unique' >= 2.
 */
-ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_tspec1024/*[1024/4 == 256]*/, uint8_t* depth_buf);
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
-
     Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec768 can't fit all needed codes due to depth limitation.
+    'depth_buf' size is ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768;
     returns 0 if failed, > 0 otherwise (may be defined some useful non-zero result in future).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf);
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
-
     Unlike 'ECL_Huff8_CTree768ToTSpec1024_ULM' the function can fail if tspec512 can't fit all needed codes due to depth limitation.
+    'depth_buf' size is ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512;
     returns 0 if failed, > 0 otherwise (may be defined some useful non-zero result in future).
 */
-ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf_x2);
+ECL_EXPORTED_API int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf);
 
 
 
@@ -220,7 +218,7 @@ ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthCTree768(const uint8_t* ctree768,
 /*
     Returns maximum tree depth (see ECL_HUFF8_TREE_DEPTH_* constants) used in the specific tspec1024.
 */
-ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec1024(const uint32_t* tspec1024/*[256]*/);
+ECL_EXPORTED_API uint16_t ECL_Huff8_GetMaxDepthTSpec1024(const uint32_t* tspec1024/*[1024/4 == 256]*/);
 
 /*
     Returns maximum tree depth (see ECL_HUFF8_TREE_DEPTH_* constants) used in the specific tspec768.
@@ -248,7 +246,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_EvaluateTree(const uint8_t* ctree768);
     Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec1024 (same as compression without saving output anywhere).
     returns amount of bits needed for compression of data stream (without tree), or 0 if can't compress it with given tspec1024.
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[1024/4 == 256]*/);
 
 /*
     Effectively a dry-run of ECL_Huff8_CompressDataWithTSpec768 (same as compression without saving output anywhere).
@@ -266,12 +264,12 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Evaluate16_ForTSpec512(const uint8_t* src, u
     Similar to ECL_Huff8_Compress16_ULM but doesn't write any encoded output, can be used to calculate required output buffer size.
     returns amount of bits needed for compression (or 0 in case of error).
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768);
 
 /*
     Similar to ECL_Huff8_Analyze16_ULM but requires an extra buffer: buf512 is uint16_t[256] and works a bit faster.
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint16_t* buf512);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, uint16_t* buf512);
 
 
 
@@ -290,7 +288,7 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16
 ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream);
 
 /* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
-ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[256]*/, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[1024/4 == 256]*/, ECL_WSTREAM_Type* wstream);
 
 /* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
 ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint16_t* tspec768/*[768/2 == 384]*/, ECL_WSTREAM_Type* wstream);
@@ -304,32 +302,34 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src,
     Returns amount of BITS written to 'dst' in case of success, or 0 in case of error.
     The function can only fail if parameters are incorrect (e.g. NULL pointers) or dst_size is insufficient.
     Requires extra buffers for work:
-        - buf1024 is uint32_t[256]; - uint32_t aligned
-        - buf44 is uint8_t[44];
+        - buf1048 is uint32_t[262]; - uint32_t aligned
         - buf768 is uint8_t[768];
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM but:
         - has diffrent (smaller) extra buffers:
-            - buf800 is uint16_t[400]; - uint16_t aligned
+            - buf784 is uint16_t[392]; - uint16_t aligned
             - buf768 is uint8_t[768];
         - additionally can fail if:
             - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf784/*[784/2 == 392]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM but:
         - has diffrent (smaller) extra buffers:
-            - buf536 is uint16_t[268]; - uint16_t aligned
+            - buf512 is uint16_t[256]; - uint16_t aligned
             - buf256 is uint8_t[256];
             - buf768 is uint8_t[768];
         - additionally can fail if:
             - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
+
+    This function as-is is more for testing tspec512-related code, it uses about the same amount of RAM as ECL_Huff8_TryCompress16_TSpec768 and *TSpec768 one is preferable.
+    TSpec512 is reasonable if the tspec itself needs to be stored and this can save 256 bytes memory comparing to TSpec768.
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf512/*[512/2 == 256]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream);
 
 
 #ifdef ECL_WSTREAM_JHx_Init /* *Raw functions require ECL_WSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_WSTREAM_Type is chosen */
@@ -340,32 +340,34 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, u
     Returns amount of BITS written to 'dst' in case of success, or 0 in case of error.
     The function can only fail if parameters are incorrect (e.g. NULL pointers) or dst_size is insufficient.
     Requires extra buffers for work:
-        - buf1024 is uint32_t[256]; - uint32_t aligned
-        - buf44 is uint8_t[44];
+        - buf1048 is uint32_t[262]; - uint32_t aligned
         - buf768 is uint8_t[768];
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM_Raw but:
         - has diffrent (smaller) extra buffers:
-            - buf800 is uint16_t[400]; - uint16_t aligned
+            - buf784 is uint16_t[392]; - uint16_t aligned
             - buf768 is uint8_t[768];
         - additionally can fail if:
             - 'bytes_cnt' > 5776 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[800/2 == 400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf784/*[784/2 == 392]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 
 /*
     Similar to ECL_Huff8_Compress16_ULM_Raw but:
         - has diffrent (smaller) extra buffers:
-            - buf536 is uint16_t[268]; - uint16_t aligned
+            - buf512 is uint16_t[256]; - uint16_t aligned
             - buf256 is uint8_t[256];
             - buf768 is uint8_t[768];
         - additionally can fail if:
             - 'bytes_cnt' > 841 and src data has unlucky combination/statictics (roughly saying, the bigger 'bytes_cnt' - the bigger is such a chance).
+
+    This function as-is is more for testing tspec512-related code, it uses about the same amount of RAM as ECL_Huff8_TryCompress16_TSpec768_Raw and *TSpec768 one is preferable.
+    TSpec512 is reasonable if the tspec itself needs to be stored and this can save 256 bytes memory comparing to TSpec768.
 */
-ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[536/2 == 268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
+ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf512/*[512/2 == 256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size);
 
 #endif
 

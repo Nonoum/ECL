@@ -285,9 +285,8 @@ uint16_t ECL_Huff8_Freqs16ToCTree768(uint16_t* freqs/*[256]*/, uint8_t* buf256, 
 
 
 
-void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_tspec1024/*[256]*/, uint8_t* depth_buf_x2) {
-    uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; /* 0: entered left; 1: entered right; allocate arrays within free buffer */
-    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + ECL_HUFF8_TREE_DEPTH_MAX_ULM; /* -:- same size */
+void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_tspec1024/*[1024/4 == 256]*/, uint8_t* depth_buf) {
+    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf;
     uint16_t tree_record_pos = 0; /* root */
     uint16_t stack_depth = 0;
     uint32_t tmp_code = 0; /* could be smaller for smaller datasets: */
@@ -297,7 +296,7 @@ void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_ts
     uint8_t checking_side = 0; /* 0/1 (left/right) */
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((ctree768 == NULL) || (out_tspec1024 == NULL) || (depth_buf_x2 == NULL)) {
+    if((ctree768 == NULL) || (out_tspec1024 == NULL) || (depth_buf == NULL)) {
         ECL_ASSERT(0);
         return;
     }
@@ -320,32 +319,30 @@ void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_ts
             ECL_ASSERT(out_tspec1024[side_value] == 0);
             out_tspec1024[side_value] = ((tmp_code >> (32 - code_len)) & 0x00FFFFFF) | (((uint32_t)code_len) << 24);
             /**/
+            tmp_code <<= 1; /* erase leading bit */
+            --code_len;
             if(checking_side) { /* checked right - return back thru stack */
                 uint8_t quit = 1;
                 while(stack_depth) {
                     --stack_depth;
                     tree_record_pos = stack_ptrs[stack_depth];
-                    tmp_code <<= 1; /* erase leading bit */
                     --code_len;
-                    if(stack_flags[stack_depth] == 0) { /* 'left' was entered there - return to that record */
-                        /* checking_side = 1; */ /* already 1 in this codepath */
+                    if(tmp_code & 0x80000000) { /* 'right' was entered there - keep returning deeper */
                         tmp_code <<= 1; /* erase leading bit */
-                        --code_len;
+                    } else { /* 'left' was entered there - return to that record */
+                        tmp_code <<= 1; /* erase leading bit */
                         quit = 0;
                         break;
-                    } /* else - 'right' was entered there - keep returning deeper */
+                    }
                 }
                 if(quit) {
                     break;
                 }
             } else { /* else - go to checking 'right' */
                 checking_side = 1;
-                tmp_code <<= 1; /* erase leading bit */
-                --code_len;
             }
         } else {
             ECL_ASSERT(stack_depth < (ECL_HUFF8_TREE_DEPTH_MAX_ULM - 1)); /* 1 last bit for a leaf - verify spec capacity */
-            stack_flags[stack_depth] = checking_side;
             stack_ptrs[stack_depth] = (uint8_t)tree_record_pos;
             ++stack_depth;
             tree_record_pos = side_value;
@@ -354,9 +351,8 @@ void ECL_Huff8_CTree768ToTSpec1024_ULM(const uint8_t* ctree768, uint32_t* out_ts
     } while(1);
 }
 
-int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf_x2) {
-    uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; /* 0: entered left; 1: entered right; allocate arrays within free buffer */
-    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768; /* -:- same size */
+int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspec768/*[768/2 == 384]*/, uint8_t* depth_buf) {
+    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf;
     uint8_t* ECL_SCOPED_CONST nbits_table = (uint8_t*)(out_tspec768 + 256); /* tspec768 is uint16_t[256] + uint8_t[256] in series */
     uint16_t tree_record_pos = 0; /* root */
     uint16_t stack_depth = 0;
@@ -365,7 +361,7 @@ int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspe
     uint8_t checking_side = 0; /* 0/1 (left/right) */
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((ctree768 == NULL) || (out_tspec768 == NULL) || (depth_buf_x2 == NULL)) {
+    if((ctree768 == NULL) || (out_tspec768 == NULL) || (depth_buf == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
@@ -389,34 +385,32 @@ int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspe
             out_tspec768[side_value] = (tmp_code >> (16 - code_len));
             nbits_table[side_value] = code_len;
             /**/
+            tmp_code <<= 1; /* erase leading bit */
+            --code_len;
             if(checking_side) { /* checked right - return back thru stack */
                 uint8_t quit = 1;
                 while(stack_depth) {
                     --stack_depth;
                     tree_record_pos = stack_ptrs[stack_depth];
-                    tmp_code <<= 1; /* erase leading bit */
                     --code_len;
-                    if(stack_flags[stack_depth] == 0) { /* 'left' was entered there - return to that record */
-                        /* checking_side = 1; */ /* already 1 in this codepath */
+                    if(tmp_code & 0x8000) { /* 'right' was entered there - keep returning deeper */
                         tmp_code <<= 1; /* erase leading bit */
-                        --code_len;
+                    } else { /* 'left' was entered there - return to that record */
+                        tmp_code <<= 1; /* erase leading bit */
                         quit = 0;
                         break;
-                    } /* else - 'right' was entered there - keep returning deeper */
+                    }
                 }
                 if(quit) {
                     break;
                 }
             } else { /* else - go to checking 'right' */
                 checking_side = 1;
-                tmp_code <<= 1; /* erase leading bit */
-                --code_len;
             }
         } else {
             if(stack_depth >= (ECL_HUFF8_TREE_DEPTH_MAX_TSPEC768 - 1)) { /* 1 last bit for a leaf - verify spec capacity */
                 return 0;
             }
-            stack_flags[stack_depth] = checking_side;
             stack_ptrs[stack_depth] = (uint8_t)tree_record_pos;
             ++stack_depth;
             tree_record_pos = side_value;
@@ -426,9 +420,8 @@ int16_t ECL_Huff8_CTree768ToTSpec768(const uint8_t* ctree768, uint16_t* out_tspe
     return 1;
 }
 
-int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf_x2) {
-    uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; /* 0: entered left; 1: entered right; allocate arrays within free buffer */
-    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512; /* -:- same size */
+int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspec512/*[512/2 == 256]*/, uint8_t* depth_buf) {
+    uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf;
     uint16_t tree_record_pos = 0; /* root */
     uint16_t stack_depth = 0;
     uint16_t tmp_code = 0;
@@ -436,7 +429,7 @@ int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspe
     uint8_t checking_side = 0; /* 0/1 (left/right) */
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((ctree768 == NULL) || (out_tspec512 == NULL) || (depth_buf_x2 == NULL)) {
+    if((ctree768 == NULL) || (out_tspec512 == NULL) || (depth_buf == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
@@ -459,34 +452,32 @@ int16_t ECL_Huff8_CTree768ToTSpec512(const uint8_t* ctree768, uint16_t* out_tspe
             ECL_ASSERT(out_tspec512[side_value] == 0);
             out_tspec512[side_value] = ((tmp_code >> (16 - code_len)) & 0x0FFF) | (((uint16_t)code_len) << 12);
             /**/
+            tmp_code <<= 1; /* erase leading bit */
+            --code_len;
             if(checking_side) { /* checked right - return back thru stack */
                 uint8_t quit = 1;
                 while(stack_depth) {
                     --stack_depth;
                     tree_record_pos = stack_ptrs[stack_depth];
-                    tmp_code <<= 1; /* erase leading bit */
                     --code_len;
-                    if(stack_flags[stack_depth] == 0) { /* 'left' was entered there - return to that record */
-                        /* checking_side = 1; */ /* already 1 in this codepath */
+                    if(tmp_code & 0x8000) { /* 'right' was entered there - keep returning deeper */
                         tmp_code <<= 1; /* erase leading bit */
-                        --code_len;
+                    } else { /* 'left' was entered there - return to that record */
+                        tmp_code <<= 1; /* erase leading bit */
                         quit = 0;
                         break;
-                    } /* else - 'right' was entered there - keep returning deeper */
+                    }
                 }
                 if(quit) {
                     break;
                 }
             } else { /* else - go to checking 'right' */
                 checking_side = 1;
-                tmp_code <<= 1; /* erase leading bit */
-                --code_len;
             }
         } else {
             if(stack_depth >= (ECL_HUFF8_TREE_DEPTH_MAX_TSPEC512 - 1)) { /* 1 last bit for a leaf - verify spec capacity */
                 return 0;
             }
-            stack_flags[stack_depth] = checking_side;
             stack_ptrs[stack_depth] = (uint8_t)tree_record_pos;
             ++stack_depth;
             tree_record_pos = side_value;
@@ -680,57 +671,57 @@ uint32_t ECL_Huff8_Evaluate16_ForTSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 
 
-uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf44, uint8_t* buf768) {
+uint32_t ECL_Huff8_Analyze16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1048 == NULL) || (buf768 == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
-    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1048);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1048, (uint8_t*)(buf1048 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     if(n_unique < 2) {
         return 9; /* 9 bits */
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1048, ((uint8_t*)buf1048) + 1024/* 24-byte buffer after the spec */);
 
     result_bits = (n_unique * 10) - 1;
     for(uint32_t i = 0, ofs = 0; i < bytes_cnt; ++i, ofs += interval) {
-        ECL_SCOPED_CONST uint32_t n_bits = (buf1024[src[ofs]] >> 24) & 0x0FF;
+        ECL_SCOPED_CONST uint32_t n_bits = (buf1048[src[ofs]] >> 24) & 0x0FF;
         result_bits += n_bits;
     }
     return result_bits;
 }
 
-uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024, uint8_t* buf44, uint8_t* buf768, uint16_t* buf512) {
+uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, uint16_t* buf512) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL) || (buf512 == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1048 == NULL) || (buf768 == NULL) || (buf512 == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
-    memcpy(buf512, buf1024, 512);
-    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1048);
+    memcpy(buf512, buf1048, 512);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1048, (uint8_t*)(buf1048 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     if(n_unique < 2) {
         return 9; /* 9 bits */
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1048, ((uint8_t*)buf1048) + 1024/* 24-byte buffer after the spec */);
 
     result_bits = (n_unique * 10) - 1;
     for(uint16_t i = 0; i < 256; ++i) {
         if(buf512[i]) {
-            ECL_SCOPED_CONST uint32_t n_bits = (buf1024[i] >> 24) & 0x0FF;
+            ECL_SCOPED_CONST uint32_t n_bits = (buf1048[i] >> 24) & 0x0FF;
             result_bits += (buf512[i] * n_bits);
         }
     }
@@ -879,89 +870,86 @@ uint32_t ECL_Huff8_CompressDataWithTSpec512(const uint8_t* src, uint16_t bytes_c
 
 
 
-uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
+uint32_t ECL_Huff8_Compress16_ULM(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1024 == NULL) || (buf44 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf1048 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
 
-    ECL_ASSERT(buf1024 == ECL_GetAlignedPointer4((uint8_t*)buf1024));
+    ECL_ASSERT(buf1048 == ECL_GetAlignedPointer4((uint8_t*)buf1048));
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1024);
-    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1024, (uint8_t*)(buf1024 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, (uint16_t*)buf1048);
+    n_unique = ECL_Huff8_Freqs16ToCTree768((uint16_t*)buf1048, (uint8_t*)(buf1048 + 128)/*move by 512 bytes, use next 256*/, buf768, 0);
 
     result_bits = ECL_Huff8_EvaluateTreeByN(n_unique);
-    ECL_Huff8_CompressCTree768(buf768, (uint8_t*)buf1024, ECL_HUFF8_TREE_DEPTH_MAX_ULM, wstream);
+    ECL_Huff8_CompressCTree768(buf768, (uint8_t*)buf1048, ECL_HUFF8_TREE_DEPTH_MAX_ULM, wstream);
 
     if(n_unique < 2) {
         return result_bits;
     }
-    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1024, buf44);
-    result_bits += ECL_Huff8_CompressDataWithTSpec1024(src, bytes_cnt, interval, buf1024, wstream);
+    ECL_Huff8_CTree768ToTSpec1024_ULM(buf768, buf1048, ((uint8_t*)buf1048) + 1024/* 24-byte buffer after the spec */);
+    result_bits += ECL_Huff8_CompressDataWithTSpec1024(src, bytes_cnt, interval, buf1048, wstream);
     return result_bits;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
-    uint16_t* ECL_SCOPED_CONST freqs_buf = buf800;
-    uint8_t* ECL_SCOPED_CONST buf256 = ((uint8_t*)buf800) + 512;
+uint32_t ECL_Huff8_TryCompress16_TSpec768(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf784/*[784/2 == 392]*/, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf800 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf784 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
-    ECL_ASSERT(buf800 == ECL_GetAlignedPointer2((uint8_t*)buf800));
+    ECL_ASSERT(buf784 == ECL_GetAlignedPointer2((uint8_t*)buf784));
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, freqs_buf);
-    n_unique = ECL_Huff8_Freqs16ToCTree768(freqs_buf, buf256, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, buf784);
+    n_unique = ECL_Huff8_Freqs16ToCTree768(buf784, ((uint8_t*)buf784) + 512, buf768, 0);
 
     result_bits = ECL_Huff8_EvaluateTreeByN(n_unique);
-    ECL_Huff8_CompressCTree768(buf768, buf256, 128, wstream);
+    ECL_Huff8_CompressCTree768(buf768, (uint8_t*)buf784, ECL_HUFF8_TREE_DEPTH_MAX_ULM, wstream);
 
-    if(n_unique < 2) {
-        return result_bits;
+    if(n_unique >= 2) {
+        if(! ECL_Huff8_CTree768ToTSpec768(buf768, buf784, ((uint8_t*)buf784) + 768)) {
+            return 0; /* maximum tree depth exceeds TSpec768 capacity */
+        }
+        result_bits += ECL_Huff8_CompressDataWithTSpec768(src, bytes_cnt, interval, buf784, wstream);
     }
-    if(! ECL_Huff8_CTree768ToTSpec768(buf768, buf800, ((uint8_t*)buf800) + 768)) {
-        return 0; /* maximum tree depth exceeds TSpec768 capacity */
-    }
-    result_bits += ECL_Huff8_CompressDataWithTSpec768(src, bytes_cnt, interval, buf800, wstream);
     return result_bits;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
-    uint16_t* ECL_SCOPED_CONST freqs_buf = buf536;
+uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf512/*[256]*/, uint8_t* buf256, uint8_t* buf768, ECL_WSTREAM_Type* wstream) {
     uint16_t n_unique;
     uint32_t result_bits;
 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
-    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf536 == NULL) || (buf256 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
+    if((src == NULL) || (! bytes_cnt) || (! interval) || (buf512 == NULL) || (buf256 == NULL) || (buf768 == NULL) || (wstream == NULL)) {
         ECL_ASSERT(0);
         return 0;
     }
 #endif
-    ECL_ASSERT(buf536 == ECL_GetAlignedPointer2((uint8_t*)buf536));
+    ECL_ASSERT(buf512 == ECL_GetAlignedPointer2((uint8_t*)buf512));
 
-    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, freqs_buf);
-    n_unique = ECL_Huff8_Freqs16ToCTree768(freqs_buf, buf256, buf768, 0);
+    ECL_Huff8_FillFreqs16(src, bytes_cnt, interval, buf512);
+    n_unique = ECL_Huff8_Freqs16ToCTree768(buf512, buf256, buf768, 0);
 
     result_bits = ECL_Huff8_EvaluateTreeByN(n_unique);
-    ECL_Huff8_CompressCTree768(buf768, buf256, 128, wstream);
 
-    if(n_unique < 2) {
-        return result_bits;
+    if(n_unique >= 2) {
+        if(! ECL_Huff8_CTree768ToTSpec512(buf768, buf512, buf256)) {
+            return 0; /* maximum tree depth exceeds TSpec512 capacity */
+        }
     }
-    if(! ECL_Huff8_CTree768ToTSpec512(buf768, buf536, ((uint8_t*)buf536) + 512)) {
-        return 0; /* maximum tree depth exceeds TSpec512 capacity */
+    ECL_Huff8_CompressCTree768(buf768, buf256, ECL_HUFF8_TREE_DEPTH_MAX_ULM, wstream);
+    if(n_unique >= 2) {
+        result_bits += ECL_Huff8_CompressDataWithTSpec512(src, bytes_cnt, interval, buf512, wstream);
     }
-    result_bits += ECL_Huff8_CompressDataWithTSpec512(src, bytes_cnt, interval, buf536, wstream);
     return result_bits;
 }
 
@@ -969,36 +957,36 @@ uint32_t ECL_Huff8_TryCompress16_TSpec512(const uint8_t* src, uint16_t bytes_cnt
 
 #ifdef ECL_WSTREAM_JHx_Init
 
-uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1024/*[256]*/, uint8_t* buf44, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+uint32_t ECL_Huff8_Compress16_ULM_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint32_t* buf1048/*[1048/4 == 262]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
     uint32_t result;
     ECL_WSTREAM_Type wstream;
     ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    result = ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1024, buf44, buf768, &wstream);
+    result = ECL_Huff8_Compress16_ULM(src, bytes_cnt, interval, buf1048, buf768, &wstream);
     if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
         return 0;
     }
     return result;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf800/*[400]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+uint32_t ECL_Huff8_TryCompress16_TSpec768_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf784/*[784/2 == 392]*/, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
     uint32_t result;
     ECL_WSTREAM_Type wstream;
     ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    result = ECL_Huff8_TryCompress16_TSpec768(src, bytes_cnt, interval, buf800, buf768, &wstream);
+    result = ECL_Huff8_TryCompress16_TSpec768(src, bytes_cnt, interval, buf784, buf768, &wstream);
     if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
         return 0;
     }
     return result;
 }
 
-uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf536/*[268]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
+uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, uint16_t* buf512/*[256]*/, uint8_t* buf256, uint8_t* buf768, uint8_t* dst, ECL_usize dst_size) {
     uint32_t result;
     ECL_WSTREAM_Type wstream;
     ECL_WSTREAM_JHx_Init(&wstream, dst, dst_size);
     ECL_ASSERT(bytes_cnt && interval);
-    result = ECL_Huff8_TryCompress16_TSpec512(src, bytes_cnt, interval, buf536, buf256, buf768, &wstream);
+    result = ECL_Huff8_TryCompress16_TSpec512(src, bytes_cnt, interval, buf512, buf256, buf768, &wstream);
     if(! wstream.is_valid) { /* hardcoded JH-relation guaranteed by ECL_WSTREAM_JHx_Init presence */
         return 0;
     }

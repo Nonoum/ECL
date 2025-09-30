@@ -117,21 +117,20 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
             const auto csize = ECL_usize(portion_size) * 8;
 #elif 0 // try ECL_Huff8_TryCompress16_TSpec512_Raw (less memory usage, restricted block size - depends on actual data)
             // *compress extra buffers for work
-            uint16_t buf536_u16[536/2];
+            uint16_t buf512_u16[512/2];
             uint8_t buf256_u8[256/1];
             uint8_t buf768[768/1];
-            const auto csize = ECL_Huff8_TryCompress16_TSpec512_Raw(src.data() + start, uint16_t(portion_size), 1, buf536_u16, buf256_u8, buf768, comp_dst, comp_alloc_size);
-#elif 1 // try ECL_Huff8_TryCompress16_TSpec768_Raw (less memory usage, restricted block size - depends on actual data)
+            const auto csize = ECL_Huff8_TryCompress16_TSpec512_Raw(src.data() + start, uint16_t(portion_size), 1, buf512_u16, buf256_u8, buf768, comp_dst, comp_alloc_size);
+#elif 0 // try ECL_Huff8_TryCompress16_TSpec768_Raw (less memory usage, restricted block size - depends on actual data)
             // *compress extra buffers for work
-            uint16_t buf800[800/2];
+            uint16_t buf784[784/2];
             uint8_t buf768[768/1];
-            const auto csize = ECL_Huff8_TryCompress16_TSpec768_Raw(src.data() + start, uint16_t(portion_size), 1, buf800, buf768, comp_dst, comp_alloc_size);
+            const auto csize = ECL_Huff8_TryCompress16_TSpec768_Raw(src.data() + start, uint16_t(portion_size), 1, buf784, buf768, comp_dst, comp_alloc_size);
 #else // default - ECL_Huff8_Compress16_ULM_Raw (more memory usage, not restricted)
             // *compress extra buffers for work
-            uint32_t buf1024[1024/4];
-            uint8_t buf44_u8[44/1];
+            uint32_t buf1048[1048/4];
             uint8_t buf768[768/1];
-            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1024, buf44_u8, buf768, comp_dst, comp_alloc_size);
+            const auto csize = ECL_Huff8_Compress16_ULM_Raw(src.data() + start, uint16_t(portion_size), 1, buf1048, buf768, comp_dst, comp_alloc_size);
 #endif
 
             if(! csize) {
