@@ -277,15 +277,17 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16
 /* Compress* user methods -------------------------------------------------------------------------------------------------------------------------- */
 
 /*
-    Compresses to wstream a tree in 'ctree768' format.
-    TODO_BEFORE_HUFF8_RELEASE more description
+    Compresses a tree in 'ctree768' format to 'wstream'.
     - 'depth_buf_x2' is external buffer needed for traversing the tree - it could be smaller or bigger depending on user needs:
         - for ULM 'depth_buf_x2' size: 2 * 'depth_buf_size' = 2 * ECL_HUFF8_TREE_DEPTH_MAX_ULM; ULM covers any user data up to 64k bytes (actually more).
         - for tiny datasets depth=8 could be enough ('depth_buf_size' = 8, depth_buf_x2 is 16 bytes long);
-        - for any technically possible tree (possible on absurdly enormous data size) 'depth_buf_size' = 256, depth_buf_x2 is 512 bytes;
-        - ! 'depth_buf_x2' buffer overflow isn't protected (with if/return), only checked with ECL_ASSERT;
+        - for any technically possible tree (possible on absurdly enormous data size) 'depth_buf_size' = 256, depth_buf_x2 is 512 bytes.
+
+    returns a value > 0 in case of success, or an error code:
+        0: invalid parameters (NULL pointers or 'depth_buf_size'==0);
+        -1: insufficient 'depth_buf_size';
 */
-ECL_EXPORTED_API void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API int16_t ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream);
 
 /* compresses to wstream only data itself, returns amount of bits written (or 0 in case of error) */
 ECL_EXPORTED_API uint32_t ECL_Huff8_CompressDataWithTSpec1024(const uint8_t* src, uint16_t bytes_cnt, uint16_t interval, const uint32_t* tspec1024/*[1024/4 == 256]*/, ECL_WSTREAM_Type* wstream);
@@ -378,19 +380,32 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* sr
 /* Decompress* user methods ------------------------------------------------------------------------------------------------------------------------ */
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
+    Decompresses the tree from 'rstream' to 'dst_dtree1024' buffer in dtree1024 format, allows limiting the buffer size with 'max_nodes'.
+
+    Returns amount of nodes (uint16_t elements) used in the output buffer (> 0) or an error code:
+        0: invalid parameters (NULL pointers or 'max_nodes'==0);
+        -1: 'max_nodes' < 2;
+        -2: ECL_HUFF8_DECOMPRESS_MAX_DEPTH isn't enough for unpacking the tree (tree depth is bigger);
+        -3, -4: corret but insufficient buffer size ('max_nodes') to unpack the dtree - can happen if 'max_nodes' < 512.
+    'rstream' validness (e.g. reading errors) is to be checked by user after the call.
 */
 ECL_EXPORTED_API int16_t ECL_Huff8_DecompressDTree1024(ECL_RSTREAM_Type* rstream, uint16_t* dst_dtree1024/*[512]*/, uint16_t max_nodes/* <= 512*/);
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
+    Decompresses the data from 'rstream' stream using specified 'dtree1024' to 'dst' with interval 'interval' bytes and amount of 'bytes_cnt'
+        (e.g. assigns dst[interval*0], dst[interval*1], dst[interval*2], ... dst[interval*(bytes_cnt-1)]).
+    'rstream' validness (e.g. reading errors) is to be checked by user after the call.
+
+    returns 'bytes_cnt' in case of success or 0 in case of error.
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree1024/*[512]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
+    Decompresses (reverse of ECL_Huff8_*Compress16_*) tree and data from 'rstream' stream to 'dst' with interval 'interval' bytes and amount of 'bytes_cnt'
+        (e.g. assigns dst[interval*0], dst[interval*1], dst[interval*2], ... dst[interval*(bytes_cnt-1)]).
+    'rstream' validness (e.g. reading errors) is to be checked by user after the call.
 
-    returns TODO
+    returns 'bytes_cnt' in case of success or 0 in case of error.
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
@@ -400,14 +415,12 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint1
 
     returns 1 in case of success;
     returns 0 if dtree1024 is empty;
-    return -1 if dtree1024 consists of single element.
+    returns -1 if dtree1024 consists of single element.
 */
 ECL_EXPORTED_API int16_t ECL_Huff8_DTree1024ToDTable768(const uint16_t* dtree1024, uint16_t* dtable768/*[768/2 == 384]*/);
 
 /*
-    Runs decompression on 'rstream' source with prepared 'dtree1024' tree and 'dtable768' cache.
-
-    Returns 0 in case of failure and 'bytes_cnt' in case of success.
+    Similar to ECL_Huff8_Decompress but uses extra buffer for faster decompression.
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uint16_t* dtable768/*[768/2 == 384]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
@@ -415,16 +428,17 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtr
 #ifdef ECL_RSTREAM_JHx_Init
 
 /*
-    TODO_BEFORE_HUFF8_RELEASE description
+    Decompresses (reverse of ECL_Huff8_*Compress16_*_Raw) tree and data from 'src' buffer known to have 'src_size' bytes to 'dst' with interval 'interval' bytes and amount of 'bytes_cnt'
+        (e.g. assigns dst[interval*0], dst[interval*1], dst[interval*2], ... dst[interval*(bytes_cnt-1)]).
 
-    returns amount of bytes consumed from src (which is <= src_size), or 0 in case of any error.
+    returns amount of BYTES consumed from 'src' (which is <= 'src_size'), or 0 in case of any error.
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
 /*
     Similar to ECL_Huff8_Decompress_Raw but uses extra buffer for faster decompression.
 
-    returns amount of bytes consumed from src (which is <= src_size), or 0 in case of any error.
+    returns amount of BYTES consumed from 'src' (which is <= 'src_size'), or 0 in case of any error.
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768_Raw(const uint8_t* src, ECL_usize src_size, uint16_t* dtree_buf/*[512]*/, uint16_t* dtable_buf/*[768/2 == 384]*/, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 

@@ -732,7 +732,7 @@ uint32_t ECL_Huff8_Analyze16_ULM_2k3(const uint8_t* src, uint16_t bytes_cnt, uin
 
 /* Compress* user methods -------------------------------------------------------------------------------------------------------------------------- */
 
-void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream) {
+int16_t ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, uint16_t depth_buf_size, ECL_WSTREAM_Type* wstream) {
     uint8_t* ECL_SCOPED_CONST stack_flags = depth_buf_x2; /* 0: entered left; 1: entered right; allocate arrays within free buffer */
     uint8_t* ECL_SCOPED_CONST stack_ptrs = depth_buf_x2 + depth_buf_size; /* -:- same size */
     uint16_t tree_record_pos = 0; /* root */
@@ -742,14 +742,14 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
 #ifndef ECL_HUFF8_DISABLE_NULL_CHECKS
     if((ctree768 == NULL) || (depth_buf_x2 == NULL) || (! depth_buf_size) || (wstream == NULL)) {
         ECL_ASSERT(0);
-        return;
+        return 0;
     }
 #endif
 
     if(! ctree768[767]) { /* n_unique == 1 */
         ECL_WSTREAM_Write1_8(wstream, 1, 1);
         ECL_WSTREAM_Write1_8(wstream, ctree768[766], 8);
-        return;
+        return 1;
     }
     ECL_WSTREAM_Write1_8(wstream, 0, 1);
     do {
@@ -780,7 +780,9 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
         } else {
             ECL_WSTREAM_Write1_8(wstream, 0, 1);
             /**/
-            ECL_ASSERT(stack_depth < depth_buf_size);
+            if(stack_depth >= depth_buf_size) {
+                return -1;
+            }
             stack_flags[stack_depth] = checking_side;
             stack_ptrs[stack_depth] = (uint8_t)tree_record_pos;
             ++stack_depth;
@@ -788,6 +790,7 @@ void ECL_Huff8_CompressCTree768(const uint8_t* ctree768, uint8_t* depth_buf_x2, 
             checking_side = 0;
         }
     } while(1);
+    return 1;
 }
 
 /* compresses only data itself, returns amount of bits written (or 0 in case of error) */
@@ -1057,7 +1060,7 @@ int16_t ECL_Huff8_DecompressDTree1024(ECL_RSTREAM_Type* rstream, uint16_t* dtree
         }
     } /* tree unpacked */
     dtree_buf[next_node] = 0; /* such thing will allow easy finding the end of dtree_buf for an algorithm accepting tree as parameter */
-    return (int16_t)next_node;
+    return (int16_t)(next_node + 1);
 }
 
 ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtree1024, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval) {
