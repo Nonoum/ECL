@@ -115,13 +115,13 @@ bool s_try_compress(const char* src_fname, const char* dst_fname, int block_size
 #ifdef SAMPLE_USE_MEMCPY_REPLACEMENT
             memcpy(comp_dst, src.data() + start, portion_size);
             const auto csize = ECL_usize(portion_size) * 8;
-#elif 0 // try ECL_Huff8_TryCompress16_TSpec512_Raw (less memory usage, restricted block size - depends on actual data)
+#elif defined(SAMPLE_C512) // try ECL_Huff8_TryCompress16_TSpec512_Raw (less memory usage, restricted block size - depends on actual data)
             // *compress extra buffers for work
             uint16_t buf512_u16[512/2];
             uint8_t buf256_u8[256/1];
             uint8_t buf768[768/1];
             const auto csize = ECL_Huff8_TryCompress16_TSpec512_Raw(src.data() + start, uint16_t(portion_size), 1, buf512_u16, buf256_u8, buf768, comp_dst, comp_alloc_size);
-#elif 0 // try ECL_Huff8_TryCompress16_TSpec768_Raw (less memory usage, restricted block size - depends on actual data)
+#elif defined(SAMPLE_C768) // try ECL_Huff8_TryCompress16_TSpec768_Raw (less memory usage, restricted block size - depends on actual data)
             // *compress extra buffers for work
             uint16_t buf784[784/2];
             uint8_t buf768[768/1];
@@ -209,7 +209,7 @@ bool s_try_decompress(const char* src_fname, const char* dst_fname) {
         }
         memcpy(tmp_output.data(), start_ptr, portion_size);
         auto consumed_size = ECL_usize(portion_size);
-#elif 0 // decompress default
+#elif defined(SAMPLE_DSLOW) // decompress slow
         uint16_t buf1024_u16[1024/2];
         auto consumed_size = ECL_Huff8_Decompress_Raw(start_ptr, left_size, buf1024_u16, tmp_output.data(), portion_size, 1);
         assert(consumed_size);
