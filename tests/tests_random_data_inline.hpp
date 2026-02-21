@@ -2,6 +2,7 @@
 #include "../ECL_ZeroDevourer.h"
 #include "../ECL_NanoLZ.h"
 #include "../ECL_Huff8.h"
+#include "../ECL_SLA.h"
 #include "ntest/ntest.h"
 
 #include <vector>
@@ -482,5 +483,51 @@ NTEST(test_Huff8_ULM_random_data) {
         ECL_TEST_COMPARE(alt_consumed_size, comp_size);
         ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
         //// copypasted part for huff8 tests <<<
+    }
+}
+
+NTEST(test_SLA_random_data) {
+    NTEST_SUPPRESS_UNUSED;
+    std::vector<uint8_t> src;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    const int n_sets = 100 * (BoundVMinMax(depth + 10, 0, 1010) + 1);
+    const int max_size = 1000;
+    const int min_size = 1;
+    const uint8_t masks[] = {/**/0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01, 0x00};
+    int n = 0;
+    double sum_uncompr_bits = 0;
+    double sum_compr_bits = 0;
+    for(int i = 0; i < n_sets; ++i) {
+        const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
+        src.resize(src_size);
+        for(ECL_usize j = 0; j < src_size; ++j) {
+            src[j] = rand();
+        }
+
+        for(auto mask : masks) {
+            for(ECL_usize j = 0; j < src_size; ++j) {
+                src[j] &= mask;
+            }
+            auto enough_size = src_size + 1; // (+6 bits actually)
+            tmp.resize(enough_size);
+            // stats
+            auto src_nbits = src_size * 8;
+            sum_uncompr_bits += src_nbits;
+            //
+            char header;
+            auto comp_size = ECL_SLA_Analyze(src.data(), src_size, &header);
+            auto comp_nbits = comp_size;
+            sum_compr_bits += comp_size;
+            //
+            comp_size += 7;
+            comp_size /= 8; // to bytes
+            approve(ECL_SLA_Compress_Raw(src.data(), src_size, header, tmp.data(), enough_size));
+
+            tmp_output.resize(src_size);
+            approve(ECL_SLA_Decompress_Raw(tmp.data(), comp_size, tmp_output.data(), src_size));
+            approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
+            ++n;
+        }
     }
 }

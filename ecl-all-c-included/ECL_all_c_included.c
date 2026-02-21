@@ -3,3 +3,4 @@
 #include "../ECL_ZeroDevourer.c"
 #include "../ECL_NanoLZ.c"
 #include "../ECL_Huff8.c"
+#include "../ECL_SLA.c"

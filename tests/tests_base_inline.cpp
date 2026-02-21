@@ -4,6 +4,7 @@
 #include "../ECL_ZeroDevourer.h"
 #include "../ECL_NanoLZ.h"
 #include "../ECL_Huff8.h"
+#include "../ECL_SLA.h"
 #include "../ECL_utils.h"
 
 #ifndef ECL_BUILD_AS_C
@@ -12,6 +13,7 @@
 #include "../ECL_ZeroDevourer.c"
 #include "../ECL_NanoLZ.c"
 #include "../ECL_Huff8.c"
+#include "../ECL_SLA.c"
 #endif
 
 #include <fstream>
