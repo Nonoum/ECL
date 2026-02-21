@@ -46,12 +46,12 @@ SLA header codes table (in cell - variant, or '*' if not used):
 
 namespace SequenceLevelsAnalyzer {
 
-ubyte GetLog2s(uint16 x) {
+uint8_t GetLog2s(uint16_t x) {
 	if(!x) {
 		return 0;
 	}
-	uint16 mask = 0x8000;
-	ubyte cnt = 16;
+	uint16_t mask = 0x8000;
+	uint8_t cnt = 16;
 	while(1) {
 		if(x & mask) {
 			return cnt;
@@ -64,26 +64,26 @@ ubyte GetLog2s(uint16 x) {
 
 const char SLA8_FLAWLESS_HEADER = 0x3F;
 
-static uint32 addbits[8] = {0xFE,0xFC,0xF8,0xF0,0xE0,0xC0,0x80,0x00}; // map of sign-extension by value's bit count. used for decoding
+static uint32_t addbits[8] = {0xFE,0xFC,0xF8,0xF0,0xE0,0xC0,0x80,0x00}; // map of sign-extension by value's bit count. used for decoding
 
-inline char MAKEHEADER(ubyte high, ubyte low) {
+inline char MAKEHEADER(uint8_t high, uint8_t low) {
 	return char( ((high)&0x07) | (((low)&0x07)<<3) );
 };
 
-inline ubyte GETHIGHLEVEL(char head) {
+inline uint8_t GETHIGHLEVEL(char head) {
 	return head & 0x07;
 };
 
-inline ubyte GETLOWLEVEL(char head) {
+inline uint8_t GETLOWLEVEL(char head) {
 	return (head>>3) & 0x07;
 };
 
 class SLA : private NonCopyable {
-	ubyte * table;
+	uint8_t * table;
 	SLA() {
-		table = new ubyte[256];
-		for(uint16 i = 1; i < 256; ++i) {
-			uint16 j = (i >= 128) ? 255-i : i;
+		table = new uint8_t[256];
+		for(uint16_t i = 1; i < 256; ++i) {
+			uint16_t j = (i >= 128) ? 255-i : i;
 			table[i] = GetLog2s(j) + 1; // real bits count
 		}
 		table[0] = 0;
@@ -93,7 +93,7 @@ class SLA : private NonCopyable {
 		table = NULL;
 	};
 public:
-	static inline const ubyte* getSLATable() {
+	static inline const uint8_t* getSLATable() {
 		static SLA initializer;
 		return initializer.table;
 	};
@@ -101,19 +101,19 @@ public:
 
 // CODE ----------------------------------------------------------------------
 
-usize Analyze(const ubyte* src, usize size, char* dst_header) {
+ECL_usize Analyze(const uint8_t* src, ECL_usize size, char* dst_header) {
 	assert((src != NULL) && "NULL as source data to analyze");
 	// returns size in bits : 3 + 3 + data_size
-	usize bits, bbest, bact; // total bits ; bits best ; bits actual
-	ubyte highlevel, lowlevel;
+	ECL_usize bits, bbest, bact; // total bits ; bits best ; bits actual
+	uint8_t highlevel, lowlevel;
 	bits = 3 + 3;
-	uint32 cntrs[9] = {0}; // 0..8-bits counters
+	uint32_t cntrs[9] = {0}; // 0..8-bits counters
 	if(! size) {
 		return bits;
 	}
-	const ubyte* sla_table = SLA::getSLATable();
+	const uint8_t* sla_table = SLA::getSLATable();
 
-	for(usize index = 0; index < size; ++index) {
+	for(ECL_usize index = 0; index < size; ++index) {
 		++cntrs[sla_table[src[index]]];
 	} // statistic done
 	char i;
@@ -155,9 +155,9 @@ usize Analyze(const ubyte* src, usize size, char* dst_header) {
 	return bits;
 }; // end analyze 8-bit ----------------------------------------------------------------------------------
 
-void Compress(const ubyte* src, usize size, char pre_calc_header, void* dst, usize* dst_byte, ubyte* dst_bit) {
+void Compress(const uint8_t* src, ECL_usize size, char pre_calc_header, void* dst, ECL_usize* dst_byte, uint8_t* dst_bit) {
 	assert((src != NULL) && "NULL as source data to compress");
-	ubyte lowl, highl, LLm1, HLm1;
+	uint8_t lowl, highl, LLm1, HLm1;
 	HLm1 = GETHIGHLEVEL(pre_calc_header);
 	LLm1 = GETLOWLEVEL(pre_calc_header);
 	WriteBits(dst, dst_byte, dst_bit, 6, pre_calc_header);
@@ -173,9 +173,9 @@ void Compress(const ubyte* src, usize size, char pre_calc_header, void* dst, usi
 				lowl = LLm1+2; // including LDB
 			}
 		}
-		for(usize i = 0; i < size; ++i) {
+		for(ECL_usize i = 0; i < size; ++i) {
 			if(src[i] != 0) { // as low level
-				WriteBits(dst, dst_byte, dst_bit, lowl, (((uint32)src[i]) << 1) | 0x001); // LDB = 1
+				WriteBits(dst, dst_byte, dst_bit, lowl, (((uint32_t)src[i]) << 1) | 0x001); // LDB = 1
 			} else {
 				WriteBits(dst, dst_byte, dst_bit, 1, 0); // LDB = 0
 			}
@@ -183,24 +183,24 @@ void Compress(const ubyte* src, usize size, char pre_calc_header, void* dst, usi
 	} else if(HLm1 != LLm1) { // variant 1
 		lowl = LLm1 + 2; // bits per low-level value + LDB
 		highl = HLm1 + 2; // bits per high-level value + LDB
-		const ubyte* sla_table = SLA::getSLATable();
-		const ubyte levels[2] = {highl, lowl};
-		for(usize i = 0; i < size; ++i) {
-			const ubyte is_low = ubyte(sla_table[src[i]] - lowl) >> 7;
-			WriteBits(dst, dst_byte, dst_bit, levels[is_low], (((uint32)src[i]) << 1) | is_low);
+		const uint8_t* sla_table = SLA::getSLATable();
+		const uint8_t levels[2] = {highl, lowl};
+		for(ECL_usize i = 0; i < size; ++i) {
+			const uint8_t is_low = uint8_t(sla_table[src[i]] - lowl) >> 7;
+			WriteBits(dst, dst_byte, dst_bit, levels[is_low], (((uint32_t)src[i]) << 1) | is_low);
 		}
 	} else { // same level, variant 2
 		highl = HLm1 + 1; // bits per any value
-		for(usize i = 0; i < size; ++i) {
+		for(ECL_usize i = 0; i < size; ++i) {
 			WriteBits(dst, dst_byte, dst_bit, highl, src[i]);
 		}
 	}
 }; // end compress 8-bit ----------------------------------------------------------------------------------
 
-void Decompress(const void* src, usize* src_byte, ubyte* src_bit, ubyte* dst, usize size) {
+void Decompress(const void* src, ECL_usize* src_byte, uint8_t* src_bit, uint8_t* dst, ECL_usize size) {
 	assert((src != NULL) && "NULL as source data to decompress");
-	ubyte HLm1, LLm1;
-	ubyte lowl, highl, head; // low level bits, high level bits, header
+	uint8_t HLm1, LLm1;
+	uint8_t lowl, highl, head; // low level bits, high level bits, header
 	head = ReadBits(src, src_byte, src_bit, 6);
 	highl = HLm1 = GETHIGHLEVEL(head);
 	lowl = LLm1 = GETLOWLEVEL(head);
@@ -218,9 +218,9 @@ void Decompress(const void* src, usize* src_byte, ubyte* src_bit, ubyte* dst, us
 			}
 		}
 		LLm1 = lowl - 1;
-		for(usize i = 0; i < size; ++i) {
+		for(ECL_usize i = 0; i < size; ++i) {
 			if(ReadBits(src, src_byte, src_bit, 1)) { // low-level
-				const ubyte value = ReadBits(src, src_byte, src_bit, lowl);
+				const uint8_t value = ReadBits(src, src_byte, src_bit, lowl);
 				dst[i] = value | (-(value >> LLm1) & addbits[LLm1]); // hardcore expanding with sign-bit
 			} else {
 				dst[i] = 0; // high-level, simply zero
@@ -229,18 +229,18 @@ void Decompress(const void* src, usize* src_byte, ubyte* src_bit, ubyte* dst, us
 	} else if(HLm1 != LLm1) { // standard coding, variant 1
 		++highl;
 		++lowl;
-		const ubyte to_read[2] = {highl, lowl};
-		const ubyte to_check[2] = {HLm1, LLm1};
-		for(usize i = 0; i < size; ++i) {
-			const ubyte LDB = ReadBits(src, src_byte, src_bit, 1);
-			const ubyte value = ReadBits(src, src_byte, src_bit, to_read[LDB]);
+		const uint8_t to_read[2] = {highl, lowl};
+		const uint8_t to_check[2] = {HLm1, LLm1};
+		for(ECL_usize i = 0; i < size; ++i) {
+			const uint8_t LDB = ReadBits(src, src_byte, src_bit, 1);
+			const uint8_t value = ReadBits(src, src_byte, src_bit, to_read[LDB]);
 			const auto nbits = to_check[LDB];
 			dst[i] = value | (-(value >> nbits) & addbits[nbits]);
 		}
 	} else { // special coding, variant 2
 		++highl;
-		for(usize i = 0; i < size; ++i) {
-			const ubyte value = ReadBits(src, src_byte, src_bit, highl);
+		for(ECL_usize i = 0; i < size; ++i) {
+			const uint8_t value = ReadBits(src, src_byte, src_bit, highl);
 			dst[i] = value | (-(value >> HLm1) & addbits[HLm1]);
 		}
 	}
