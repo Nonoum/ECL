@@ -38,20 +38,20 @@
 extern "C" {
 #endif
 
-/*	'ECL_SLA_Analyze' generates optimal valid header of (src) with (size) samples.
-	returns best FULL-bit count for compressed block (including bits needed to store the header),
-	and writes header signature in (*dst_header) containing 1 byte.
+/* 'ECL_SLA_Analyze' generates optimal valid header of (src) with (size) samples.
+    returns best FULL-bit count for compressed block (including bits needed to store the header),
+    and writes header signature in (*dst_header) containing 1 byte.
 */
 ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header);
 
-/*	'ECL_SLA_Compress' encodes (size) samples from (src) to (wstream) using (pre_calc_header) that was created before.
-	if (pre_calc_header) is wrong then stream can DAMAGE information (not verified for now).
-	stream DOESN'T contain information about size of input or output data.
+/* 'ECL_SLA_Compress' encodes (size) samples from (src) to (wstream) using (pre_calc_header) that was created before.
+    if (pre_calc_header) is wrong then stream can DAMAGE information (not verified for now).
+    stream DOESN'T contain information about size of input or output data.
     returns 1 in case of success, 0 in case of error (NULL pointers etc).
 */
 uint8_t ECL_SLA_Compress(const uint8_t* src, ECL_usize size, char pre_calc_header, ECL_WSTREAM_Type* wstream);
 
-/*	'ECL_SLA_Decompress' decodes data from (rstream) to (dst) expecting that there is (size) of encoded samples.
+/* 'ECL_SLA_Decompress' decodes data from (rstream) to (dst) expecting that there is (size) of encoded samples.
     returns 1 in case of success, 0 in case of error (NULL pointers etc).
 */
 uint8_t ECL_SLA_Decompress(ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize size);
