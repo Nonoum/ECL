@@ -305,3 +305,122 @@ uint8_t ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* 
     return 1;
 }
 #endif /* ECL_RSTREAM_JHx_Init */
+
+
+/* ----------------------------------------------------------------------------------------------------*/
+
+uint8_t ECL_SLA_PackU16(const uint16_t* src, ECL_usize block_offset, uint16_t n_values, uint8_t* buffers) {
+#ifndef ECL_SLA_DISABLE_NULL_CHECKS
+    if((src == NULL) || (! n_values) || (buffers == NULL)) {
+        ECL_ASSERT(0);
+        return 0;
+    }
+#endif
+
+    src += block_offset;
+    {
+        uint16_t val_0 = block_offset
+            ? (*src - src[-1])
+            : *src
+            ;
+        *buffers = (uint8_t)(val_0);
+        buffers[n_values] = (uint8_t)(val_0 >> 8);
+    }
+    {
+        uint8_t* ECL_SCOPED_CONST buf_bound = buffers + n_values;
+        for(++buffers; buffers < buf_bound; ++buffers, ++src) {
+            ECL_SCOPED_CONST uint16_t s_diff = (uint16_t)(src[1] - *src);
+
+            *buffers          = (uint8_t)(s_diff);
+            buffers[n_values] = (uint8_t)(s_diff >> 8);
+        }
+    }
+    return 1;
+}
+
+uint8_t ECL_SLA_UnpackU16(const uint8_t* buffers, uint16_t* dst, ECL_usize block_offset, uint16_t n_values) {
+#ifndef ECL_SLA_DISABLE_NULL_CHECKS
+    if((buffers == NULL) || (dst == NULL) || (! n_values)) {
+        ECL_ASSERT(0);
+        return 0;
+    }
+#endif
+
+    dst += block_offset;
+    *dst = (uint16_t)(*buffers) | (((uint16_t)(buffers[n_values])) << 8);
+    if(block_offset) {
+        *dst += dst[-1];
+    }
+    {
+        const uint8_t* ECL_SCOPED_CONST buf_bound = buffers + n_values;
+        for(++buffers; buffers < buf_bound; ++buffers, ++dst) {
+            dst[1] = ((uint16_t)(*buffers) | ((uint16_t)(buffers[n_values]) << 8)) + *dst;
+        }
+    }
+    return 1;
+}
+
+/**/
+
+uint8_t ECL_SLA_PackU32(const uint32_t* src, ECL_usize block_offset, uint16_t n_values, uint8_t* buffers) {
+#ifndef ECL_SLA_DISABLE_NULL_CHECKS
+    if((src == NULL) || (! n_values) || (buffers == NULL)) {
+        ECL_ASSERT(0);
+        return 0;
+    }
+#endif
+
+    src += block_offset;
+    {
+        uint32_t val_0 = block_offset
+            ? (*src - src[-1])
+            : *src
+            ;
+        *buffers            = (uint8_t)(val_0);
+        buffers[n_values]   = (uint8_t)(val_0 >> 8);
+        buffers[n_values*2] = (uint8_t)(val_0 >> 16);
+        buffers[n_values*3] = (uint8_t)(val_0 >> 24);
+    }
+    {
+        uint8_t* ECL_SCOPED_CONST buf_bound = buffers + n_values;
+        for(++buffers; buffers < buf_bound; ++buffers, ++src) {
+            ECL_SCOPED_CONST uint32_t s_diff = (uint32_t)(src[1] - *src);
+
+            *buffers            = (uint8_t)(s_diff);
+            buffers[n_values  ] = (uint8_t)(s_diff >> 8);
+            buffers[n_values*2] = (uint8_t)(s_diff >> 16);
+            buffers[n_values*3] = (uint8_t)(s_diff >> 24);
+        }
+    }
+    return 1;
+}
+
+uint8_t ECL_SLA_UnpackU32(const uint8_t* buffers, uint32_t* dst, ECL_usize block_offset, uint16_t n_values) {
+#ifndef ECL_SLA_DISABLE_NULL_CHECKS
+    if((buffers == NULL) || (dst == NULL) || (! n_values)) {
+        ECL_ASSERT(0);
+        return 0;
+    }
+#endif
+
+    dst += block_offset;
+    *dst = (uint32_t)(*buffers)
+        | (((uint32_t)(buffers[n_values])) << 8)
+        | (((uint32_t)(buffers[n_values*2])) << 16)
+        | (((uint32_t)(buffers[n_values*3])) << 24)
+        ;
+    if(block_offset) {
+        *dst += dst[-1];
+    }
+    {
+        const uint8_t* ECL_SCOPED_CONST buf_bound = buffers + n_values;
+        for(++buffers; buffers < buf_bound; ++buffers, ++dst) {
+            dst[1] = ( (uint32_t)(*buffers)
+                   | (((uint32_t)(buffers[n_values])) << 8)
+                   | (((uint32_t)(buffers[n_values*2])) << 16)
+                   | (((uint32_t)(buffers[n_values*3])) << 24)
+                   ) + *dst;
+        }
+    }
+    return 1;
+}

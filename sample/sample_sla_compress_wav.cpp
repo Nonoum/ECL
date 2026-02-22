@@ -19,6 +19,11 @@
 #include <algorithm>
 #include <numeric>
 
+bool EnsureAboveZero(uint8_t val) {
+    assert(val > 0);
+    return val > 0;
+}
+
 void s_show_usage() {
     std::cout << "-- Usage: sample 128 my_wav_file.wav" << std::endl;
     std::cout << "  where '128' is block_size for SLA processing, which has to be > 0 (reasonable is 32 .. 256)" << std::endl;
@@ -36,8 +41,11 @@ static double TestAudio_GetMonoCompressionRatio16(
     using Samp_Ty = uint16_t; // further logic is still hardcoded for 2-byte sample size
     const size_t Samp_Size = sizeof(Samp_Ty);
     //
-    std::vector<uint8_t> tmp_compr; // compressed data representing whole samples vector
     const size_t n_blocks = (samples.size() + samples_in_block - 1) / samples_in_block;
+    std::vector<uint8_t> block_buf_data; // actually contains 2 compressible blocks (one for lower sample bytes, one for higher)
+    block_buf_data.resize(samples_in_block * Samp_Size);
+
+    std::vector<uint8_t> tmp_compr; // compressed data representing whole samples vector
     const size_t enough_size = ECL_SLA_GET_BOUND(samples_in_block) * n_blocks * Samp_Size;
     tmp_compr.resize(enough_size);
     // set up wstream
@@ -45,8 +53,6 @@ static double TestAudio_GetMonoCompressionRatio16(
     ECL_WSTREAM_JHx_Init(&wstream, tmp_compr.data(), tmp_compr.size());
     // --------------
 
-    std::vector<uint8_t> block_buf_data; // actually contains 2 compressible blocks (one for lower sample bytes, one for higher)
-    block_buf_data.resize(samples_in_block * Samp_Size);
     //
     comp_measurer.startResume();
     for(size_t i_block = 0; i_block < n_blocks; ++i_block) {
@@ -54,28 +60,15 @@ static double TestAudio_GetMonoCompressionRatio16(
         const size_t n_samples = std::min<size_t>(samples.size() - samples_offs, samples_in_block); // in current block
         assert(n_samples > 0);
         assert(n_samples <= samples_in_block);
-        auto samp_0 = samples_offs
-            ? (samples[samples_offs] - samples[samples_offs-1])
-            : samples[samples_offs]
-            ;
-        block_buf_data[0] = uint8_t(samp_0);
-        block_buf_data[n_samples] = uint8_t(samp_0 >> 8);
+        EnsureAboveZero( ECL_SLA_PackU16(samples.data(), samples_offs, n_samples, block_buf_data.data()) );
         //
-        for(size_t sample_src_index = samples_offs + 1; sample_src_index < (samples_offs + n_samples); ++sample_src_index) {
-            auto s_diff = Samp_Ty(samples[sample_src_index] - samples[sample_src_index - 1]);
-            //
-            auto i_sample = sample_src_index - samples_offs;
-            block_buf_data[0         + i_sample] = uint8_t(s_diff);
-            block_buf_data[n_samples + i_sample] = uint8_t(s_diff >> 8);
+        for(size_t i = 0; i < Samp_Size; ++i) {
+            // compress subblock i
+            char tmp_sla_header;
+            auto subbuffer = block_buf_data.data() + n_samples * i;
+            auto bits_size = ECL_SLA_Analyze(subbuffer, n_samples, &tmp_sla_header);
+            EnsureAboveZero( ECL_SLA_Compress(subbuffer, n_samples, tmp_sla_header, &wstream) );
         }
-        //
-        char tmp_sla_header;
-        // compress subblock 1
-        auto bits_size_1 = ECL_SLA_Analyze(block_buf_data.data() + 0, n_samples, &tmp_sla_header);
-        ECL_SLA_Compress(block_buf_data.data(), n_samples, tmp_sla_header, &wstream);
-        // compress subblock 2
-        auto bits_size_2 = ECL_SLA_Analyze(block_buf_data.data() + n_samples, n_samples, &tmp_sla_header);
-        ECL_SLA_Compress(block_buf_data.data() + n_samples, n_samples, tmp_sla_header, &wstream);
     }
     comp_measurer.stop();
     const size_t compr_in_n_bytes = size_t(wstream.next - tmp_compr.data());
@@ -95,19 +88,12 @@ static double TestAudio_GetMonoCompressionRatio16(
             assert(n_samples > 0);
             assert(n_samples <= samples_in_block);
             //
-            ECL_SLA_Decompress(&rstream, block_buf_data.data(), n_samples);
-            ECL_SLA_Decompress(&rstream, block_buf_data.data() + n_samples, n_samples);
-            //
-            recovered_samples[samples_offs] = uint16_t(block_buf_data[0]) | (uint16_t(block_buf_data[n_samples]) << 8);
-            if(samples_offs) {
-                recovered_samples[samples_offs] += recovered_samples[samples_offs-1];
+            for(size_t i = 0; i < Samp_Size; ++i) {
+                // decompress subblock i
+                EnsureAboveZero( ECL_SLA_Decompress(&rstream, block_buf_data.data() + n_samples * i, n_samples) );
             }
             //
-            for(size_t sample_src_index = samples_offs + 1; sample_src_index < (samples_offs + n_samples); ++sample_src_index) {
-                auto i_sample = sample_src_index - samples_offs;
-                recovered_samples[sample_src_index] = uint16_t(block_buf_data[i_sample]) | (uint16_t(block_buf_data[n_samples + i_sample]) << 8);
-                recovered_samples[sample_src_index] += recovered_samples[sample_src_index - 1]; // diff
-            }
+            EnsureAboveZero( ECL_SLA_UnpackU16(block_buf_data.data(), recovered_samples.data(), samples_offs, n_samples) );
         }
         decomp_measurer.stop();
         if(recovered_samples != samples) {
