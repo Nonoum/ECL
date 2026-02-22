@@ -32,7 +32,16 @@
 #include <stdbool.h>
 
 
-#define ECL_SLA_FLAWLESS_HEADER 0x3F
+#define ECL_SLA_GET_BOUND(src_size) ((src_size) + 1) /* at most src_size + 6 bits */
+#define ECL_SLA_FLAWLESS_HEADER 0x3F /* header that can safely encode any data (no compression though) */
+
+
+/******************************* REDEFINABLE *******************************/
+
+/* #define ECL_SLA_DISABLE_NULL_CHECKS */ /* can be defined to omit NULL checks, zero-size checks */
+
+/***************************************************************************/
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,29 +51,29 @@ extern "C" {
     returns best FULL-bit count for compressed block (including bits needed to store the header),
     and writes header signature in (*dst_header) containing 1 byte.
 */
-ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header);
+ECL_EXPORTED_API ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header);
 
 /* 'ECL_SLA_Compress' encodes (size) samples from (src) to (wstream) using (pre_calc_header) that was created before.
     if (pre_calc_header) is wrong then stream can DAMAGE information (not verified for now).
     stream DOESN'T contain information about size of input or output data.
     returns 1 in case of success, 0 in case of error (NULL pointers etc).
 */
-uint8_t ECL_SLA_Compress(const uint8_t* src, ECL_usize size, char pre_calc_header, ECL_WSTREAM_Type* wstream);
+ECL_EXPORTED_API uint8_t ECL_SLA_Compress(const uint8_t* src, ECL_usize size, char pre_calc_header, ECL_WSTREAM_Type* wstream);
 
 /* 'ECL_SLA_Decompress' decodes data from (rstream) to (dst) expecting that there is (size) of encoded samples.
     returns 1 in case of success, 0 in case of error (NULL pointers etc).
 */
-uint8_t ECL_SLA_Decompress(ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize size);
+ECL_EXPORTED_API uint8_t ECL_SLA_Decompress(ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize size);
 
 
 
-#ifdef ECL_WSTREAM_JHx_Init /* *Raw functions require ECL_WSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_WSTREAM_Type is chosen */
-uint8_t ECL_SLA_Compress_Raw(const uint8_t* src, ECL_usize src_size, char pre_calc_header, uint8_t* dst, ECL_usize dst_size);
+#ifdef ECL_WSTREAM_JHx_Init /* Compress*Raw functions require ECL_WSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_WSTREAM_Type is chosen */
+ECL_EXPORTED_API uint8_t ECL_SLA_Compress_Raw(const uint8_t* src, ECL_usize src_size, char pre_calc_header, uint8_t* dst, ECL_usize dst_size);
 #endif /* ECL_WSTREAM_JHx_Init */
 
 
-#ifdef ECL_RSTREAM_JHx_Init
-uint8_t ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size);
+#ifdef ECL_RSTREAM_JHx_Init /* Decompress*Raw functions require ECL_RSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_RSTREAM_Type is chosen */
+ECL_EXPORTED_API uint8_t ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size);
 #endif /* ECL_RSTREAM_JHx_Init */
 
 
