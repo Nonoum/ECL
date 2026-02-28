@@ -517,7 +517,6 @@ NTEST(test_SLA_random_data) {
             //
             char header;
             auto comp_size = ECL_SLA_Analyze(src.data(), src_size, &header);
-            auto comp_nbits = comp_size;
             sum_compr_bits += comp_size;
             //
             comp_size += 7;

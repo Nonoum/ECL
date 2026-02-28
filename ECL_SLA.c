@@ -66,7 +66,7 @@ SLA header codes table (in cell - variant, or '*' if not used):
     19 free cells.
 *************************************************************************************/
 
-static uint8_t c_ecl_sla_addbits[8] = {0xFE,0xFC,0xF8,0xF0,0xE0,0xC0,0x80,0x00}; /* map of sign-extension by value's bit count. used for decoding */
+static const uint8_t c_ecl_sla_addbits[8] = {0xFE,0xFC,0xF8,0xF0,0xE0,0xC0,0x80,0x00}; /* map of sign-extension by value's bit count. used for decoding */
 
 inline char ECL_SLA_AUX_MakeHDR(uint8_t high, uint8_t low) {
     return (char)( ((high)&0x07) | (((low)&0x07)<<3) );
@@ -98,7 +98,9 @@ ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header) 
     /* returns size in bits : 3 + 3 + data_size */
     ECL_usize bits, bbest, bact; /* total bits ; bits best ; bits actual */
     uint8_t highlevel, lowlevel;
-    uint32_t cntrs[9] = {0}; /* 0..8-bits counters */
+    int8_t i;
+    ECL_usize cntrs[9] = {0}; /* 0..8-bits counters */
+    const uint8_t* sla_table = ECL_SLA_GetTable();
 
 #ifndef ECL_SLA_DISABLE_NULL_CHECKS
     if((src == NULL) || (! size) || (dst_header == NULL)) {
@@ -110,21 +112,19 @@ ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header) 
     if(! size) {
         return bits;
     }
-    const uint8_t* sla_table = ECL_SLA_GetTable();
 
     for(ECL_usize index = 0; index < size; ++index) {
         ++cntrs[sla_table[src[index]]];
     } /* statistic done */
-    char i;
     for(i = 8; i >= 0; --i) {
-        if(cntrs[i]) {
+        if(cntrs[(uint8_t)i]) {
             break;
         }
     }
-    highlevel = i; /* high level is known */
+    highlevel = (uint8_t)i; /* high level is known */
     /* transforming cntrs */
-    for(i = 1; i < highlevel; ++i) {
-        cntrs[i] += cntrs[i-1];
+    for(i = 1; ((uint8_t)i) < highlevel; ++i) {
+        cntrs[(uint8_t)i] += cntrs[(uint8_t)(i-1)];
     }
     /* done. highlevel contains REAL BIT COUNT per data (excluding possible LDB) */
     if(highlevel == 0) { /* all zeroes */
@@ -133,12 +133,12 @@ ECL_usize ECL_SLA_Analyze(const uint8_t* src, ECL_usize size, char* dst_header) 
     } /* further this variant is excluded */
     lowlevel = highlevel;
     bbest = size * highlevel; /* if all - same-leveled (high = low, variant 2) */
-    for(i = highlevel - 1; i >= 0; --i) {
-        bact = cntrs[i] * (1+i); /* count * (LDB + value) */
-        bact += (size - cntrs[i]) * (1 + highlevel); /* high-leveled values */
+    for(i = (int8_t)highlevel - 1; i >= 0; --i) {
+        bact = cntrs[(uint8_t)i] * (ECL_usize)(1+i); /* count * (LDB + value) */
+        bact += (size - cntrs[(uint8_t)i]) * (1 + highlevel); /* high-leveled values */
         if(bact < bbest) {
             bbest = bact;
-            lowlevel = i;
+            lowlevel = (uint8_t)i;
         }
     }
     bits += bbest;
@@ -176,12 +176,14 @@ uint8_t ECL_SLA_Compress(const uint8_t* src, ECL_usize size, char pre_calc_heade
         } else {
             if(HLm1 == 5) { /* variant 5 */
                 lowl = LLm1+2; /* including LDB */
+            } else {
+                return 0; /* error: invalid header */
             }
         }
         if(lowl <= 8) {
             for(ECL_usize i = 0; i < size; ++i) {
                 if(src[i] != 0) { /* as low level */
-                    ECL_WSTREAM_Write1_8(wstream, (((src[i]) << 1) | 0x01), lowl);
+                    ECL_WSTREAM_Write1_8(wstream, (uint8_t)(((src[i]) << 1) | 0x01), lowl);
                 } else {
                     ECL_WSTREAM_Write1_8(wstream, 0, 1); /* LDB = 0 */
                 }
@@ -198,20 +200,20 @@ uint8_t ECL_SLA_Compress(const uint8_t* src, ECL_usize size, char pre_calc_heade
             }
         }
     } else if(HLm1 != LLm1) { /* variant 1 */
-        const uint8_t* sla_table = ECL_SLA_GetTable();
+        const uint8_t* ECL_SCOPED_CONST sla_table = ECL_SLA_GetTable();
         lowl = LLm1 + 2; /* bits per low-level value + LDB */
         highl = HLm1 + 2; /* bits per high-level value + LDB */
 
         if((highl <= 8) && (lowl <= 8)) { /* can write with (LDB) safely using ECL_WSTREAM_Write1_8 */
-            const uint8_t levels[2] = {highl, lowl};
+            ECL_SCOPED_CONST uint8_t levels[2] = {highl, lowl};
             for(ECL_usize i = 0; i < size; ++i) {
-                const uint8_t is_low = (uint8_t)(sla_table[src[i]] - lowl) >> 7;
-                ECL_WSTREAM_Write1_8(wstream, ((src[i] << 1) | is_low), levels[is_low]);
+                ECL_SCOPED_CONST uint8_t is_low = (uint8_t)(sla_table[src[i]] - lowl) >> 7;
+                ECL_WSTREAM_Write1_8(wstream, (uint8_t)((src[i] << 1) | is_low), levels[is_low]);
             }
         } else { /* need to write LDB separately */
-            const uint8_t levels[2] = {(uint8_t)(highl - 1), (uint8_t)(lowl - 1)};
+            ECL_SCOPED_CONST uint8_t levels[2] = {(uint8_t)(highl - 1), (uint8_t)(lowl - 1)};
             for(ECL_usize i = 0; i < size; ++i) {
-                const uint8_t is_low = (uint8_t)(sla_table[src[i]] - lowl) >> 7;
+                ECL_SCOPED_CONST uint8_t is_low = (uint8_t)(sla_table[src[i]] - lowl) >> 7;
                 ECL_WSTREAM_Write1_8(wstream, is_low, 1);
                 ECL_WSTREAM_Write1_8(wstream, src[i], levels[is_low]);
             }
@@ -254,7 +256,7 @@ uint8_t ECL_SLA_Decompress(ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize si
         LLm1 = lowl - 1;
         for(ECL_usize i = 0; i < size; ++i) {
             if(ECL_RSTREAM_Read1_8(rstream, 1)) { /* low-level */
-                const uint8_t value = ECL_RSTREAM_Read1_8(rstream, lowl);
+                ECL_SCOPED_CONST uint8_t value = ECL_RSTREAM_Read1_8(rstream, lowl);
                 dst[i] = value | (-(value >> LLm1) & c_ecl_sla_addbits[LLm1]); /* hardcore expanding with sign-bit */
             } else {
                 dst[i] = 0; /* high-level, simply zero */
@@ -263,18 +265,18 @@ uint8_t ECL_SLA_Decompress(ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize si
     } else if(HLm1 != LLm1) { /* standard coding, variant 1 */
         ++highl;
         ++lowl;
-        const uint8_t to_read[2] = {highl, lowl};
-        const uint8_t to_check[2] = {HLm1, LLm1};
+        ECL_SCOPED_CONST uint8_t to_read[2] = {highl, lowl};
+        ECL_SCOPED_CONST uint8_t to_check[2] = {HLm1, LLm1};
         for(ECL_usize i = 0; i < size; ++i) {
-            const uint8_t LDB = ECL_RSTREAM_Read1_8(rstream, 1);
-            const uint8_t value = ECL_RSTREAM_Read1_8(rstream, to_read[LDB]);
-            const auto nbits = to_check[LDB];
+            ECL_SCOPED_CONST uint8_t LDB = ECL_RSTREAM_Read1_8(rstream, 1);
+            ECL_SCOPED_CONST uint8_t value = ECL_RSTREAM_Read1_8(rstream, to_read[LDB]);
+            ECL_SCOPED_CONST uint8_t nbits = to_check[LDB];
             dst[i] = value | (-(value >> nbits) & c_ecl_sla_addbits[nbits]);
         }
     } else { /* special coding, variant 2 */
         ++highl;
         for(ECL_usize i = 0; i < size; ++i) {
-            const uint8_t value = ECL_RSTREAM_Read1_8(rstream, highl);
+            ECL_SCOPED_CONST uint8_t value = ECL_RSTREAM_Read1_8(rstream, highl);
             dst[i] = value | (-(value >> HLm1) & c_ecl_sla_addbits[HLm1]);
         }
     }

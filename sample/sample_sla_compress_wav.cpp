@@ -67,6 +67,7 @@ static double TestAudio_GetMonoCompressionRatio16(
             char tmp_sla_header;
             auto subbuffer = block_buf_data.data() + n_samples * i;
             auto bits_size = ECL_SLA_Analyze(subbuffer, n_samples, &tmp_sla_header);
+            (void)bits_size;
             EnsureAboveZero( ECL_SLA_Compress(subbuffer, n_samples, tmp_sla_header, &wstream) );
         }
     }
@@ -112,7 +113,7 @@ static double TestAudio_GetStereoCompressionRatio16(
     , HelperTimeMeasurer& comp_measurer, HelperTimeMeasurer& decomp_measurer)
 {
     if(samp_l.size() != samp_r.size()) {
-        throw std::exception("err");
+        throw std::logic_error("err");
     }
     std::vector<uint16_t> tmp_diff_chan_2; // with tested audio samples diff/bearing-channel option doesn't help compression at all
     tmp_diff_chan_2.resize(samp_l.size());
