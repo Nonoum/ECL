@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstdint>
 
-#define NTEST_VERSION_STRING "3.1.1"
+#define NTEST_VERSION_STRING "3.2.0"
 
 // allow to override namespace to have ability of having multiple thirdparties with ntest easily launched within single project
 #ifndef NTEST_NAMESPACE_NAME

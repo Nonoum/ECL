@@ -93,38 +93,47 @@ size_t TestBase :: RunTests(std::ostream& log_output, int depth, int argc, char*
         }
         return result;
     };
-    const auto should_run = [&sensitive_patterns, &insensitive_patterns, &tolower_string](const char* test_name) -> bool {
+    bool invert_filter = false;
+    const auto should_run = [&sensitive_patterns, &insensitive_patterns, &tolower_string, &invert_filter](const char* test_name) -> bool {
         for(auto& patt : sensitive_patterns) {
             if(nullptr != ::strstr(test_name, patt.c_str())) {
-                return true;
+                return true ^ invert_filter;
             }
         }
         if(insensitive_patterns.size()) {
             const auto tmp_insens = tolower_string(std::string(test_name));
             for(auto& patt : insensitive_patterns) {
                 if(tmp_insens.find(patt) != std::string::npos) {
-                    return true;
+                    return true ^ invert_filter;
                 }
             }
         }
         if(sensitive_patterns.size() || insensitive_patterns.size()) {
-            return false;
+            return false ^ invert_filter;
         }
-        return true;
+        return true ^ invert_filter;
     };
 
     // process args (argc, argv): [-m match_test_name_substring], ..., [-mi match_test_name_substring_case_insensitive], ...
     if(argv && argc) {
         const std::string key_sens("-m");
         const std::string key_insens("-mi");
-        for(int i = 1; i < (argc - 1); ++i) {
+        const std::string key_inv("-inv");
+        //
+        for(int i = 1; i < argc; ++i) {
             const std::string test_str(argv[i]);
             if(key_sens == test_str) {
-                sensitive_patterns.emplace_back( std::string(argv[i + 1]) );
-                ++i;
+                if(i < (argc - 1)) {
+                    sensitive_patterns.emplace_back( std::string(argv[i + 1]) );
+                    ++i;
+                }
             } else if(key_insens == test_str) {
-                insensitive_patterns.emplace_back( tolower_string(std::string(argv[i + 1])) );
-                ++i;
+                if(i < (argc - 1)) {
+                    insensitive_patterns.emplace_back( tolower_string(std::string(argv[i + 1])) );
+                    ++i;
+                }
+            } else if(key_inv == test_str) {
+                invert_filter = true;
             }
         }
     }
