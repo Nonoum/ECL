@@ -39,13 +39,14 @@
 */
 #define ECL_HUFF8_GET_BOUND(src_size) ((src_size) + 1 + (ECL_HUFF8_COMPRESSED_TREE_SIZE_BITS(256) / 8))
 
+
 /*
     Maximum Huffman tree depth supported by ULM implementation - covers any data up to 64k bytes (uint16_t size).
     Constant is used to allocate small buffers on stack (in decompressor - see it's documentation) or within existing supplied buffers for compressor (no extra stack arrays there).
 
-    Maximum depth is maximum path from root to a leave, where direct "root->leave" depth=1.
+    Maximum depth is maximum path from the tree root to a leaf, where direct "root->leaf" depth=1.
     Maximum safe data size is input data size for which any data combination will result in a tree with depth not exceeding appropriate limit,
-        although this is very edge case (e.g. for depth=12, max=841 - you can expect it to work ok for several kb data size or even more).
+        although this is very edge case (e.g. for depth=12 (tspec512 capacity), max=841 - you can expect it to work ok for several kb data size or even more).
     Maximum safe data size per-depth is:
         for depth = 0 max = 1 (0x1) [special case - if depth is 0 - there's only one leaf (all values are equal) and no further compressed data stream]
         for depth = 1 max = 2 (0x2)
@@ -380,13 +381,14 @@ ECL_EXPORTED_API uint32_t ECL_Huff8_TryCompress16_TSpec512_Raw(const uint8_t* sr
 /* Decompress* user methods ------------------------------------------------------------------------------------------------------------------------ */
 
 /*
-    Decompresses the tree from 'rstream' to 'dst_dtree1024' buffer in dtree1024 format, allows limiting the buffer size with 'max_nodes'.
+    Decompresses the tree from 'rstream' to 'dst_dtree1024' buffer in dtree1024 format, allows limiting the 'dst_dtree1024' buffer size with 'max_nodes' (node is a uint16_t item of the dtree array).
+    Allocates a stack buffer of ECL_HUFF8_DECOMPRESS_MAX_DEPTH*2 bytes (+few regular variables, obviously).
 
     Returns amount of nodes (uint16_t elements) used in the output buffer (> 0) or an error code:
         0: invalid parameters (NULL pointers or 'max_nodes'==0);
         -1: 'max_nodes' < 2;
-        -2: ECL_HUFF8_DECOMPRESS_MAX_DEPTH isn't enough for unpacking the tree (tree depth is bigger);
-        -3, -4: corret but insufficient buffer size ('max_nodes') to unpack the dtree - can happen if 'max_nodes' < 512.
+        -2: ECL_HUFF8_DECOMPRESS_MAX_DEPTH isn't enough for unpacking the tree (the tree depth is bigger);
+        -3, -4: correct but insufficient buffer size ('max_nodes') to unpack the dtree - can happen if 'max_nodes' < 512.
     'rstream' validness (e.g. reading errors) is to be checked by user after the call.
 */
 ECL_EXPORTED_API int16_t ECL_Huff8_DecompressDTree1024(ECL_RSTREAM_Type* rstream, uint16_t* dst_dtree1024/*[512]*/, uint16_t max_nodes/* <= 512*/);
@@ -404,6 +406,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTree1024(const uint16_t* dtr
     Decompresses (reverse of ECL_Huff8_*Compress16_*) tree and data from 'rstream' stream to 'dst' with interval 'interval' bytes and amount of 'bytes_cnt'
         (e.g. assigns dst[interval*0], dst[interval*1], dst[interval*2], ... dst[interval*(bytes_cnt-1)]).
     'rstream' validness (e.g. reading errors) is to be checked by user after the call.
+    Allocates a stack buffer of ECL_HUFF8_DECOMPRESS_MAX_DEPTH*2 bytes (+few regular variables, obviously).
 
     returns 'bytes_cnt' in case of success or 0 in case of error.
 */
@@ -413,7 +416,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress(ECL_RSTREAM_Type* rstream, uint1
 /*
     Generates 'dtable768' special decompression cache (to be used along with dtree1024 in dedicated Decompress function).
 
-    returns 1 in case of success;
+    returns 1 in case of success (can just check if > 0, other positive values won't be used at least as errors);
     returns 0 if dtree1024 is empty;
     returns -1 if dtree1024 consists of single element.
 */
@@ -421,6 +424,8 @@ ECL_EXPORTED_API int16_t ECL_Huff8_DTree1024ToDTable768(const uint16_t* dtree102
 
 /*
     Similar to ECL_Huff8_Decompress but uses extra buffer for faster decompression.
+
+    Does NOT allocate a stack buffer of ECL_HUFF8_DECOMPRESS_MAX_DEPTH*2 bytes (unlike ECL_Huff8_Decompress).
 */
 ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uint16_t* dtable768/*[768/2 == 384]*/, ECL_RSTREAM_Type* rstream, uint8_t* dst, ECL_usize bytes_cnt, ECL_usize interval);
 
@@ -430,6 +435,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtr
 /*
     Decompresses (reverse of ECL_Huff8_*Compress16_*_Raw) tree and data from 'src' buffer known to have 'src_size' bytes to 'dst' with interval 'interval' bytes and amount of 'bytes_cnt'
         (e.g. assigns dst[interval*0], dst[interval*1], dst[interval*2], ... dst[interval*(bytes_cnt-1)]).
+    Allocates a stack buffer of ECL_HUFF8_DECOMPRESS_MAX_DEPTH*2 bytes (+few regular variables, obviously).
 
     returns amount of BYTES consumed from 'src' (which is <= 'src_size'), or 0 in case of any error.
 */
@@ -437,6 +443,7 @@ ECL_EXPORTED_API ECL_usize ECL_Huff8_Decompress_Raw(const uint8_t* src, ECL_usiz
 
 /*
     Similar to ECL_Huff8_Decompress_Raw but uses extra buffer for faster decompression.
+    Allocates a stack buffer of ECL_HUFF8_DECOMPRESS_MAX_DEPTH*2 bytes (+few regular variables, obviously).
 
     returns amount of BYTES consumed from 'src' (which is <= 'src_size'), or 0 in case of any error.
 */

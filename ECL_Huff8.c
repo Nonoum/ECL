@@ -1235,7 +1235,7 @@ ECL_usize ECL_Huff8_DecompressWithDTable768(const uint16_t* dtree1024, const uin
     if(bytes_cnt > 16) {
         const uint16_t* ECL_SCOPED_CONST codes_table = dtable768;
         const uint8_t* ECL_SCOPED_CONST nbits_table = (uint8_t*)(dtable768 + 256);
-        ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 16)); /* leave last 16 values for separate loop - they will take AT LEAST 16 bits which we pre-read */
+        ECL_SCOPED_CONST ECL_usize bound_ofs = (interval * (bytes_cnt - 16)); /* leave last 16 values for separate loop - they will take AT LEAST 16 bits - as much as we pre-read */
 
 #ifdef ECL_RSTREAM_PeekWithinByte
         ECL_RSTREAM_PeekWithinByte(rstream, &nbits); /* get amount of bits in current byte - prefer aligning bound before entering loop */
