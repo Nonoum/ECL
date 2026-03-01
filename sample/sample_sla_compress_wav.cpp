@@ -39,6 +39,8 @@ void s_show_usage() {
     std::cout << "  be compressed by SLA, meaning that 24bit compression is 16bit compression + 8bit as-is." << std::endl;
 }
 
+//#define SAMPLE_USE_MEMCPY_REPLACEMENT // as CPU/MEMORY performance reference
+
 static double TestAudio_GetMonoCompressionRatio16(
     const std::vector<uint16_t>& samples, uint16_t samples_in_block
     , HelperTimeMeasurer& comp_measurer, HelperTimeMeasurer& decomp_measurer
@@ -60,11 +62,23 @@ static double TestAudio_GetMonoCompressionRatio16(
 
     //
     comp_measurer.startResume();
+#ifdef SAMPLE_USE_MEMCPY_REPLACEMENT
+    size_t compr_in_n_bytes = 0;
     for(size_t i_block = 0; i_block < n_blocks; ++i_block) {
         const size_t samples_offs = i_block * samples_in_block;
         const size_t n_samples = std::min<size_t>(samples.size() - samples_offs, samples_in_block); // in current block
-        assert(n_samples > 0);
-        assert(n_samples <= samples_in_block);
+
+        auto n_bytes = n_samples * sizeof(samples[0]);
+        memcpy(tmp_compr.data() + compr_in_n_bytes
+            , samples.data() + samples_offs
+            , n_bytes);
+        compr_in_n_bytes += n_bytes;
+    }
+#else
+    for(size_t i_block = 0; i_block < n_blocks; ++i_block) {
+        const size_t samples_offs = i_block * samples_in_block;
+        const size_t n_samples = std::min<size_t>(samples.size() - samples_offs, samples_in_block); // in current block
+
         EnsureAboveZero( ECL_SLA_PackU16(samples.data(), samples_offs, n_samples, block_buf_data.data()) );
         //
         for(size_t i = 0; i < Samp_Size; ++i) {
@@ -76,8 +90,9 @@ static double TestAudio_GetMonoCompressionRatio16(
             EnsureAboveZero( ECL_SLA_Compress(subbuffer, n_samples, tmp_sla_header, &wstream) );
         }
     }
-    comp_measurer.stop();
     const size_t compr_in_n_bytes = size_t(wstream.next - tmp_compr.data());
+#endif
+    comp_measurer.stop();
 
     { // decompress, verify
         // set up rstream
@@ -88,11 +103,22 @@ static double TestAudio_GetMonoCompressionRatio16(
         recovered_samples.resize(samples.size());
 
         decomp_measurer.startResume();
+#ifdef SAMPLE_USE_MEMCPY_REPLACEMENT
+        size_t compr_byte_offset = 0;
         for(size_t i_block = 0; i_block < n_blocks; ++i_block) {
             const size_t samples_offs = i_block * samples_in_block;
             const size_t n_samples = std::min<size_t>(samples.size() - samples_offs, samples_in_block); // in current block
-            assert(n_samples > 0);
-            assert(n_samples <= samples_in_block);
+
+            auto n_bytes = n_samples * sizeof(samples[0]);
+            memcpy(recovered_samples.data() + samples_offs
+                , tmp_compr.data() + compr_byte_offset
+                , n_bytes);
+            compr_byte_offset += n_bytes;
+        }
+#else
+        for(size_t i_block = 0; i_block < n_blocks; ++i_block) {
+            const size_t samples_offs = i_block * samples_in_block;
+            const size_t n_samples = std::min<size_t>(samples.size() - samples_offs, samples_in_block); // in current block
             //
             for(size_t i = 0; i < Samp_Size; ++i) {
                 // decompress subblock i
@@ -101,6 +127,7 @@ static double TestAudio_GetMonoCompressionRatio16(
             //
             EnsureAboveZero( ECL_SLA_UnpackU16(block_buf_data.data(), recovered_samples.data(), samples_offs, n_samples) );
         }
+#endif
         decomp_measurer.stop();
         if(recovered_samples != samples) {
             assert(false);

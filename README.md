@@ -1,21 +1,29 @@
 EMBEDDED COMPRESSION LIBRARY
 ===
 
-**ECL** aka EMBEDDED COMPRESSION LIBRARY is NOT ONLY for embedded, it is **mostly oriented for small data** and has special optimized **low-memory** modes for restricted environments.
+**ECL** aka EMBEDDED COMPRESSION LIBRARY is NOT ONLY for embedded, it is **mostly oriented towards small data** and has optimized **low-memory** modes/algorithms for restricted environments, that also makes it highload-friendly.
 
 ---
 ### Language: C
 ### Platforms: any
 ### Endianness: any
-### Library version: 1.1.0
+### Library version: 1.2.0
 ---
 ## NEWS
 
 ### [PINNED] 11 July 2025: Announcing new functionality development, adding Patreon page for support
 - new type low-memory codec: TBA **[released Huff8 @ 30 September 2025]**
-- new type specialized low-memory codec (2): TBA
+- new type specialized low-memory codec (2): TBA **[released SLA @ 01 March 2026]**
 - new type specialized low-memory codec (3): TBA
+- new type codec (4): TBA
 - Patreon page: https://www.patreon.com/Nonoum
+
+### 01 March 2026: Releasing SLA (Sequence Levels Analyzer) specialized codec. ECL 1.2.0
+- See description and benchmarks in sections with "ECL:SLA" below
+- Simple, fast, very low-memory
+- The compressor (with aux conversion functions) targets chart data (e.g. integer array of sensor readings, audio samples etc)
+- Can be used for lossless audio data/stream compression (also applicable for very small independent data chunks) - alternative to codecs like "flac"
+- Can be used for lossless graphic image compression (TBD: Ultra Low Memory 2d image codec - PNG alternative)
 
 ### 30 September 2025: Releasing Huff8 (Huffman 8-bit) Ultra Low Memory codec. ECL 1.1.0
 - See description and benchmarks in sections with "ECL:Huff8" below
@@ -58,6 +66,9 @@ EMBEDDED COMPRESSION LIBRARY
 
 ### Version 1.1.0 Tested on:
 - Windows 10: msvc2022, gcc 15.2.0, XC8 2.32 (compile only), arduino IDE (compile only)
+
+### Version 1.2.0 Tested on:
+- Windows 10: msvc2022, gcc 15.2.0, XC8 2.32 (compile only), arduino IDE (compile only)
 ---
 
 
@@ -65,9 +76,23 @@ EMBEDDED COMPRESSION LIBRARY
 Some of modes of some compressors use intermediate buffers for compression, they don't use any implicit allocation (unless otherwise specified) - user can easily choose how to allocate buffers.
 Every compression method that uses temporary buffer (say, more than 10 bytes) - has it specified in documentation near method declaration.
 
+### ECL:SLA (Sequence Levels Analyzer) - a specialized codec to compress a sequence of low-mean-amplitude values (which can be a spatial diff).
+- use cases - chart data (integer array of sensor readings), audio, graphics (all adapted in a certain way)
+- can be beneficial for very small amounts of data, only 6 bit extra info is added to output;
+- compression ratio - small..middle;
+- compression ratio limit - 8, or infinite for edge case (if all bytes are zero);
+- compressors complexity: linear;
+- compressors performance - middle..high;
+- decompressor complexity - linear;
+- decompressor performance - middle..high;
+- compressor, decompressor buffer memory consumption - 0 (except from packing/unpacking aux functions that can normally use about some 128 bytes - according to user chosen block size);
+- static const memory consumption for Analyze/Compress - 256 bytes + ~20 bytes;
+- static const memory consumption for Decompress - ~20 bytes;
+- stack consumption - normal;
+
 ### ECL:Huff8 - a Huffman codec implementation highly optimized for restricted memory environments. Works per-byte (at most 256 different codes).
 - use cases - various, useful for non-equal distribution of bytes in user data;
-- all code is recursion-free, no large stack arrays allocation, fully predictable and documented memory use;
+- **all code is recursion-free**, no large stack arrays allocation, fully predictable and documented memory use;
 - provides API for advanced use, medium use, trivial use;
 - works with data blocks up to 65535 bytes (uint16 size), for larger datasets data should be split in smaller blocks (see sample); larger blocks make little sense as they harm statictics;
 - can be beneficial for very small amounts of data if data set has not many unique bytes;
@@ -151,9 +176,8 @@ See **ECL_config.h** for details on configuring, mostly controlled by ECL_USE* m
 - in case you don't have uint*_t types defined in `stdint.h` - define those types there near "user setup part";
 
 
-## PERFORMANCE BENCHMARKS for version 1.0.0 (NanoLZ, ZeroEater, ZeroDevourer)
+## PERFORMANCE BENCHMARKS for version 1.0.0 : NanoLZ, ZeroEater, ZeroDevourer (**year 2018, old hardware**)
 PC benchmarks are performed for *Intel core i5-3570k @ 3.4 GHz / Windows 7 64 bit / 16gb RAM 1600 MHz*.
-All benchmarks are performed for ECL version 1.0.0.
 Compiled with GCC 7.2.0, options: `-m32 -Wall -Wextra -pedantic -O3`.
 - ECL sources are compiled as single file: "ecl-all-c-included/ECL_all_c_included.c" (and for Embedded benchmarks too);
 - Speed is in megabytes per second (mb/s);
@@ -260,7 +284,7 @@ Note that prodigious decompression speed of `ZeroEater` and `ZeroDevourer` is ac
 [Silesia Corpus]: http://sun.aei.polsl.pl/~sdeor/index.php?page=silesia
 
 
-## PERFORMANCE BENCHMARKS for ECL:Huff8 / version 1.1.0
+## PERFORMANCE BENCHMARKS for ECL:Huff8 / version 1.1.0 (**year 2025**)
 ### Windows environment - all measurements are done within 'sample/sample_huff8_blocked.cpp', 'memcpy' variant has overhead of auxiliary code in sample.
 - hardware: AMD Ryzen 5600x, 32gb 3600mhz RAM
 - compiler: gcc version 15.2.0
@@ -307,23 +331,54 @@ Note that prodigious decompression speed of `ZeroEater` and `ZeroDevourer` is ac
 | ----- | ----- | ------------ | --------------- |
 | 32000 | 0.836 |   224.2 mb/s |      232.2 mb/s |
 
+
+## PERFORMANCE BENCHMARKS for ECL:SLA / version 1.2.0 (**year 2026**)
+### Windows environment - all measurements are done within 'sample/sample_sla_compress_wav.cpp'
+- hardware: AMD Ryzen 5600x, 32gb 3600mhz RAM
+- compiler: gcc version 15.2.0
+- optimization options: -O3
+- used 'block size' parameter = 128 (tests with '64', '32' have pretty similar results with a bit worse compression ratio)
+- used several wav files converted from high quality flac audio samples, wav bitness = 16
+
+#### System performance reference for .wav files
+
+| Param | 'Pack + Analyze + Compress' replaced with memcpy | 'Decompress + Unpack' replaced with memcpy |
+| ----- | ------------------------------------------------ | ------------------------------------------ |
+|  128  |                                      ~13500 mb/s |                                ~13500 mb/s |
+
+*Processed files have sizes 20-50mb, memcpy reference performance varies noticeably.
+
+#### SLA performance for compressing .wav audio files
+| Audio file, channel     | Ratio | 'Pack + Analyze + Compress' | 'Decompress + Unpack' |
+| ----------------------- | ----- | --------------------------- | --------------------- |
+| waterfall; channel L    | 0.334 |                   409 mb/s  |             469 mb/s  |
+| waterfall; channel R    | 0.311 |                   444 mb/s  |             609 mb/s  |
+| meditation; channel L   | 0.287 |                   462 mb/s  |             675 mb/s  |
+| meditation; channel R   | 0.286 |                   458 mb/s  |             674 mb/s  |
+| metal song 1; channel L | 0.433 |                   384 mb/s  |             434 mb/s  |
+| metal song 1; channel R | 0.433 |                   386 mb/s  |             443 mb/s  |
+| metal song 2; channel L | 0.430 |                   384 mb/s  |             427 mb/s  |
+| metal song 2; channel R | 0.429 |                   379 mb/s  |             433 mb/s  |
+
+
 ## MULTITHREADING
 Codecs don't share any non-const data, so API is thread safe.
 
 
-## SAMPLE TESTING PROGRAM
-There are sample programs to compress/decompress in via command line (see **"sample/"** dir):
+## SAMPLE TESTING PROGRAMS
+There are sample programs to compress/decompress files via command line (see **"sample/"** dir):
+It's enough to compile single **"sample/\<foo\>.cpp"** file, some building scripts are provided in same dir.
+Samples are unable to compress too large files as they're simplified (pre-read whole file) and used for benchmarks.
 - `NanoLZ`:Scheme1 format (**"sample/sample_nanolz.cpp"**);
 - `Huff8` blocked variant (**"sample/sample_huff8_blocked.cpp"**);
-It's enough to compile single **"sample/<foo>.cpp"** file, some building scripts are provided in same dir.
-Samples are unable to compress too large files as they're simplified (pre-read whole file) and used for benchmarks.
+- `SLA` blocked audio compression (**"sample/sample_sla_compress_wav.cpp"**);
 
 
 ## USAGE
 In general usage is pretty straightforward - you call \*Compress method, you call \*Decompress method - that's it.
-- usage samples present in headers of each codec;
-- see **"sample/sample_nanolz.cpp"**, **"sample/sample_huff8_blocked.cpp"** example programs to encode/decode files;
-- you can find examples in tests located in **"tests/"** dir.
+- usage samples are present in headers of somes codecs.
+- see usage examples in the sample programs (**"sample/"** dir).
+- see more API usage examples in tests (**"tests/"** dir).
 
 
 ## BUILDING

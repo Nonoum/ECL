@@ -33,7 +33,7 @@
 
 
 #define ECL_SLA_GET_BOUND(src_size) ((src_size) + 1) /* at most src_size + 6 bits */
-#define ECL_SLA_FLAWLESS_HEADER 0x3F /* header that can safely encode any data (no compression though) */
+#define ECL_SLA_FLAWLESS_HEADER 0x3F /* header that can safely encode any data (always no compression) */
 
 
 /******************************* REDEFINABLE *******************************/
