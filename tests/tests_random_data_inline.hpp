@@ -495,9 +495,7 @@ NTEST(test_SLA_random_data) {
     const int max_size = 1000;
     const int min_size = 1;
     const uint8_t masks[] = {/**/0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01, 0x00};
-    int n = 0;
-    double sum_uncompr_bits = 0;
-    double sum_compr_bits = 0;
+
     for(int i = 0; i < n_sets; ++i) {
         const ECL_usize src_size = (rand() % (max_size - min_size)) + min_size;
         src.resize(src_size);
@@ -511,22 +509,17 @@ NTEST(test_SLA_random_data) {
             }
             auto enough_size = src_size + 1; // (+6 bits actually)
             tmp.resize(enough_size);
-            // stats
-            auto src_nbits = src_size * 8;
-            sum_uncompr_bits += src_nbits;
             //
-            char header;
-            auto comp_size = ECL_SLA_Analyze(src.data(), src_size, &header);
-            sum_compr_bits += comp_size;
+            char tmp_sla_header;
+            auto comp_bits = ECL_SLA_Analyze(src.data(), src_size, &tmp_sla_header);
+            approve(comp_bits > 0);
             //
-            comp_size += 7;
-            comp_size /= 8; // to bytes
-            approve(ECL_SLA_Compress_Raw(src.data(), src_size, header, tmp.data(), enough_size));
+            auto comp_size_bytes = (comp_bits + 7) / 8; // to bytes
+            approve(ECL_SLA_Compress_Raw(src.data(), src_size, tmp_sla_header, tmp.data(), enough_size) > 0);
 
             tmp_output.resize(src_size);
-            approve(ECL_SLA_Decompress_Raw(tmp.data(), comp_size, tmp_output.data(), src_size));
+            approve(comp_size_bytes == ECL_SLA_Decompress_Raw(tmp.data(), comp_size_bytes, tmp_output.data(), src_size));
             approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
-            ++n;
         }
     }
 }

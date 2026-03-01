@@ -76,7 +76,10 @@ ECL_EXPORTED_API uint8_t ECL_SLA_Compress_Raw(const uint8_t* src, ECL_usize src_
 
 
 #ifdef ECL_RSTREAM_JHx_Init /* Decompress*Raw functions require ECL_RSTREAM_JHx_Init, which is present by default, but needs to be defined if custom ECL_RSTREAM_Type is chosen */
-ECL_EXPORTED_API uint8_t ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size);
+/*
+    returns amount of BYTES consumed from 'src' (which is <= 'src_size'), or 0 in case of any error.
+*/
+ECL_EXPORTED_API ECL_usize ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size);
 #endif /* ECL_RSTREAM_JHx_Init */
 
 

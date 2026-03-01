@@ -653,3 +653,31 @@ NTEST(test_Huff8_ULM_datasets) {
         //// copypasted part for huff8 tests <<<
     }
 }
+
+NTEST(test_SLA_datasets) {
+    NTEST_SUPPRESS_UNUSED;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+
+    for(auto& rec : GetDatasetRecords()) {
+        auto src_data = (const uint8_t*)rec.ptr;
+        ECL_usize src_size = rec.length;
+        approve(src_data);
+        approve(src_size);
+
+        auto enough_size = ECL_SLA_GET_BOUND(src_size);
+        ECL_TEST_MAGIC_RESIZE(tmp, enough_size);
+        tmp_output.resize(src_size);
+
+        char tmp_sla_header;
+        auto comp_bits = ECL_SLA_Analyze(src_data, src_size, &tmp_sla_header);
+        approve(comp_bits > 0);
+        auto comp_size_bytes = (comp_bits + 7) / 8;
+        approve( ECL_SLA_Compress_Raw(src_data, src_size, tmp_sla_header, tmp.data(), enough_size) > 0 );
+
+        approve(comp_size_bytes == ECL_SLA_Decompress_Raw(tmp.data(), comp_size_bytes, tmp_output.data(), src_size));
+
+        approve(0 == memcmp(src_data, tmp_output.data(), src_size));
+        ECL_TEST_MAGIC_VALIDATE(tmp);
+    }
+}

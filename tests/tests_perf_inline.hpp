@@ -224,3 +224,62 @@ NTEST(test_perf_Huff8_ULM_decompressor_dtable) {
     ECL_TEST_ASSERT(0 == memcmp(src_data, tmp_output.data(), src_size));
     ECL_TEST_MAGIC_VALIDATE(tmp);
 }
+
+NTEST(test_perf_SLA_compressor) {
+    NTEST_SUPPRESS_UNUSED;
+    std::vector<uint8_t> src;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    auto src_size = ECL_test_perf_data_block_size;
+    if(sizeof(ECL_usize) < 4) {
+        src_size = std::min<ECL_usize>(src_size, 0x0FFF);
+    }
+
+    src.resize(src_size);
+    for(int j = 0; j < src_size; ++j) {
+        src[j] = rand() & ECL_test_perf_data_byte_mask;
+    }
+    auto enough_size = ECL_SLA_GET_BOUND(src_size);
+    tmp.resize(enough_size);
+    tmp_output.resize(src_size);
+    ECL_usize comp_size_bytes;
+
+    for(int i = 0; i < ECL_test_perf_data_repeats; ++i) {
+        char tmp_sla_header;
+        auto comp_bits = ECL_SLA_Analyze(src.data(), src_size, &tmp_sla_header);
+        approve(comp_bits > 0);
+        comp_size_bytes = (comp_bits + 7) / 8;
+        approve( ECL_SLA_Compress_Raw(src.data(), src_size, tmp_sla_header, tmp.data(), enough_size) > 0 );
+    }
+    approve(comp_size_bytes == ECL_SLA_Decompress_Raw(tmp.data(), comp_size_bytes, tmp_output.data(), src_size));
+    approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
+}
+
+NTEST(test_perf_SLA_decompressor) {
+    NTEST_SUPPRESS_UNUSED;
+    std::vector<uint8_t> src;
+    std::vector<uint8_t> tmp;
+    std::vector<uint8_t> tmp_output;
+    auto src_size = ECL_test_perf_data_block_size;
+    if(sizeof(ECL_usize) < 4) {
+        src_size = std::min<ECL_usize>(src_size, 0x0FFF);
+    }
+
+    src.resize(src_size);
+    for(int j = 0; j < src_size; ++j) {
+        src[j] = rand() & ECL_test_perf_data_byte_mask;
+    }
+    auto enough_size = ECL_SLA_GET_BOUND(src_size);
+    tmp.resize(enough_size);
+    tmp_output.resize(src_size);
+    char tmp_sla_header;
+    auto comp_bits = ECL_SLA_Analyze(src.data(), src_size, &tmp_sla_header);
+    approve(comp_bits > 0);
+    auto comp_size_bytes = (comp_bits + 7) / 8;
+    approve( ECL_SLA_Compress_Raw(src.data(), src_size, tmp_sla_header, tmp.data(), enough_size) > 0 );
+
+    for(int i = 0; i < ECL_test_perf_data_repeats; ++i) {
+        approve(comp_size_bytes == ECL_SLA_Decompress_Raw(tmp.data(), comp_size_bytes, tmp_output.data(), src_size));
+    }
+    approve(0 == memcmp(src.data(), tmp_output.data(), src_size));
+}

@@ -24,6 +24,11 @@ bool EnsureAboveZero(uint8_t val) {
     return val > 0;
 }
 
+bool EnsureAboveZero(ECL_usize val) {
+    assert(val > 0);
+    return val > 0;
+}
+
 void s_show_usage() {
     std::cout << "-- Usage: sample 128 my_wav_file.wav" << std::endl;
     std::cout << "  where '128' is block_size for SLA processing, which has to be > 0 (reasonable is 32 .. 256)" << std::endl;

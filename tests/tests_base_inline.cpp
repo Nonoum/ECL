@@ -91,6 +91,7 @@ static void ECL_TEST_LogVectorData(std::ostream& log, const std::vector<T>& v, s
 #include "tests_perf_inline.hpp"
 #include "tests_errors_inline.hpp"
 #include "tests_huff8_specific_inline.hpp"
+#include "tests_sla_specific_inline.hpp"
 
 NTEST(test_version) {
     NTEST_SUPPRESS_UNUSED;

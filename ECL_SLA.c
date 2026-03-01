@@ -298,13 +298,13 @@ uint8_t ECL_SLA_Compress_Raw(const uint8_t* src, ECL_usize src_size, char pre_ca
 
 
 #ifdef ECL_RSTREAM_JHx_Init
-uint8_t ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size) {
+ECL_usize ECL_SLA_Decompress_Raw(const uint8_t* src, ECL_usize src_size, uint8_t* dst, ECL_usize size) {
     ECL_RSTREAM_Type rstream;
     ECL_RSTREAM_JHx_Init(&rstream, src, src_size);
     if((! ECL_SLA_Decompress(&rstream, dst, size)) || (! rstream.is_valid)) {
         return 0;
     }
-    return 1;
+    return (uintptr_t)(rstream.next - src);
 }
 #endif /* ECL_RSTREAM_JHx_Init */
 
